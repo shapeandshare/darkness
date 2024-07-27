@@ -13,6 +13,11 @@ commands:
     unix: |
       bash
 
+  main:
+    env_spec: default
+    unix: |
+      fastapi dev src/darkness/services/main.py
+
   chart:dep:build:
     env_spec: default
     unix: |
@@ -54,12 +59,16 @@ env_specs:
     packages:
       # Python Version
     - defaults:python>=3.12.0
+    - defaults:pip
+    - pip:
+        - fastapi
+        - pydantic
 
-      # Project Dependencies
-    - fastapi
-    - pydantic
-
-      # Project Maintenance and Documentation
-    - pylint
-    - black
-    - isort
+#      # Project Dependencies
+#    - conda-forge:fastapi
+#    - conda-forge:pydantic
+#
+#      # Project Maintenance and Documentation
+#    - defaults:pylint
+#    - defaults:black
+#    - defaults:isort
