@@ -1,16 +1,25 @@
+from ..contracts.errors.service import ServiceError
 from ..services.world import WorldService
+
+import logging
+
+logger = logging.getLogger()
 
 
 class ContextManager:
     # Application Level Services
     world_service: WorldService | None = None
 
-    def __init__(self, world_service: WorldService):
-        if self.world_service is None:
-            self.world_service = world_service
-            print("[ContextManager] assigned new world service")
+    def __init__(self):
+        if ContextManager.world_service is None:
+            ContextManager.world_service = WorldService()
+            logger.debug("[ContextManager] assigned new world service to context manager")
         else:
-            print("[ContextManager] world service already assigned")
+            logger.debug("[ContextManager] world service already assigned")
 
 
-context = ContextManager(world_service=WorldService())
+try:
+    ContextManager()
+except ServiceError as error:
+    logger.error(error)
+    exit(1)

@@ -55,24 +55,24 @@ def defaultWorld(universal_dim: tuple[int, int]) -> World:
         for y in range(0, max_y):
             if x in [0, max_x-1] or y in [0, max_y-1]:
                 local_tile_name: str = f"tile_{x}_{y}"
-                localWorld.islands[localIsland.id].tiles[local_tile_name].tileType = TileType.water
+                localWorld.islands[localIsland.id].tiles[local_tile_name].tile_type = TileType.water
 
     # build shore and dirt
     for x in range(0, max_x):
         for y in range(0, max_y):
             local_tile_name: str = f"tile_{x}_{y}"
-            if localWorld.islands[localIsland.id].tiles[local_tile_name].tileType == TileType.unknown:
+            if localWorld.islands[localIsland.id].tiles[local_tile_name].tile_type == TileType.unknown:
                 # print(f"{local_tile_name}, type: {localWorld.islands[localIsland.id].tiles[local_tile_name].tileType}")
                 for (connect_type, adjacent_id) in localWorld.islands[localIsland.id].tiles[local_tile_name].next.items():
                     # print(f"    direction: {connect_type}, adjacent_id: {adjacent_id}, type: {localWorld.islands[localIsland.id].tiles[adjacent_id].tileType}")
-                    if localWorld.islands[localIsland.id].tiles[adjacent_id].tileType == TileType.water:
+                    if localWorld.islands[localIsland.id].tiles[adjacent_id].tile_type == TileType.water:
                         # print("    water, we are shore, stopping ...")
-                        localWorld.islands[localIsland.id].tiles[local_tile_name].tileType = TileType.shore
+                        localWorld.islands[localIsland.id].tiles[local_tile_name].tile_type = TileType.shore
                         break
                 # see if we got assigned shore..
-                if localWorld.islands[localIsland.id].tiles[local_tile_name].tileType == TileType.unknown:
+                if localWorld.islands[localIsland.id].tiles[local_tile_name].tile_type == TileType.unknown:
                     # print("    still have undecided tile type .. (making it plain dirt)")
-                    localWorld.islands[localIsland.id].tiles[local_tile_name].tileType = TileType.dirt
+                    localWorld.islands[localIsland.id].tiles[local_tile_name].tile_type = TileType.dirt
 
 
     return localWorld
