@@ -21,7 +21,7 @@ class FlatIslandFactory:
         for x in range(0, max_x):
             for y in range(0, max_y):
                 local_tile_name: str = f"tile_{x}_{y}"
-                local_tile: Tile = Tile(id=local_tile_name, tile_type=TileType.unknown)
+                local_tile: Tile = Tile(id=local_tile_name, tile_type=TileType.UNKNOWN)
                 local_island.tiles[local_tile.id] = local_tile
 
         # 3. connect the tiles (n,m)
@@ -55,13 +55,13 @@ class FlatIslandFactory:
             for y in range(0, max_y):
                 if x in [0, max_x - 1] or y in [0, max_y - 1]:
                     local_tile_name: str = f"tile_{x}_{y}"
-                    local_island.tiles[local_tile_name].tile_type = TileType.water
+                    local_island.tiles[local_tile_name].tile_type = TileType.WATER
 
         # 5. build shore and dirt
         for x in range(0, max_x):
             for y in range(0, max_y):
                 local_tile_name: str = f"tile_{x}_{y}"
-                if local_island.tiles[local_tile_name].tile_type == TileType.unknown:
+                if local_island.tiles[local_tile_name].tile_type == TileType.UNKNOWN:
                     msg: str = (
                         f"{local_tile_name}, type: {local_island.tiles[local_tile_name].tile_type}"
                     )
@@ -73,16 +73,16 @@ class FlatIslandFactory:
                             f"    direction: {connect_type}, adjacent_id: {adjacent_id}, type: {local_island.tiles[adjacent_id].tile_type}"
                         )
                         logger.debug(msg)
-                        if local_island.tiles[adjacent_id].tile_type == TileType.water:
+                        if local_island.tiles[adjacent_id].tile_type == TileType.WATER:
                             logger.debug("    water, we are shore, stopping ...")
                             local_island.tiles[local_tile_name].tile_type = (
-                                TileType.shore
+                                TileType.SHORE
                             )
                             break
                     # see if we got assigned shore..
                     if (
                         local_island.tiles[local_tile_name].tile_type
-                        == TileType.unknown
+                        == TileType.UNKNOWN
                     ):
                         logger.debug(
                             "    still have undecided tile type .. (making biomen type)"

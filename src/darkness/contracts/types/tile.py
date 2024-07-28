@@ -2,9 +2,9 @@ from enum import Enum
 
 
 class TileType(str, Enum):
-    unknown = "unknown"
+    UNKNOWN = "unknown"
 
-    water = "water"
-    shore = "shore"
-    dirt = "dirt"
-    grass = "grass"
+    WATER = "water"
+    SHORE = "shore"
+    DIRT = "dirt"
+    GRASS = "grass"
