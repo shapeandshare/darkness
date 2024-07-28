@@ -14,7 +14,7 @@ build:
   script:
     - {{ PYTHON }} -m pip install . --no-deps --ignore-installed -vv
   entry_points:
-    - darkness = shapeandshare.darkness.server.main
+    - darkness = shapeandshare.darkness.server.main:main
 
 requirements:
   host:

@@ -69,7 +69,7 @@ env_specs:
     - defaults:fastapi
     - defaults:pydantic
     - defaults:uvicorn
-    - joshburt/label/dev::shapeandshare.darkness=0.1.0
+    - joshburt/label/dev::shapeandshare.darkness=0.1.1
 
     # Project Maintenance and Documentation
     - defaults:anaconda-project
