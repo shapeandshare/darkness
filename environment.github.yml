@@ -16,3 +16,4 @@ dependencies:
   - python-dotenv
   - setuptools
   - anaconda-client
+  - anaconda-project
