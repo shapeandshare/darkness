@@ -20,6 +20,9 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -39,9 +42,9 @@ jobs:
     - name: Conda Info
       run: |
         conda info
-#    - name: Run Auditing
-#      run: |
-#        anaconda-project run lint
+    - name: Run Auditing
+      run: |
+        anaconda-project run lint
     - name: Conda Build
       run: |
         make clean
