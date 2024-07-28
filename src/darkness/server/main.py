@@ -3,7 +3,7 @@ import logging
 import uvicorn
 from fastapi import FastAPI
 
-from .routers import island
+from .routers import island, metrics
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
@@ -13,6 +13,9 @@ if __name__ == "__main__":
 
     logger.info("[Main] starting")
     app = FastAPI()
+
+    logger.debug("[Main] adding metrics routes")
+    app.include_router(metrics.router)
 
     logger.debug("[Main] adding island routes")
     app.include_router(island.router)
