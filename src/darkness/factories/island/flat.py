@@ -85,7 +85,7 @@ class FlatIslandFactory:
                         == TileType.UNKNOWN
                     ):
                         logger.debug(
-                            "    still have undecided tile type .. (making biomen type)"
+                            "    still have undecided tile type .. (making biome type)"
                         )
                         local_island.tiles[local_tile_name].tile_type = biome
 

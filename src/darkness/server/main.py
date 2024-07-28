@@ -9,8 +9,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
 
-if __name__ == "__main__":
-
+def main():
     logger.info("[Main] starting")
     app = FastAPI()
 
@@ -23,3 +22,7 @@ if __name__ == "__main__":
     logger.info("[Main] online")
 
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level=logging.getLogger().level)
+
+
+if __name__ == "__main__":
+    main()
