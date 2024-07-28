@@ -1,4 +1,2 @@
-
-
 class FactoryError(Exception):
     pass

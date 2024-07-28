@@ -8,6 +8,3 @@ class Island(BaseModel):
     name: str
     rbac: dict = {}
     tiles: dict[str, Tile] = {}
-
-
-

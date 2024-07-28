@@ -1,6 +1,6 @@
-from .flat import FlatIslandFactory
 from ...contracts.dtos.island import Island
 from ...contracts.types.tile import TileType
+from .flat import FlatIslandFactory
 
 
 class IslandFactory(FlatIslandFactory):

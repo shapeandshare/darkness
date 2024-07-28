@@ -8,8 +8,6 @@ class Tile(BaseModel):
     id: str
     tile_type: TileType
     rbac: dict = {}
-    next: dict[TileConnectionType, str] = {} # str=id
+    next: dict[TileConnectionType, str] = {}  # str=id
     # subtype: ClassVar[str]
     # subtype: any | None = None
-
-

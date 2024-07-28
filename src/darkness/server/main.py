@@ -1,9 +1,10 @@
-import uvicorn
+import logging
 
+import uvicorn
 from fastapi import FastAPI
+
 from .routers import island
 
-import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 

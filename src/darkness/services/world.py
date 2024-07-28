@@ -1,11 +1,13 @@
-from pathlib import Path
 import json
+import logging
+from pathlib import Path
+
+from src.darkness.contracts.dtos.island_create_request import IslandCreateRequest
+
 from ..contracts.dtos.island import Island
 from ..contracts.dtos.world import World
 from ..contracts.errors.service import ServiceError
-from ..contracts.types.tile import TileType
 from ..factories.world.world import WorldFactory
-import logging
 
 logger = logging.getLogger()
 
@@ -44,13 +46,17 @@ class WorldService:
     def _commit(self):
         logger.debug("[WorldService] writing world data to storage")
         world_data: str = self.world.model_dump_json(indent=4)
-        with open(file=METADATA_PATH.resolve().as_posix(), mode="w", encoding="utf-8") as file:
+        with open(
+            file=METADATA_PATH.resolve().as_posix(), mode="w", encoding="utf-8"
+        ) as file:
             file.write(world_data)
 
-    def island_create(self) -> str:
+    def island_create(self, request: IslandCreateRequest) -> str:
         logger.debug("[WorldService] creating island")
         # discover an island and return its id.
-        island_id: str = WorldFactory.island_discover(target_world=self.world, dim=[1, 1], biome=TileType.dirt)
+        island_id: str = WorldFactory.island_discover(
+            target_world=self.world, dim=request.dim, biome=request.biome
+        )
         self._commit()
         return island_id
 

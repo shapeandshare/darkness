@@ -1,7 +1,7 @@
+import logging
+
 from ..contracts.errors.service import ServiceError
 from ..services.world import WorldService
-
-import logging
 
 logger = logging.getLogger()
 
@@ -13,7 +13,9 @@ class ContextManager:
     def __init__(self):
         if ContextManager.world_service is None:
             ContextManager.world_service = WorldService()
-            logger.debug("[ContextManager] assigned new world service to context manager")
+            logger.debug(
+                "[ContextManager] assigned new world service to context manager"
+            )
         else:
             logger.debug("[ContextManager] world service already assigned")
 

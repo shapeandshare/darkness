@@ -1,4 +1,2 @@
-
-
 class ServiceError(Exception):
     pass
