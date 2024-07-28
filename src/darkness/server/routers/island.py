@@ -3,10 +3,8 @@ import logging
 from fastapi import APIRouter, HTTPException
 
 from ...contracts.dtos.island import Island
-from ...contracts.dtos.requests.island_create_request import \
-    IslandCreateRequest
-from ...contracts.dtos.responses.island_create_response import \
-    IslandCreateResponse
+from ...contracts.dtos.requests.island_create_request import IslandCreateRequest
+from ...contracts.dtos.responses.island_create_response import IslandCreateResponse
 from ...contracts.dtos.responses.response import Response
 from ...contracts.errors.service import ServiceError
 from ..context import ContextManager
@@ -42,7 +40,7 @@ async def island_get(island_id: str) -> Response[str]:
     try:
         island: Island | None = ContextManager.world_service.island_get(id=island_id)
     except ServiceError as error:
-        logger.warn(str(error))
+        logger.warning(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
 
     response = Response[str](data=island.model_dump())
