@@ -5,3 +5,4 @@ infra/darkness/charts/*.tgz
 __pycache__/
 data/
 .DS_Store
+build/

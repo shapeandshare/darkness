@@ -81,19 +81,16 @@ env_specs:
   default:
     description: Default environment spec for running commands
     packages:
-      # Python Version
+    # Python Version
     - defaults:python>=3.12.0
-    - defaults:anaconda-project
-    - defaults:pip
-    - pip:
-        - fastapi
-        - pydantic
 
-#      # Project Dependencies
-#    - conda-forge:fastapi
-#    - conda-forge:pydantic
-#
-      # Project Maintenance and Documentation
+    # Application Dependnecies
+    - defaults:fastapi
+    - defaults:pydantic
+    - defaults:uvicorn
+
+    # Project Maintenance and Documentation
+    - defaults:anaconda-project
     - defaults:pylint
     - defaults:black
     - defaults:isort
