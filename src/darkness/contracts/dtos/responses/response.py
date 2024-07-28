@@ -5,5 +5,5 @@ from pydantic import BaseModel
 T = TypeVar("T")
 
 
-class Response(Generic[T], BaseModel):
+class Response(BaseModel, Generic[T]):
     data: T

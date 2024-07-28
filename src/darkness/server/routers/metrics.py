@@ -19,8 +19,9 @@ router: APIRouter = APIRouter(
 
 
 @router.get("/health")
-async def health_get():
-    return {"healthy": True}
+async def health_get() -> Response[dict]:
+    response: Response[dict] = Response[dict](data={"healthy": True})
+    return response
 
 
 # async def health_get( -> Response[IslandCreateResponse]:

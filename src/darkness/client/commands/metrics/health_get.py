@@ -1,9 +1,12 @@
 """ Health Get Command Definition """
 
 import requests
-from requests import Response
 
+from ....contracts.dtos.responses.response import Response
 from ..abstract import AbstractCommand
+
+# from requests import Response
+
 
 
 class HealthGetCommand(AbstractCommand):
@@ -27,8 +30,8 @@ class HealthGetCommand(AbstractCommand):
             The server health (true or false).
         """
 
-        response: Response = requests.get(
+        response: requests.Response = requests.get(
             url=f"http://{self.options.tld}/metrics/health",
             timeout=self.options.timeout,
         )
-        return {"status": response.status_code, "data": response.text}
+        return Response[dict].parse_obj(response.json()).data
