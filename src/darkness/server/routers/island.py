@@ -9,6 +9,7 @@ from ...contracts.dtos.responses.island_create_response import \
     IslandCreateResponse
 from ...contracts.dtos.responses.response import Response
 from ..context import ContextManager
+from ...contracts.errors.service import ServiceError
 
 logger = logging.getLogger()
 
@@ -37,12 +38,14 @@ async def island_create(
 async def island_get(island_id: str) -> Response[str]:
     msg: str = f"[GET][/island/{island_id}]"
     logger.debug(msg)
-    island: Island | None = ContextManager.world_service.island_get(id=island_id)
-    if island:
-        response = Response[str](data=island.model_dump())
-        msg: str = f"[GET][/island/{island_id}] {response}"
-        logger.debug(msg)
-        return response
-    msg: str = f"[GET][/island/{island_id}] - 404"
-    logger.warn(msg)
-    raise HTTPException(status_code=404, detail="Item not found")
+
+    try:
+        island: Island | None = ContextManager.world_service.island_get(id=island_id)
+    except ServiceError as error:
+        logger.warn(str(error))
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+    response = Response[str](data=island.model_dump())
+    msg: str = f"[GET][/island/{island_id}] {response}"
+    logger.debug(msg)
+    return response

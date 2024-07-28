@@ -26,6 +26,8 @@ class WorldService:
         else:
             self._read()
 
+    ### Internal ##################################
+
     def _generate(self):
         logger.debug("[WorldService] generating world skeleton")
         self.world = WorldFactory.generate()
@@ -52,6 +54,8 @@ class WorldService:
         ) as file:
             file.write(world_data)
 
+    ### Islands ##################################
+
     def island_create(self, request: IslandCreateRequest) -> str:
         logger.debug("[WorldService] creating island")
         # discover an island and return its id.
@@ -71,7 +75,14 @@ class WorldService:
     def island_get(self, id: str) -> Island:
         msg: str = f"[WorldService] getting island {id}"
         logger.debug(msg)
-        return self.world.islands[id]
+
+        try:
+            island: Island = self.world.islands[id]
+        except KeyError as error:
+            msg: str = f"Unable to find island {id}"
+            logger.error(msg)
+            raise ServiceError(msg) from error
+        return island
 
     def island_put(self, island: Island) -> None:
         msg: str = f"[WorldService] putting island {island.id} into world storage"

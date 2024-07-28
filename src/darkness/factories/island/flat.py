@@ -31,22 +31,22 @@ class FlatIslandFactory:
 
                 if f"tile_{x - 1}_{y}" in local_island.tiles:
                     local_island.tiles[local_tile_name].next[
-                        TileConnectionType.left
+                        TileConnectionType.LEFT
                     ] = f"tile_{x - 1}_{y}"
 
                 if f"tile_{x + 1}_{y}" in local_island.tiles:
                     local_island.tiles[local_tile_name].next[
-                        TileConnectionType.right
+                        TileConnectionType.RIGHT
                     ] = f"tile_{x + 1}_{y}"
 
                 if f"tile_{x}_{y - 1}" in local_island.tiles:
                     local_island.tiles[local_tile_name].next[
-                        TileConnectionType.up
+                        TileConnectionType.UP
                     ] = f"tile_{x}_{y - 1}"
 
                 if f"tile_{x}_{y + 1}" in local_island.tiles:
                     local_island.tiles[local_tile_name].next[
-                        TileConnectionType.down
+                        TileConnectionType.DOWN
                     ] = f"tile_{x}_{y + 1}"
 
         # 4. set tile types

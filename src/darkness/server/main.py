@@ -5,7 +5,7 @@ from fastapi import FastAPI
 
 from .routers import island
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
 
