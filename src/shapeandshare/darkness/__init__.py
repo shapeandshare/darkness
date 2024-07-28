@@ -22,7 +22,9 @@ from .contracts.dtos.responses.response import Response
 from .contracts.dtos.tile import Tile
 from .contracts.dtos.world import World
 from .contracts.dtos.wrapped_request import WrappedRequest
-from .contracts.errors.environment_variable_not_found import EnvironmentVariableNotFoundError
+from .contracts.errors.environment_variable_not_found import (
+    EnvironmentVariableNotFoundError,
+)
 from .contracts.errors.exceeded_retry_count import ExceededRetryCountError
 from .contracts.errors.factory import FactoryError
 from .contracts.errors.request_failure import RequestFailureError

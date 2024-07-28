@@ -3,7 +3,9 @@
 import os
 from typing import Optional
 
-from ...contracts.errors.environment_variable_not_found import EnvironmentVariableNotFoundError
+from ...contracts.errors.environment_variable_not_found import (
+    EnvironmentVariableNotFoundError,
+)
 
 
 def demand_env_var(name: str) -> str:

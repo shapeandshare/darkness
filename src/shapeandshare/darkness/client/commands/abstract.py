@@ -10,7 +10,11 @@ import requests
 from pydantic import BaseModel
 from requests import Response
 
-from ...common.config.environment import demand_env_var, demand_env_var_as_float, demand_env_var_as_int
+from ...common.config.environment import (
+    demand_env_var,
+    demand_env_var_as_float,
+    demand_env_var_as_int,
+)
 from ...contracts.dtos.command_options import CommandOptions
 from ...contracts.dtos.wrapped_request import WrappedRequest
 from ...contracts.errors.exceeded_retry_count import ExceededRetryCountError
