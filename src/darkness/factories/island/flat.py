@@ -62,15 +62,17 @@ class FlatIslandFactory:
             for y in range(0, max_y):
                 local_tile_name: str = f"tile_{x}_{y}"
                 if local_island.tiles[local_tile_name].tile_type == TileType.unknown:
-                    logger.debug(
+                    msg: str = (
                         f"{local_tile_name}, type: {local_island.tiles[local_tile_name].tile_type}"
                     )
+                    logger.debug(msg)
                     for connect_type, adjacent_id in local_island.tiles[
                         local_tile_name
                     ].next.items():
-                        logger.debug(
+                        msg: str = (
                             f"    direction: {connect_type}, adjacent_id: {adjacent_id}, type: {local_island.tiles[adjacent_id].tile_type}"
                         )
+                        logger.debug(msg)
                         if local_island.tiles[adjacent_id].tile_type == TileType.water:
                             logger.debug("    water, we are shore, stopping ...")
                             local_island.tiles[local_tile_name].tile_type = (

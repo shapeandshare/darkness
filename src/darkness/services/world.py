@@ -2,9 +2,8 @@ import json
 import logging
 from pathlib import Path
 
-from src.darkness.contracts.dtos.island_create_request import IslandCreateRequest
-
 from ..contracts.dtos.island import Island
+from ..contracts.dtos.requests.island_create_request import IslandCreateRequest
 from ..contracts.dtos.world import World
 from ..contracts.errors.service import ServiceError
 from ..factories.world.world import WorldFactory
@@ -39,8 +38,10 @@ class WorldService:
                 self.world = None
             self.world = World.parse_file(path=METADATA_PATH)
         except json.decoder.JSONDecodeError as error:
-            error_message: str = f"Unable to load world data from ({METADATA_PATH})"
-            logger.error(f"[WorldService] {error_message}")
+            error_message: str = (
+                f"[WorldService] Unable to load world data from ({METADATA_PATH})"
+            )
+            logger.error(error_message)
             raise ServiceError(error_message) from error
 
     def _commit(self):
@@ -61,16 +62,19 @@ class WorldService:
         return island_id
 
     def island_delete(self, id: str) -> None:
-        logger.debug(f"[WorldService] deleting island {id}")
+        msg: str = f"[WorldService] deleting island {id}"
+        logger.debug(msg)
         if id in self.world.islands:
             del self.world.islands[id]
         self._commit()
 
     def island_get(self, id: str) -> Island:
-        logger.debug(f"[WorldService] getting island {id}")
+        msg: str = f"[WorldService] getting island {id}"
+        logger.debug(msg)
         return self.world.islands[id]
 
     def island_put(self, island: Island) -> None:
-        logger.debug(f"[WorldService] putting island {island.id} into world storage")
+        msg: str = f"[WorldService] putting island {island.id} into world storage"
+        logger.debug(msg)
         self.world.islands[island.id] = island
         self._commit()

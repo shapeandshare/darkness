@@ -2,11 +2,12 @@ import logging
 
 from fastapi import APIRouter, HTTPException
 
-from src.darkness.contracts.dtos.island_create_request import IslandCreateRequest
-
 from ...contracts.dtos.island import Island
-from ...contracts.dtos.island_create_response import IslandCreateResponse
-from ...contracts.dtos.response import Response
+from ...contracts.dtos.requests.island_create_request import \
+    IslandCreateRequest
+from ...contracts.dtos.responses.island_create_response import \
+    IslandCreateResponse
+from ...contracts.dtos.responses.response import Response
 from ..context import ContextManager
 
 logger = logging.getLogger()
@@ -27,17 +28,21 @@ async def island_create(
         request=island_create_request
     )
     response = Response[IslandCreateResponse](data=IslandCreateResponse(id=island_id))
-    logger.debug(f"[GET][/island/create] {response}")
+    msg: str = f"[GET][/island/create] {response}"
+    logger.debug(msg)
     return response
 
 
 @router.get("/{island_id}")
 async def island_get(island_id: str) -> Response[str]:
-    logger.debug(f"[GET][/island/{island_id}]")
+    msg: str = f"[GET][/island/{island_id}]"
+    logger.debug(msg)
     island: Island | None = ContextManager.world_service.island_get(id=island_id)
     if island:
         response = Response[str](data=island.model_dump())
-        logger.debug(f"[GET][/island/{island_id}] {response}")
+        msg: str = f"[GET][/island/{island_id}] {response}"
+        logger.debug(msg)
         return response
-    logger.warn(f"[GET][/island/{island_id}] - 404")
+    msg: str = f"[GET][/island/{island_id}] - 404"
+    logger.warn(msg)
     raise HTTPException(status_code=404, detail="Item not found")

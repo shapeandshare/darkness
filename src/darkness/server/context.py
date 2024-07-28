@@ -1,4 +1,5 @@
 import logging
+import sys
 
 from ..contracts.errors.service import ServiceError
 from ..services.world import WorldService
@@ -24,4 +25,4 @@ try:
     ContextManager()
 except ServiceError as error:
     logger.error(error)
-    exit(1)
+    sys.exit(1)
