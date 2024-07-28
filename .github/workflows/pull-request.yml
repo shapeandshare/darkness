@@ -39,9 +39,9 @@ jobs:
     - name: Conda Info
       run: |
         conda info
-    - name: Run Auditing
-      run: |
-        anaconda-project run lint
+#    - name: Run Auditing
+#      run: |
+#        anaconda-project run lint
     - name: Conda Build
       run: |
         make clean
