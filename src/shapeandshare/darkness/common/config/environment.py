@@ -5,8 +5,6 @@ from typing import Optional
 
 from ...contracts.errors.environment_variable_not_found import EnvironmentVariableNotFoundError
 
-# from .environment_variable_not_found_error import EnvironmentVariableNotFoundError
-
 
 def demand_env_var(name: str) -> str:
     """

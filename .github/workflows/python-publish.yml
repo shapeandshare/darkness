@@ -1,0 +1,56 @@
+# This workflow will upload a Python Package using Twine when a release is created
+# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
+
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Upload Python Package
+
+on:
+  push:
+    branches: [ master ]
+
+
+  # Allows you to run this workflow manually from the Actions tab
+#  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - name: Install dependencies
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        channels: defaults,conda-forge,joshburt
+        auto-activate-base: false
+        activate-environment: ci.build
+        environment-file: environment.github.yml
+    - name: Conda Info
+      run: |
+        conda info
+    - name: Conda Build
+      run: |
+        make clean
+        make setup
+        make conda
+    - name: Publish
+      env:
+        ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
+      run: |
+        anaconda --verbose --token $ANACONDA_TOKEN upload --user joshburt /usr/share/miniconda/envs/ci.build/conda-bld/noarch/shapeandshare.darknesss-*.tar.bz2 --force

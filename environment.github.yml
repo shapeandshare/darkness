@@ -1,4 +1,4 @@
-name: shapeandshare.command.runner
+name: ci.build
 channels:
   - defaults
   - conda-forge
@@ -12,7 +12,7 @@ dependencies:
   - pip
   - pydantic
   - pylint
-  - python=3.10.8
+  - python>=3.12
   - python-dotenv
   - setuptools
   - anaconda-client
