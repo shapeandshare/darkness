@@ -47,3 +47,8 @@ jobs:
         make clean
         make setup
         make conda
+    - name: Publish Dev Package
+      env:
+        ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
+      run: |
+        anaconda --verbose --token $ANACONDA_TOKEN upload --user joshburt --label dev build/noarch/shapeandshare.darknesss-*.tar.bz2 --force

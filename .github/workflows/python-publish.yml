@@ -53,4 +53,4 @@ jobs:
       env:
         ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
       run: |
-        anaconda --verbose --token $ANACONDA_TOKEN upload --user joshburt /usr/share/miniconda/envs/ci.build/conda-bld/noarch/shapeandshare.darknesss-*.tar.bz2 --force
+        anaconda --verbose --token $ANACONDA_TOKEN upload --user joshburt build/noarch/shapeandshare.darknesss-*.tar.bz2 --force
