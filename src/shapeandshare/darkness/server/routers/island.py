@@ -24,9 +24,7 @@ async def island_create(
     island_create_request: IslandCreateRequest,
 ) -> Response[IslandCreateResponse]:
     logger.debug("[POST][/island/create]")
-    island_id: str = ContextManager.world_service.island_create(
-        request=island_create_request
-    )
+    island_id: str = ContextManager.world_service.island_create(request=island_create_request)
     response = Response[IslandCreateResponse](data=IslandCreateResponse(id=island_id))
     msg: str = f"[GET][/island/create] {response}"
     logger.debug(msg)
@@ -39,9 +37,7 @@ async def island_get(island_get_request: IslandGetRequest) -> Response[Island]:
     logger.debug(msg)
 
     try:
-        island: Island | None = ContextManager.world_service.island_get(
-            id=island_get_request.id
-        )
+        island: Island | None = ContextManager.world_service.island_get(id=island_get_request.id)
     except ServiceError as error:
         logger.warning(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error

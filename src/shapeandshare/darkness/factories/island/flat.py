@@ -30,24 +30,16 @@ class FlatIslandFactory:
                 local_tile_name: str = f"tile_{x}_{y}"
 
                 if f"tile_{x - 1}_{y}" in local_island.tiles:
-                    local_island.tiles[local_tile_name].next[
-                        TileConnectionType.LEFT
-                    ] = f"tile_{x - 1}_{y}"
+                    local_island.tiles[local_tile_name].next[TileConnectionType.LEFT] = f"tile_{x - 1}_{y}"
 
                 if f"tile_{x + 1}_{y}" in local_island.tiles:
-                    local_island.tiles[local_tile_name].next[
-                        TileConnectionType.RIGHT
-                    ] = f"tile_{x + 1}_{y}"
+                    local_island.tiles[local_tile_name].next[TileConnectionType.RIGHT] = f"tile_{x + 1}_{y}"
 
                 if f"tile_{x}_{y - 1}" in local_island.tiles:
-                    local_island.tiles[local_tile_name].next[
-                        TileConnectionType.UP
-                    ] = f"tile_{x}_{y - 1}"
+                    local_island.tiles[local_tile_name].next[TileConnectionType.UP] = f"tile_{x}_{y - 1}"
 
                 if f"tile_{x}_{y + 1}" in local_island.tiles:
-                    local_island.tiles[local_tile_name].next[
-                        TileConnectionType.DOWN
-                    ] = f"tile_{x}_{y + 1}"
+                    local_island.tiles[local_tile_name].next[TileConnectionType.DOWN] = f"tile_{x}_{y + 1}"
 
         # 4. set tile types
         # outer water
@@ -62,31 +54,20 @@ class FlatIslandFactory:
             for y in range(0, max_y):
                 local_tile_name: str = f"tile_{x}_{y}"
                 if local_island.tiles[local_tile_name].tile_type == TileType.UNKNOWN:
-                    msg: str = (
-                        f"{local_tile_name}, type: {local_island.tiles[local_tile_name].tile_type}"
-                    )
+                    msg: str = f"{local_tile_name}, type: {local_island.tiles[local_tile_name].tile_type}"
                     logger.debug(msg)
-                    for connect_type, adjacent_id in local_island.tiles[
-                        local_tile_name
-                    ].next.items():
+                    for connect_type, adjacent_id in local_island.tiles[local_tile_name].next.items():
                         msg: str = (
                             f"    direction: {connect_type}, adjacent_id: {adjacent_id}, type: {local_island.tiles[adjacent_id].tile_type}"
                         )
                         logger.debug(msg)
                         if local_island.tiles[adjacent_id].tile_type == TileType.WATER:
                             logger.debug("    water, we are shore, stopping ...")
-                            local_island.tiles[local_tile_name].tile_type = (
-                                TileType.SHORE
-                            )
+                            local_island.tiles[local_tile_name].tile_type = TileType.SHORE
                             break
                     # see if we got assigned shore..
-                    if (
-                        local_island.tiles[local_tile_name].tile_type
-                        == TileType.UNKNOWN
-                    ):
-                        logger.debug(
-                            "    still have undecided tile type .. (making biome type)"
-                        )
+                    if local_island.tiles[local_tile_name].tile_type == TileType.UNKNOWN:
+                        logger.debug("    still have undecided tile type .. (making biome type)")
                         local_island.tiles[local_tile_name].tile_type = biome
 
         return local_island

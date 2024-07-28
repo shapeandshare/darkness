@@ -44,18 +44,14 @@ class WorldService:
                 self.world = None
             self.world = World.parse_file(path=METADATA_PATH)
         except json.decoder.JSONDecodeError as error:
-            error_message: str = (
-                f"[WorldService] Unable to load world data from ({METADATA_PATH})"
-            )
+            error_message: str = f"[WorldService] Unable to load world data from ({METADATA_PATH})"
             logger.error(error_message)
             raise ServiceError(error_message) from error
 
     def _commit(self):
         logger.debug("[WorldService] writing world data to storage")
         world_data: str = self.world.model_dump_json(indent=4)
-        with open(
-            file=METADATA_PATH.resolve().as_posix(), mode="w", encoding="utf-8"
-        ) as file:
+        with open(file=METADATA_PATH.resolve().as_posix(), mode="w", encoding="utf-8") as file:
             file.write(world_data)
 
     ### Islands ##################################
@@ -63,9 +59,7 @@ class WorldService:
     def island_create(self, request: IslandCreateRequest) -> str:
         logger.debug("[WorldService] creating island")
         # discover an island and return its id.
-        island_id: str = WorldFactory.island_discover(
-            target_world=self.world, dim=request.dim, biome=request.biome
-        )
+        island_id: str = WorldFactory.island_discover(target_world=self.world, dim=request.dim, biome=request.biome)
         self._commit()
         return island_id
 

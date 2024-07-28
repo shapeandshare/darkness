@@ -10,11 +10,7 @@ import requests
 from pydantic import BaseModel
 from requests import Response
 
-from ...common.config.environment import (
-    demand_env_var,
-    demand_env_var_as_float,
-    demand_env_var_as_int,
-)
+from ...common.config.environment import demand_env_var, demand_env_var_as_float, demand_env_var_as_int
 from ...contracts.dtos.command_options import CommandOptions
 from ...contracts.dtos.wrapped_request import WrappedRequest
 from ...contracts.errors.exceeded_retry_count import ExceededRetryCountError
@@ -84,9 +80,7 @@ class AbstractCommand(BaseModel):
         """
 
         if depth < 1:
-            raise ExceededRetryCountError(
-                json.dumps({"request": request.dict(), "depth": depth})
-            )
+            raise ExceededRetryCountError(json.dumps({"request": request.dict(), "depth": depth}))
         depth -= 1
 
         params: dict = self._build_requests_params(request=request)
