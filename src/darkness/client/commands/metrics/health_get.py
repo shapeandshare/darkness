@@ -3,7 +3,7 @@
 import requests
 from requests import Response
 
-from .abstract import AbstractCommand
+from ..abstract import AbstractCommand
 
 
 class HealthGetCommand(AbstractCommand):
@@ -17,7 +17,7 @@ class HealthGetCommand(AbstractCommand):
         Executes the command.
     """
 
-    def execute(self) -> bool:
+    def execute(self) -> dict:
         """
         Executes the command.
 
@@ -31,4 +31,4 @@ class HealthGetCommand(AbstractCommand):
             url=f"http://{self.options.tld}/metrics/health",
             timeout=self.options.timeout,
         )
-        return bool(response.text)
+        return {"status": response.status_code, "data": response.text}

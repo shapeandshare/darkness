@@ -10,6 +10,8 @@ import requests
 from pydantic import BaseModel
 from requests import Response
 
+from ...common.config.environment import demand_env_var, demand_env_var_as_float, demand_env_var_as_int
+from ...contracts.dtos.command_options import CommandOptions
 from ...contracts.dtos.wrapped_request import WrappedRequest
 from ...contracts.errors.exceeded_retry_count import ExceededRetryCountError
 from ...contracts.errors.request_failure import RequestFailureError
@@ -36,6 +38,18 @@ from ...contracts.types.request_verb import RequestVerbType
 
 
 class AbstractCommand(BaseModel):
+    options: Optional[CommandOptions] = None
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        if self.options is None:
+            self.options: CommandOptions = CommandOptions(
+                sleep_time=demand_env_var_as_float(name="DARKNESS_SERVICE_SLEEP_TIME"),
+                retry_count=demand_env_var_as_int(name="DARKNESS_SERVICE_RETRY_COUNT"),
+                tld=demand_env_var(name="DARKNESS_TLD"),
+                timeout=demand_env_var_as_float(name="DARKNESS_SERVICE_TIMEOUT"),
+            )
 
     @abstractmethod
     def execute(self, *args, **kwargs) -> Optional[Any]:

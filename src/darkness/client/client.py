@@ -1,5 +1,7 @@
 from ..contracts.dtos.command_options import CommandOptions
-from .commands.health_get import HealthGetCommand
+from .commands.metrics.health_get import HealthGetCommand
+
+# from src.darkness.client.commands.metrics.health_get import HealthGetCommand
 
 
 class Client:
@@ -16,7 +18,7 @@ class Client:
 
         self.health_get_command = HealthGetCommand.parse_obj(command_dict)
 
-    def health_get(self) -> bool:
+    def health_get(self) -> dict:
         """
         Gets the server health.
 
