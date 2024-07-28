@@ -8,7 +8,6 @@ from ..abstract import AbstractCommand
 # from requests import Response
 
 
-
 class HealthGetCommand(AbstractCommand):
     """
     Health Get Command

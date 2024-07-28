@@ -17,25 +17,6 @@ from ...contracts.errors.exceeded_retry_count import ExceededRetryCountError
 from ...contracts.errors.request_failure import RequestFailureError
 from ...contracts.types.request_verb import RequestVerbType
 
-# from ....dtos.wrapped_request import WrappedRequest
-
-
-# from rowantree.auth.sdk import AuthenticateUserCommand, AuthenticateUserRequest
-# from rowantree.auth.sdk import CommandOptions as AuthCommandOptions
-# from rowantree.auth.sdk import Token, TokenClaims, get_claims
-# from rowantree.common.sdk import demand_env_var, demand_env_var_as_float, demand_env_var_as_int
-# from rowantree.contracts import BaseModel
-#
-# from ..contracts.dto.command_options import CommandOptions
-# from ..contracts.dto.wrapped_request import WrappedRequest
-# from ..contracts.exceeded_retry_count_error import ExceededRetryCountError
-# from ..contracts.request_failure_error import RequestFailureError
-# from ..contracts.request_verb import RequestVerb
-
-# Acts as a singleton for auth across multiple commands.
-# ROWANTREE_SERVICE_SDK_HEADERS: dict[str, str] = {}
-# ROWANTREE_SERVICE_SDK_CLAIMS: dict[str, TokenClaims] = {}
-
 
 class AbstractCommand(BaseModel):
     options: Optional[CommandOptions] = None
@@ -54,22 +35,6 @@ class AbstractCommand(BaseModel):
     @abstractmethod
     def execute(self, *args, **kwargs) -> Optional[Any]:
         """Command entry point"""
-
-    # # User Commands
-    # def _authenticate(self) -> None:
-    #     """
-    #     Authenticates the session.
-    #
-    #     This method writes into ROWANTREE_SERVICE_SDK_HEADERS which is acting as a singleton
-    #     for use across all service sdk commands.
-    #     """
-    #
-    #     request: AuthenticateUserRequest = AuthenticateUserRequest(
-    #         username=demand_env_var(name="ACCESS_USERNAME"), password=demand_env_var(name="ACCESS_PASSWORD")
-    #     )
-    #     auth_token: Token = self.authenticate_user_command.execute(request=request)
-    #     ROWANTREE_SERVICE_SDK_CLAIMS["claims"] = get_claims(auth_token.access_token, verify=False)
-    #     ROWANTREE_SERVICE_SDK_HEADERS["Authorization"] = f"Bearer {auth_token.access_token}"
 
     def _build_requests_params(self, request: WrappedRequest) -> dict:
         """
@@ -180,10 +145,3 @@ class AbstractCommand(BaseModel):
         """
 
         return self._api_caller(request=request, depth=self.options.retry_count)
-
-    # def demand_user_guid(self, user_guid: Optional[str] = None) -> str:
-    #     if user_guid is None:
-    #         user_guid = ROWANTREE_SERVICE_SDK_CLAIMS["claims"].sub
-    #     if user_guid is None:
-    #         raise RequestFailureError("Unable to determine command target")
-    #     return user_guid
