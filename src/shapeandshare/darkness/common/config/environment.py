@@ -1,7 +1,6 @@
 """ Helper functions for environment variables. """
 
 import os
-from typing import Optional
 
 from ...contracts.errors.environment_variable_not_found import EnvironmentVariableNotFoundError
 
@@ -25,7 +24,7 @@ def demand_env_var(name: str) -> str:
     return os.environ[name]
 
 
-def get_env_var(name: str) -> Optional[str]:
+def get_env_var(name: str) -> str | None:
     """
     Returns an environment variable as a string, otherwise `None` if it does not exist.
 

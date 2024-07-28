@@ -11,6 +11,6 @@ class IslandGetCommand(AbstractCommand):
         response: requests.Response = requests.get(
             url=f"http://{self.options.tld}/island/{request.id}",
             timeout=self.options.timeout,
-            json=request.dict(),
+            json=request.model_dump(),
         )
-        return Response[Island].parse_obj(response.json()).data
+        return Response[Island].model_validate(response.json()).data

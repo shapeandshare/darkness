@@ -1,2 +1,2 @@
 class ServiceError(Exception):
-    pass
+    """Service Error"""

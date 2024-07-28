@@ -11,6 +11,6 @@ class IslandCreateCommand(AbstractCommand):
         response: requests.Response = requests.post(
             url=f"http://{self.options.tld}/island/create",
             timeout=self.options.timeout,
-            json=request.dict(),
+            json=request.model_dump(),
         )
-        return Response[IslandCreateResponse].parse_obj(response.json()).data
+        return Response[IslandCreateResponse].model_validate(response.json()).data

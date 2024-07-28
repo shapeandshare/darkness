@@ -10,6 +10,7 @@ logger = logging.getLogger()
 
 
 class FlatIslandFactory:
+    # pylint: disable=too-many-branches
     @staticmethod
     def flat(universal_dim: tuple[int, int], biome: TileType) -> Island:
 
@@ -57,6 +58,7 @@ class FlatIslandFactory:
                     msg: str = f"{local_tile_name}, type: {local_island.tiles[local_tile_name].tile_type}"
                     logger.debug(msg)
                     for connect_type, adjacent_id in local_island.tiles[local_tile_name].next.items():
+                        # pylint: disable=line-too-long
                         msg: str = (
                             f"    direction: {connect_type}, adjacent_id: {adjacent_id}, type: {local_island.tiles[adjacent_id].tile_type}"
                         )

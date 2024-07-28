@@ -23,8 +23,8 @@ disable=
     fixme,
     missing-function-docstring,
     missing-module-docstring,
-    missing-class-docstring
-#    arguments-differ
+    missing-class-docstring,
+    arguments-differ
 
 
 [FORMAT]

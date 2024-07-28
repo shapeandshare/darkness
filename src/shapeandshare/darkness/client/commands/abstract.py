@@ -4,7 +4,6 @@ import json
 import logging
 import time
 from abc import abstractmethod
-from typing import Any, Optional
 
 import requests
 from pydantic import BaseModel
@@ -19,7 +18,7 @@ from ...contracts.types.request_verb import RequestVerbType
 
 
 class AbstractCommand(BaseModel):
-    options: Optional[CommandOptions] = None
+    options: CommandOptions | None = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -33,7 +32,7 @@ class AbstractCommand(BaseModel):
             )
 
     @abstractmethod
-    def execute(self, *args, **kwargs) -> Optional[Any]:
+    def execute(self, *args, **kwargs) -> any:
         """Command entry point"""
 
     def _build_requests_params(self, request: WrappedRequest) -> dict:
@@ -53,7 +52,6 @@ class AbstractCommand(BaseModel):
 
         params: dict = {
             "url": request.url,
-            # "headers": ROWANTREE_SERVICE_SDK_HEADERS,
             "timeout": self.options.timeout,
         }
         if request.verb == RequestVerbType.POST:
@@ -62,7 +60,7 @@ class AbstractCommand(BaseModel):
             params["params"] = request.params
         return params
 
-    def _api_caller(self, request: WrappedRequest, depth: int) -> Optional[dict]:
+    def _api_caller(self, request: WrappedRequest, depth: int) -> dict | None:
         """
         Wrapper for calls with `requests` to external APIs.
 
@@ -126,7 +124,7 @@ class AbstractCommand(BaseModel):
             )
         )
 
-    def wrapped_request(self, request: WrappedRequest) -> Optional[dict]:
+    def wrapped_request(self, request: WrappedRequest) -> dict | None:
         """
         High level request method.  Entry point for consumption.
 

@@ -5,8 +5,6 @@ import requests
 from ....contracts.dtos.responses.response import Response
 from ..abstract import AbstractCommand
 
-# from requests import Response
-
 
 class HealthGetCommand(AbstractCommand):
     """
@@ -15,7 +13,7 @@ class HealthGetCommand(AbstractCommand):
 
     Methods
     -------
-    execute(self) -> bool
+    execute(self) -> dict
         Executes the command.
     """
 
@@ -25,7 +23,7 @@ class HealthGetCommand(AbstractCommand):
 
         Returns
         -------
-        health: bool
+        health: dict
             The server health (true or false).
         """
 
@@ -33,4 +31,4 @@ class HealthGetCommand(AbstractCommand):
             url=f"http://{self.options.tld}/metrics/health",
             timeout=self.options.timeout,
         )
-        return Response[dict].parse_obj(response.json()).data
+        return Response[dict].model_validate(response.json()).data
