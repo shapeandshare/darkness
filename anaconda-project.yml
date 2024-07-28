@@ -27,6 +27,11 @@ commands:
       black src
       isort src
 
+  server:
+    env_spec: default
+    unix: |
+      python -m src.darkness.server.main
+
 #  main:
 #    env_spec: default
 #    unix: |
