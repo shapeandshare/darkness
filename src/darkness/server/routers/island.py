@@ -8,8 +8,8 @@ from ...contracts.dtos.requests.island_create_request import \
 from ...contracts.dtos.responses.island_create_response import \
     IslandCreateResponse
 from ...contracts.dtos.responses.response import Response
-from ..context import ContextManager
 from ...contracts.errors.service import ServiceError
+from ..context import ContextManager
 
 logger = logging.getLogger()
 

@@ -16,6 +16,10 @@ METADATA_PATH: Path = STORAGE_BASE_PATH / "metadata.json"
 
 class WorldService:
     world: World | None = None
+    # islands: dict[str, Island] = {}
+
+    # # island_ids
+    # islands: dict[str, str] = {}
 
     def __init__(self):
         STORAGE_BASE_PATH.mkdir(parents=True, exist_ok=True)
