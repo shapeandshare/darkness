@@ -58,4 +58,4 @@ jobs:
       env:
         ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
       run: |
-        anaconda --verbose --token $ANACONDA_TOKEN upload --user joshburt --label dev build/noarch/shapeandshare.darknesss-*.tar.bz2 --force
+        anaconda --verbose --token $ANACONDA_TOKEN upload --user joshburt --label dev build/noarch/shapeandshare.darkness-*.tar.bz2 --force
