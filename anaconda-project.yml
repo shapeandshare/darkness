@@ -30,7 +30,7 @@ commands:
   server:
     env_spec: default
     unix: |
-      python -m src.darkness.server.main
+      python -m src.shapeandshare.darkness.server.main
 
 #  main:
 #    env_spec: default

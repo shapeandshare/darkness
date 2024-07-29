@@ -3,7 +3,7 @@ import logging
 import uvicorn
 from fastapi import FastAPI
 
-from .routers import island, metrics
+from .routers import island, islands, metrics
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
@@ -18,6 +18,9 @@ def main():
 
     logger.debug("[Main] adding island routes")
     app.include_router(island.router)
+
+    logger.debug("[Main] adding islands routes")
+    app.include_router(islands.router)
 
     logger.info("[Main] online")
 

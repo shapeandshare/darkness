@@ -17,6 +17,6 @@ class WorldFactory:
 
     @staticmethod
     def island_discover(target_world: World, dim: tuple[int, int], biome: TileType) -> str:
-        local_island: Island = IslandFactory.generate(dim=dim, biome=biome)
+        local_island: Island = IslandFactory.flatland(dim=dim, biome=biome)
         target_world.islands[local_island.id] = local_island
         return local_island.id

@@ -87,3 +87,9 @@ class WorldService:
         logger.debug(msg)
         self.world.islands[island.id] = island
         self._commit()
+
+    def islands_get(self) -> list[str]:
+        results = [key for key in self.world.islands.keys()]
+        print(results)
+        return results
+

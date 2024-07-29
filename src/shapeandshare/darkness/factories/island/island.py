@@ -1,3 +1,4 @@
+from .flatland import FlatLandFactory
 from ...contracts.dtos.island import Island
 from ...contracts.types.tile import TileType
 from .flat import FlatIslandFactory
@@ -5,5 +6,9 @@ from .flat import FlatIslandFactory
 
 class IslandFactory(FlatIslandFactory):
     @staticmethod
-    def generate(dim: tuple[int, int], biome: TileType) -> Island:
+    def flat(dim: tuple[int, int], biome: TileType) -> Island:
         return FlatIslandFactory.flat(universal_dim=dim, biome=biome)
+
+    @staticmethod
+    def flatland(dim: tuple[int, int], biome: TileType) -> Island:
+        return FlatLandFactory.generate(universal_dim=dim, biome=biome)
