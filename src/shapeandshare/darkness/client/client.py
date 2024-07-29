@@ -4,8 +4,8 @@ from ..contracts.dtos.requests.island_create_request import IslandCreateRequest
 from ..contracts.dtos.requests.island_get_request import IslandGetRequest
 from ..contracts.dtos.responses.island_create_response import IslandCreateResponse
 from ..contracts.types.tile import TileType
-from .commands.islands.island_create import IslandCreateCommand
-from .commands.islands.island_get import IslandGetCommand
+from .commands.island.island_create import IslandCreateCommand
+from .commands.island.island_get import IslandGetCommand
 from .commands.metrics.health_get import HealthGetCommand
 
 
