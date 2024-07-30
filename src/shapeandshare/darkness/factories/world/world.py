@@ -16,7 +16,7 @@ class WorldFactory:
         )
 
     @staticmethod
-    def island_discover(target_world: World, dim: tuple[int, int], biome: TileType) -> str:
-        local_island: Island = IslandFactory.flatland(dim=dim, biome=biome)
+    def island_discover(target_world: World, dimensions: tuple[int, int], biome: TileType) -> str:
+        local_island: Island = IslandFactory.flatland(dimensions=dimensions, biome=biome)
         target_world.islands[local_island.id] = local_island
         return local_island.id

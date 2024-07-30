@@ -59,7 +59,9 @@ class WorldService:
     def island_create(self, request: IslandCreateRequest) -> str:
         logger.debug("[WorldService] creating island")
         # discover an island and return its id.
-        island_id: str = WorldFactory.island_discover(target_world=self.world, dim=request.dim, biome=request.biome)
+        island_id: str = WorldFactory.island_discover(
+            target_world=self.world, dimensions=request.dimensions, biome=request.biome
+        )
         self._commit()
         return island_id
 
