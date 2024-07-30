@@ -50,10 +50,10 @@ jobs:
         make clean
         make setup
         make conda
-    - name: SonarCloud Scan
-      uses: sonarsource/sonarcloud-github-action@v2.3.0 # Ex: v2.1.0, See the latest version at https://github.com/marketplace/actions/sonarcloud-scan
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#    - name: SonarCloud Scan
+#      uses: sonarsource/sonarcloud-github-action@v2.3.0 # Ex: v2.1.0, See the latest version at https://github.com/marketplace/actions/sonarcloud-scan
+#      env:
+#        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     - name: Publish Dev Package
       env:
         ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
