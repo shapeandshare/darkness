@@ -46,8 +46,8 @@ class Client:
 
         return self.health_get_command.execute()
 
-    def island_create(self, dim: tuple[int, int], biome: TileType) -> str:
-        request: IslandCreateRequest = IslandCreateRequest(dim=dim, biome=biome)
+    def island_create(self, dimensions: tuple[int, int], biome: TileType) -> str:
+        request: IslandCreateRequest = IslandCreateRequest(dimensions=dimensions, biome=biome)
         response: IslandCreateResponse = self.island_create_command.execute(request=request)
         return response.id
 
