@@ -92,4 +92,3 @@ class WorldService:
         results = [key for key in self.world.islands.keys()]
         print(results)
         return results
-

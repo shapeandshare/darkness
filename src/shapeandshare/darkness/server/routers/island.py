@@ -4,7 +4,6 @@ from fastapi import APIRouter, HTTPException
 
 from ...contracts.dtos.island import Island
 from ...contracts.dtos.requests.island_create_request import IslandCreateRequest
-from ...contracts.dtos.requests.island_get_request import IslandGetRequest
 from ...contracts.dtos.responses.island_create_response import IslandCreateResponse
 from ...contracts.dtos.responses.response import Response
 from ...contracts.errors.service import ServiceError
@@ -19,11 +18,9 @@ router: APIRouter = APIRouter(
 )
 
 
-@router.post("/create")
-async def island_create(
-    island_create_request: IslandCreateRequest,
-) -> Response[IslandCreateResponse]:
-    logger.debug("[POST][/island/create]")
+@router.post("/")
+async def island_create(island_create_request: IslandCreateRequest) -> Response[IslandCreateResponse]:
+    logger.debug("[POST][/island]")
     island_id: str = ContextManager.world_service.island_create(request=island_create_request)
     response = Response[IslandCreateResponse](data=IslandCreateResponse(id=island_id))
     msg: str = f"[GET][/island/create] {response}"
@@ -32,17 +29,32 @@ async def island_create(
 
 
 @router.get("/{island_id}")
-async def island_get(island_get_request: IslandGetRequest) -> Response[Island]:
-    msg: str = f"[GET][/island/{island_get_request.id}]"
+async def island_get(island_id: id) -> Response[Island]:
+    msg: str = f"[GET][/island/{island_id}]"
     logger.debug(msg)
 
     try:
-        island: Island | None = ContextManager.world_service.island_get(id=island_get_request.id)
+        island: Island | None = ContextManager.world_service.island_get(id=island_id)
     except ServiceError as error:
         logger.warning(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
 
     response = Response[Island](data=island)
-    msg: str = f"[GET][/island/{response.data.id}] {response.dict()}"
+    msg: str = f"[GET][/island/{response.data.id}] {response.model_dump()}"
     logger.debug(msg)
     return response
+
+
+@router.delete("/{island_id}")
+async def island_delete(island_id: str) -> None:
+    msg: str = f"[DELETE][/island/{island_id}]"
+    logger.debug(msg)
+
+    try:
+        ContextManager.world_service.island_delete(id=island_id)
+    except ServiceError as error:
+        logger.warning(str(error))
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+    msg: str = f"[DELETE][/island/{island_id}]"
+    logger.debug(msg)

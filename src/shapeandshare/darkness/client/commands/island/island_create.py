@@ -9,7 +9,7 @@ from ..abstract import AbstractCommand
 class IslandCreateCommand(AbstractCommand):
     def execute(self, request: IslandCreateRequest) -> IslandCreateResponse:
         response: requests.Response = requests.post(
-            url=f"http://{self.options.tld}/island/create",
+            url=f"http://{self.options.tld}/island",
             timeout=self.options.timeout,
             json=request.model_dump(),
         )

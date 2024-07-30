@@ -14,11 +14,11 @@ router: APIRouter = APIRouter(
 )
 
 
-@router.post("/")
-async def islands_get() -> Response[IslandsGetResponse]:
+@router.get("/")
+async def island_ids_get() -> Response[IslandsGetResponse]:
     logger.debug("[GET][/islands]")
-    islands: list[str] = ContextManager.world_service.islands_get()
-    response = Response[IslandsGetResponse](data=IslandsGetResponse(ids=islands))
+    island_ids: list[str] = ContextManager.world_service.islands_get()
+    response = Response[IslandsGetResponse](data=IslandsGetResponse(ids=island_ids))
     msg: str = f"[GET][/islands] {response}"
     logger.debug(msg)
     return response

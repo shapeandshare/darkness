@@ -1,6 +1,6 @@
 import logging
-import uuid
 import secrets
+import uuid
 
 from ...contracts.dtos.island import Island
 from ...contracts.dtos.tile import Tile
@@ -79,10 +79,10 @@ class FlatLandFactory:
         #         local_tile_name: str = f"tile_{x}_{y}"
 
         # 5. Apply random noise
-        SPAWN_RATE: int = 90 # [30/100]
-        SPAWN_TYPE: TileType = biome # TileType.DIRT
-        for x in range(1, max_x-1):
-            for y in range(1, max_y-1):
+        SPAWN_RATE: int = 90  # [30/100]
+        SPAWN_TYPE: TileType = biome  # TileType.DIRT
+        for x in range(1, max_x - 1):
+            for y in range(1, max_y - 1):
                 if secrets.randbelow(100) <= SPAWN_RATE:
                     # then we spawn the tile type
                     local_tile_name: str = f"tile_{x}_{y}"
@@ -96,7 +96,7 @@ class FlatLandFactory:
                 # for tiles what are solid, TileType.SHORE is rechecked here... do we want to long term?
                 if local_island.tiles[local_tile_name].tile_type not in [TileType.UNKNOWN, TileType.WATER]:
                     next_to_water: bool = False
-                    for (_, adjecent_id) in local_island.tiles[local_tile_name].next.items():
+                    for _, adjecent_id in local_island.tiles[local_tile_name].next.items():
                         if local_island.tiles[adjecent_id].tile_type == TileType.WATER:
                             next_to_water = True
                             break
