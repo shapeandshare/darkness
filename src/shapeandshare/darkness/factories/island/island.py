@@ -8,9 +8,9 @@ from .flatland import FlatLandFactory
 
 class IslandFactory(BaseModel):
     @staticmethod
-    def flat(dim: tuple[int, int], biome: TileType) -> Island:
-        return FlatIslandFactory.flat(dim=dim, biome=biome)
+    def flat(dimensions: tuple[int, int], biome: TileType) -> Island:
+        return FlatIslandFactory.flat(dimensions=dimensions, biome=biome)
 
     @staticmethod
-    def flatland(dim: tuple[int, int], biome: TileType) -> Island:
-        return FlatLandFactory.generate(dim=dim, biome=biome)
+    def flatland(dimensions: tuple[int, int], biome: TileType) -> Island:
+        return FlatLandFactory.generate(dimensions=dimensions, biome=biome)

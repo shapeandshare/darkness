@@ -4,5 +4,5 @@ from ...types.tile import TileType
 
 
 class IslandCreateRequest(BaseModel):
-    dim: tuple[int, int]
+    dimensions: tuple[int, int]
     biome: TileType
