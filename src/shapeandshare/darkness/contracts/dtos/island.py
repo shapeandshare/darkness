@@ -8,3 +8,4 @@ class Island(BaseModel):
     name: str
     rbac: dict = {}
     tiles: dict[str, Tile] = {}
+    dim: tuple[int, int] | None = None

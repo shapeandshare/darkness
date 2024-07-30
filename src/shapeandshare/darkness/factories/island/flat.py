@@ -12,13 +12,13 @@ logger = logging.getLogger()
 class FlatIslandFactory:
     # pylint: disable=too-many-branches
     @staticmethod
-    def flat(universal_dim: tuple[int, int], biome: TileType) -> Island:
+    def flat(dim: tuple[int, int], biome: TileType) -> Island:
 
         # 1. blank, named island
-        local_island: Island = Island(id=str(uuid.uuid4()), name="roshar")
+        local_island: Island = Island(id=str(uuid.uuid4()), name="roshar", dim=dim)
 
         # 2. build a blank nXm island
-        max_x, max_y = universal_dim
+        max_x, max_y = dim
         for x in range(0, max_x):
             for y in range(0, max_y):
                 local_tile_name: str = f"tile_{x}_{y}"

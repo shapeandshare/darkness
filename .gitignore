@@ -1,6 +1,6 @@
 .idea/
 envs/
-infra/darkness/charts/*.tgz
+*.tgz
 *.pyc
 __pycache__/
 data/
