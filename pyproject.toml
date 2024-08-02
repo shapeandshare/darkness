@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.isort]
+py_version = "all"
+line_length = 120
+profile = "black"
+src_paths = ["src","test"]
+known_first_party = "shapeandshare"
+
+[tool.black]
+line-length = 120
+target-version = ["py312"]

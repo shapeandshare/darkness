@@ -1,0 +1,34 @@
+{% set name = "shapeandshare.darkness" %}
+{% set version = "0.1.6" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  path: ../
+
+build:
+  number: 0
+  noarch: python
+  script:
+    - {{ PYTHON }} -m pip install . --no-deps --ignore-installed -vv
+  entry_points:
+    - darkness = shapeandshare.darkness.server.main:main
+
+requirements:
+  host:
+    - pip
+    - python>=3.10
+    - setuptools
+  run:
+    - python>=3.10
+    - fastapi
+    - pydantic
+    - uvicorn
+
+about:
+  home: https://github.com/shapeandshare/command.runner
+  summary: "Darkness"
+  license: MIT
+  license_file: LICENSE

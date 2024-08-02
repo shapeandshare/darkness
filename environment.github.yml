@@ -1,0 +1,19 @@
+name: ci.build
+channels:
+  - defaults
+  - conda-forge
+  - joshburt
+dependencies:
+  - black
+  - black-jupyter
+  - conda-build
+  - coverage
+  - isort
+  - pip
+  - pydantic
+  - pylint
+  - python>=3.12
+  - python-dotenv
+  - setuptools
+  - anaconda-client
+  - anaconda-project
