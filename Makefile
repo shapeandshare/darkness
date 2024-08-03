@@ -15,7 +15,7 @@ build:
 	resources/build.sh
 
 publish:
-	resource/publish.sh
+	resources/publish.sh
 
 # In CI:
 	#TWINE_USERNAME=joshburt
