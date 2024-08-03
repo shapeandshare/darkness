@@ -35,7 +35,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-dependencies = ["fastapi","pydantic", "uvicorn"]
+dependencies = ["fastapi","pydantic", "uvicorn", "requests"]
 
 
 [project.scripts]
