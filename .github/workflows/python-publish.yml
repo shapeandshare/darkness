@@ -37,23 +37,19 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.x'
-    - name: Install dependencies
-      uses: conda-incubator/setup-miniconda@v2
-      with:
-        channels: defaults,conda-forge,joshburt
-        auto-activate-base: false
-        activate-environment: ci.build
-        environment-file: environment.github.yml
-    - name: Conda Info
+    - name: Setup
       run: |
-        conda info
-    - name: Conda Build
-      run: |
-        make clean
         make setup
-        make conda
+    - name: Prepare
+      run: |
+        make prepare
+    - name: Build
+      run: |
+        make build
     - name: Publish
       env:
-        ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
+        TWINE_USERNAME: token
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        TWINE_NON_INTERACTIVE: true
       run: |
-        anaconda --verbose --token $ANACONDA_TOKEN upload --user joshburt build/noarch/shapeandshare.darkness-*.tar.bz2 --force
+        make publish

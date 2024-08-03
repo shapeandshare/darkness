@@ -1,12 +1,30 @@
 
+setup:
+	resources/setup.sh
+
+prepare:
+	resources/prepare.sh
 
 clean:
-	rm -rf ./build
+	rm -rf ./build ./dist ./src/shapeandshare.darkness.egg-info
 
-setup:
-	mkdir ./build
+nuke:
+	rm -rf ./build ./dist ./src/shapeandshare.darkness.egg-info ./venv ./data
 
-conda:
-	conda build conda-recipe --no-anaconda-upload --no-include-recipe --no-test --output-folder ./build
+build:
+	resources/build.sh
 
+publish:
+	resources/publish.sh
 
+# In CI:
+#	TWINE_USERNAME=joshburt
+#	TWINE_PASSWORD=token
+#	TWINE_NON_INTERACTIVE
+# locally: ~/.pypirc
+
+lint:
+	resources/lint.sh
+
+lint-fix:
+	resources/lint-fix.sh
