@@ -47,5 +47,9 @@ jobs:
       run: |
         make build
     - name: Publish
+      env:
+        TWINE_USERNAME: token
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        TWINE_NON_INTERACTIVE: true
       run: |
         make publish
