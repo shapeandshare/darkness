@@ -15,7 +15,12 @@ build:
 	resources/build.sh
 
 publish:
-	twine upload dist/*
+	resource/publish.sh
 
+# In CI:
+	#TWINE_USERNAME=joshburt
+	#TWINE_PASSWORD=token
+	#TWINE_NON_INTERACTIVE
+# locally: ~/.pypirc
 
 
