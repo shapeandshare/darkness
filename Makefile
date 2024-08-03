@@ -14,7 +14,8 @@ nuke:
 build:
 	resources/build.sh
 
-#conda:
-#	conda build conda-recipe --no-anaconda-upload --no-include-recipe --no-test --output-folder ./build
-#
+publish:
+	twine upload dist/*
+
+
 
