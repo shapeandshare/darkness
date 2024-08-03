@@ -1,0 +1,4 @@
+# Application Dependnecies
+fastapi
+pydantic
+uvicorn
