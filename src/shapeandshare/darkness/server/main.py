@@ -14,7 +14,7 @@ logger = logging.getLogger()
 @click.command()
 @click.option("--hostname", type=click.STRING, default="0.0.0.0", help="host address to bind to")
 @click.option("--port", type=click.INT, default=8000, help="port to bind to")
-@click.option("--log-level", type=click.STRING, default="INFO", help="log level")
+@click.option("--log-level", type=click.STRING, default="INFO", help="log level (INFO, DEBUG, WARNING, ERROR, FATAL)")
 @click.option("--sleep-time", type=click.FLOAT, default=1.0, help="api call sleep time (seconds)")
 @click.option("--timeout", type=click.FLOAT, default=5.0, help="api call timeout (seconds)")
 @click.option("--retries", type=click.INT, default=5, help="api call retries (integer)")
@@ -22,6 +22,8 @@ logger = logging.getLogger()
 def main(
     hostname: str, port: int, log_level: str, sleep_time: float, timeout: float, retries: int, url: str | None
 ) -> None:
+    logger.setLevel(logging.getLevelName(log_level))
+
     # Setup server runtime environment variables
     if url:
         os.environ["DARKNESS_TLD"] = url

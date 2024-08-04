@@ -1,6 +1,6 @@
 # Application Dependnecies
 fastapi
-pydantic
+pydantic>=2
 uvicorn
 requests
 click

@@ -2,8 +2,8 @@
 
 from .client.client import Client
 from .client.commands.abstract import AbstractCommand
-from .client.commands.island.island_create import IslandCreateCommand
-from .client.commands.island.island_get import IslandGetCommand
+from .client.commands.island.create import IslandCreateCommand
+from .client.commands.island.get import IslandGetCommand
 from .client.commands.metrics.health_get import HealthGetCommand
 from .common.config.environment import (
     demand_env_var,
