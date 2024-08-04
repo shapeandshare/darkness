@@ -1,8 +1,8 @@
 import requests
 
-from ....contracts.dtos.requests.island_get_request import IslandGetRequest
-from ....contracts.dtos.responses.island_get_response import IslandGetResponse
-from ....contracts.dtos.responses.response import Response
+from ....sdk.contracts.dtos.sdk.requests.island.get import IslandGetRequest
+from ....sdk.contracts.dtos.sdk.responses.island.get import IslandGetResponse
+from ....sdk.contracts.dtos.sdk.responses.response import Response
 from ..abstract import AbstractCommand
 
 

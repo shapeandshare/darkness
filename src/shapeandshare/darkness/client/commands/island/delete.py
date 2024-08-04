@@ -1,8 +1,8 @@
 import requests
 
-from ....contracts.dtos.requests.island_delete_request import IslandDeleteRequest
-from ....contracts.dtos.responses.island_delete_response import IslandDeleteResponse
-from ....contracts.dtos.responses.response import Response
+from ....sdk.contracts.dtos.sdk.requests.island.delete import IslandDeleteRequest
+from ....sdk.contracts.dtos.sdk.responses.island.delete import IslandDeleteResponse
+from ....sdk.contracts.dtos.sdk.responses.response import Response
 from ..abstract import AbstractCommand
 
 

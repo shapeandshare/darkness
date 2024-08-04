@@ -1,15 +1,15 @@
-from ..contracts.dtos.command_options import CommandOptions
-from ..contracts.dtos.locations.island import Island
-from ..contracts.dtos.requests.island_create_request import IslandCreateRequest
-from ..contracts.dtos.requests.island_get_request import IslandGetRequest
-from ..contracts.dtos.responses.island_create_response import IslandCreateResponse
-from ..contracts.dtos.responses.island_get_response import IslandGetResponse
-from ..contracts.dtos.responses.islands_get_response import IslandsGetResponse
-from ..contracts.types.tile import TileType
+from ..sdk.contracts.dtos.island import Island
+from ..sdk.contracts.dtos.sdk.command_options import CommandOptions
+from ..sdk.contracts.dtos.sdk.requests.island.create import IslandCreateRequest
+from ..sdk.contracts.dtos.sdk.requests.island.get import IslandGetRequest
+from ..sdk.contracts.dtos.sdk.responses.island.create import IslandCreateResponse
+from ..sdk.contracts.dtos.sdk.responses.island.get import IslandGetResponse
+from ..sdk.contracts.dtos.sdk.responses.islands.get import IslandsGetResponse
+from ..sdk.contracts.types.tile import TileType
 from .commands.island.create import IslandCreateCommand
 from .commands.island.get import IslandGetCommand
 from .commands.islands.get import IslandsGetCommand
-from .commands.metrics.health_get import HealthGetCommand
+from .commands.metrics.health.get import HealthGetCommand
 
 
 class Client:

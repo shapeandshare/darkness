@@ -9,12 +9,12 @@ import requests
 from pydantic import BaseModel
 from requests import Response
 
-from ...common.config.environment import demand_env_var, demand_env_var_as_float, demand_env_var_as_int
-from ...contracts.dtos.command_options import CommandOptions
-from ...contracts.dtos.wrapped_request import WrappedRequest
-from ...contracts.errors.exceeded_retry_count import ExceededRetryCountError
-from ...contracts.errors.request_failure import RequestFailureError
-from ...contracts.types.request_verb import RequestVerbType
+from ...sdk.common.config.environment import demand_env_var, demand_env_var_as_float, demand_env_var_as_int
+from ...sdk.contracts.dtos.sdk.command_options import CommandOptions
+from ...sdk.contracts.dtos.sdk.wrapped_request import WrappedRequest
+from ...sdk.contracts.errors.sdk.exceeded_retry_count import ExceededRetryCountError
+from ...sdk.contracts.errors.sdk.request_failure import RequestFailureError
+from ...sdk.contracts.types.sdk.request_verb import RequestVerbType
 
 
 class AbstractCommand(BaseModel):
