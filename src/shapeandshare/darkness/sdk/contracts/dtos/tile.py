@@ -10,6 +10,4 @@ class Tile(BaseModel):
     tile_type: TileType
     rbac: dict = {}
     next: dict[TileConnectionType, str] = {}  # str=id
-    # subtype: ClassVar[str]
-    # subtype: any | None = None
     contains: dict[str, Entity] = {}  # str=id
