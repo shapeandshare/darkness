@@ -1,8 +1,8 @@
 import logging
 import uuid
 
-from ...contracts.dtos.island import Island
-from ...contracts.dtos.tile import Tile
+from ...contracts.dtos.locations.island import Island
+from ...contracts.dtos.locations.tile import Tile
 from ...contracts.types.connection import TileConnectionType
 from ...contracts.types.tile import TileType
 

@@ -13,14 +13,12 @@ from .common.config.environment import (
     get_env_var,
 )
 from .contracts.dtos.command_options import CommandOptions
-from .contracts.dtos.island import Island
+from .contracts.dtos.locations.tile import Tile
 from .contracts.dtos.request_status_codes import RequestStatusCodes
 from .contracts.dtos.requests.island_create_request import IslandCreateRequest
 from .contracts.dtos.requests.island_get_request import IslandGetRequest
 from .contracts.dtos.responses.island_create_response import IslandCreateResponse
 from .contracts.dtos.responses.response import Response
-from .contracts.dtos.tile import Tile
-from .contracts.dtos.world import World
 from .contracts.dtos.wrapped_request import WrappedRequest
 from .contracts.errors.environment_variable_not_found import EnvironmentVariableNotFoundError
 from .contracts.errors.exceeded_retry_count import ExceededRetryCountError

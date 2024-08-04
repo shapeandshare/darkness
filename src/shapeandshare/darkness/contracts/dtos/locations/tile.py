@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
-from ..types.connection import TileConnectionType
-from ..types.tile import TileType
+from ...types.connection import TileConnectionType
+from ...types.tile import TileType
 
 
 class Tile(BaseModel):

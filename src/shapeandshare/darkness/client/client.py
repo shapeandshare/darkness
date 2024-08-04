@@ -1,5 +1,5 @@
 from ..contracts.dtos.command_options import CommandOptions
-from ..contracts.dtos.island import Island
+from ..contracts.dtos.locations.island import Island
 from ..contracts.dtos.requests.island_create_request import IslandCreateRequest
 from ..contracts.dtos.requests.island_get_request import IslandGetRequest
 from ..contracts.dtos.responses.island_create_response import IslandCreateResponse

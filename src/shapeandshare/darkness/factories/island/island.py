@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from ...contracts.dtos.island import Island
+from ...contracts.dtos.locations.island import Island
 from ...contracts.types.tile import TileType
 from .flat import FlatIslandFactory
 from .flatland import FlatLandFactory

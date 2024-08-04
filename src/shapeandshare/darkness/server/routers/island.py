@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException
 
-from ...contracts.dtos.island import Island
+from ...contracts.dtos.locations.island import Island
 from ...contracts.dtos.requests.island_create_request import IslandCreateRequest
 from ...contracts.dtos.responses.island_create_response import IslandCreateResponse
 from ...contracts.dtos.responses.island_get_response import IslandGetResponse

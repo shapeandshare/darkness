@@ -2,9 +2,9 @@ import json
 import logging
 from pathlib import Path
 
-from ..contracts.dtos.island import Island
+from ..contracts.dtos.locations.island import Island
+from ..contracts.dtos.locations.world import World
 from ..contracts.dtos.requests.island_create_request import IslandCreateRequest
-from ..contracts.dtos.world import World
 from ..contracts.errors.service import ServiceError
 from ..factories.world.world import WorldFactory
 

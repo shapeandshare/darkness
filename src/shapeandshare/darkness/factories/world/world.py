@@ -1,7 +1,7 @@
 import uuid
 
-from ...contracts.dtos.island import Island
-from ...contracts.dtos.world import World
+from ...contracts.dtos.locations.island import Island
+from ...contracts.dtos.locations.world import World
 from ...contracts.types.tile import TileType
 from ..island.island import IslandFactory
 
