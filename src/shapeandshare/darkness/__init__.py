@@ -14,6 +14,7 @@ from .sdk.common.config.environment import (
     demand_env_var_as_int,
     get_env_var,
 )
+from .sdk.contracts.dtos.coordinate import Coordinate
 from .sdk.contracts.dtos.entity import Entity
 from .sdk.contracts.dtos.island import Island
 from .sdk.contracts.dtos.sdk.command_options import CommandOptions
@@ -28,6 +29,7 @@ from .sdk.contracts.dtos.sdk.responses.islands.get import IslandsGetResponse
 from .sdk.contracts.dtos.sdk.responses.response import Response
 from .sdk.contracts.dtos.sdk.wrapped_request import WrappedRequest
 from .sdk.contracts.dtos.tile import Tile
+from .sdk.contracts.dtos.window import Window
 from .sdk.contracts.dtos.world import World
 from .sdk.contracts.errors.common.environment_variable_not_found import EnvironmentVariableNotFoundError
 from .sdk.contracts.errors.sdk.exceeded_retry_count import ExceededRetryCountError
