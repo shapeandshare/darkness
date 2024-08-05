@@ -29,7 +29,7 @@ authors = [
 license.file = "LICENSE"
 description = "Darkness Voxel Engine"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -39,7 +39,7 @@ dependencies = ["fastapi","pydantic", "uvicorn", "requests", "click"]
 
 
 [project.scripts]
-darkness = "shapeandshare.darkness.server.main:main"
+darkness = "shapeandshare.darkness.server.api.main:main"
 
 
 [project.urls]
