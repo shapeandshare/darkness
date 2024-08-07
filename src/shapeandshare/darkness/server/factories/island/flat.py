@@ -133,6 +133,13 @@ class FlatIslandFactory:
                 # next to more than one kind (grass/water)
                 island.tiles[tile_id].tile_type = TileType.FOREST
 
+        # # grass+(dirt)
+        # if island.tiles[tile_id].tile_type == TileType.GRASS:
+        #     neighbors: list[TileType] = FlatIslandFactory.adjecent_to(
+        #         # TODO: review this josh ...
+        #         island=island, tile_id=tile_id, types=[TileType.WATER, TileType.GRASS, TileType.DIRT, TileType.FOREST]
+        #     )
+
     @staticmethod
     def brackish_tile(island: Island, tile_id: str):
         # Convert inner Ocean to Water Tiles
