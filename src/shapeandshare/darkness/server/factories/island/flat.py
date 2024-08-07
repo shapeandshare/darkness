@@ -44,7 +44,7 @@ class FlatIslandFactory:
                 local_y = y + 1
                 tile_id: str = f"tile_{local_x}_{local_y}"
                 # print(tile_id)
-                FlatIslandFactory.mutate_tile(island=island, tile_id=tile_id, mutate=3, type=TileType.ROCK)
+                FlatIslandFactory.mutate_tile(island=island, tile_id=tile_id, mutate=0.5, type=TileType.ROCK)
 
         # TODO: isolated ocean is NOT ocean, we MUST have path to the edge
         # Convert inner Ocean to Water Tiles
@@ -81,7 +81,7 @@ class FlatIslandFactory:
                 FlatIslandFactory.grow_tile(island=island, tile_id=tile_id)
 
     @staticmethod
-    def mutate_tile(island: Island, tile_id: str, mutate: int, type: TileType) -> None:
+    def mutate_tile(island: Island, tile_id: str, mutate: float, type: TileType) -> None:
         if secrets.randbelow(100) <= mutate:
             # then we spawn the tile type
             island.tiles[tile_id].tile_type = type
@@ -106,7 +106,7 @@ class FlatIslandFactory:
                 and island.tiles[adjecent_id].tile_type not in adjecent_targets
             ):
                 adjecent_targets.append(island.tiles[adjecent_id].tile_type)
-        print(f"tile {tile_id} is adjecent to: {adjecent_targets}")
+        # print(f"tile {tile_id} is adjecent to: {adjecent_targets}")
         return adjecent_targets
 
     @staticmethod
@@ -154,7 +154,7 @@ class FlatIslandFactory:
                 if island.tiles[tile_id].tile_type not in (TileType.ROCK, TileType.SHORE):
                     previous_type = island.tiles[tile_id].tile_type
                     island.tiles[tile_id].tile_type = TileType.SHORE
-                    print(f"tile {tile_id}:{previous_type} converted to {TileType.SHORE}")
+                    # print(f"tile {tile_id}:{previous_type} converted to {TileType.SHORE}")
 
     @staticmethod
     def generate_ocean_block(island: Island, window: Window):
