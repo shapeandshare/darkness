@@ -6,10 +6,10 @@ prepare:
 	resources/prepare.sh
 
 clean:
-	rm -rf ./build ./dist ./src/shapeandshare.darkness.egg-info
+	rm -rf ./build ./dist ./src/shapeandshare.darkness.egg-info docs/build
 
 nuke:
-	rm -rf ./build ./dist ./src/shapeandshare.darkness.egg-info ./venv ./data
+	rm -rf ./build ./dist ./src/shapeandshare.darkness.egg-info docs/build ./venv ./data
 
 build:
 	resources/build.sh
