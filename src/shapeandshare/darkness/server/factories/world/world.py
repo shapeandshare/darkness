@@ -8,11 +8,14 @@ from ..island.island import IslandFactory
 
 class WorldFactory:
     @staticmethod
-    def generate() -> World:
+    def generate(name: str | None = None) -> World:
+        if name is None:
+            name = "darkness"
+
         # 1. blank, named world
         return World(
             id=str(uuid.uuid4()),
-            name="darkness",
+            name=name,
         )
 
     @staticmethod
