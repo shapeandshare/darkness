@@ -2,4 +2,5 @@ from pydantic import BaseModel
 
 
 class IslandGetRequest(BaseModel):
-    id: str
+    world_id: str
+    island_id: str

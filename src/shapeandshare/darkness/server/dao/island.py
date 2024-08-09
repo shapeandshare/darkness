@@ -2,7 +2,9 @@ import logging
 import shutil
 import uuid
 from pathlib import Path
+
 from pydantic import BaseModel
+
 from ... import TileType
 from ...sdk.contracts.dtos.island_lite import IslandLite
 from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
@@ -10,11 +12,12 @@ from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 logger = logging.getLogger()
 
 
-class IslandStorage(BaseModel):
+class IslandDao(BaseModel):
     # ["base"]  / "worlds" / "world_id" / "islands" / "island_id" / metadata.json
     storage_base_path: Path
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.storage_base_path.mkdir(parents=True, exist_ok=True)
 
     ### Internal ##################################

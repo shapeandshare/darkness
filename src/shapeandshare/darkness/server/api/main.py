@@ -5,7 +5,7 @@ import click
 import uvicorn
 from fastapi import FastAPI
 
-from .routers import island, islands, metrics
+from .routers import island, metrics, world
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()

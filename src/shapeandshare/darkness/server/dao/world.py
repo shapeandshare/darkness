@@ -2,6 +2,7 @@ import logging
 import shutil
 import uuid
 from pathlib import Path
+
 from pydantic import BaseModel
 
 from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
@@ -10,7 +11,7 @@ from ...sdk.contracts.dtos.world_lite import WorldLite
 logger = logging.getLogger()
 
 
-class WorldStorage(BaseModel):
+class WorldDao(BaseModel):
     # ["base"]  / "worlds" / "world_id" / metadata.json
     storage_base_path: Path
 

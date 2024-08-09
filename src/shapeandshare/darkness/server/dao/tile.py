@@ -11,7 +11,7 @@ from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 logger = logging.getLogger()
 
 
-class TileStorage(BaseModel):
+class TileDao(BaseModel):
     # ["base"] / "worlds" / "wold_id" / "islands" / "island_id" / "tiles" / "tile_id.json"
     storage_base_path: Path
 
