@@ -28,3 +28,12 @@ lint:
 
 lint-fix:
 	resources/lint-fix.sh
+
+docs-quickstart:
+	sphinx-quickstart docs --sep --project darknesss
+
+docs-api:
+	sphinx-apidoc -f -o docs/source/api src/shapeandshare/darkness
+
+docs-build:
+	rm -rf docs/build && cd docs && make clean && make html
