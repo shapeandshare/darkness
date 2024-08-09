@@ -18,6 +18,7 @@ from ..dao.island import IslandDao
 from ..dao.tile import TileDao
 from ..dao.world import WorldDao
 from ..factories.island.flat import FlatIslandFactory
+from ..factories.world.world import WorldFactory
 
 logger = logging.getLogger()
 
@@ -27,19 +28,19 @@ class StateService(BaseModel):
     islanddao: IslandDao
     tiledao: TileDao
 
+    worldfactory: WorldFactory | None = None
     flatislandfactory: FlatIslandFactory | None = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.worldfactory = WorldFactory(worlddao=self.worlddao)
         self.flatislandfactory = FlatIslandFactory(islanddao=self.islanddao, tiledao=self.tiledao)
 
     ### World ##################################
 
     def world_create(self, request: WorldCreateRequest) -> str:
         logger.debug("[StateService] creating world")
-        new_world: WorldLite = WorldLite(id=str(uuid.uuid4()), name=request.name)
-        self.worlddao.post(world=new_world)
-        return new_world.id
+        return self.worldfactory.create(name=request.name)
 
     def world_lite_get(self, request: WorldGetRequest) -> WorldLite:
         return self.worlddao.get(world_id=request.id).data
@@ -66,6 +67,12 @@ class StateService(BaseModel):
         new_island: IslandLite = self.flatislandfactory.create(
             world_id=request.world_id, name=request.name, dimensions=request.dimensions, biome=request.biome
         )
+        # add new island to world
+        # add island to world and store
+        world_lite: WorldLite = self.worlddao.get(world_id=request.world_id).data
+        world_lite.island_ids.add(new_island.id)
+        self.worlddao.put(world=world_lite)
+
         return new_island.id
 
     def island_delete(self, request: IslandDeleteRequest) -> None:
@@ -74,11 +81,11 @@ class StateService(BaseModel):
         self.islanddao.delete(world_id=request.world_id, island_id=request.island_id)
 
     def island_lite_get(self, request: IslandGetRequest) -> IslandLite:
-        return self.islandao.get(world_id=request.world_id, island_id=request.island_id)
+        return self.islanddao.get(world_id=request.world_id, island_id=request.island_id).data
 
     def island_get(self, request: IslandGetRequest) -> Island:
         # Builds a complete Island from Lite objects
-        island_lite: IslandLite = self.islandao.get(world_id=request.world_id, island_id=request.island_id)
+        island_lite: IslandLite = self.islanddao.get(world_id=request.world_id, island_id=request.island_id).data
         tile_ids: set[str] = island_lite.tile_ids
         island_partial = island_lite.model_dump(exclude={"tile_ids"})
         island: Island = Island.model_validate(island_partial)

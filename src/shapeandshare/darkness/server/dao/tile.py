@@ -5,8 +5,9 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from ... import Tile, TileType
 from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
+from ...sdk.contracts.dtos.tile import Tile
+from ...sdk.contracts.types.tile import TileType
 
 logger = logging.getLogger()
 

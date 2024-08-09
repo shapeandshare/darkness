@@ -9,6 +9,7 @@ from ....sdk.contracts.dtos.coordinate import Coordinate
 from ....sdk.contracts.dtos.island_lite import IslandLite
 from ....sdk.contracts.dtos.tile import Tile
 from ....sdk.contracts.dtos.window import Window
+from ....sdk.contracts.dtos.world_lite import WorldLite
 from ....sdk.contracts.types.connection import TileConnectionType
 from ....sdk.contracts.types.tile import TileType
 from ...dao.tile import TileDao
@@ -179,13 +180,16 @@ class FlatIslandFactory(AbstractIslandFactory):
             for y in range(range_y_min, range_y_max):
                 local_x = x + 1
                 local_y = y + 1
-                tile_id: str = f"tile_{local_x}_{local_y}"
-                logger.debug(f"({tile_id}) brought into existence as {TileType.OCEAN}")
 
+                tile_id: str = f"tile_{local_x}_{local_y}"
                 local_tile: Tile = Tile(id=tile_id, tile_type=TileType.OCEAN)
 
                 # store tile
                 self.tiledao.post(world_id=world_id, island_id=island.id, tile=local_tile)
+                logger.debug(f"({tile_id}) brought into existence as {TileType.OCEAN}")
+
+                # Add tile_id to in-memory representation before storing
+                island.tile_ids.add(tile_id)
 
                 # store island update (tile addition)
                 self.islanddao.put(world_id=world_id, island=island)
@@ -199,7 +203,7 @@ class FlatIslandFactory(AbstractIslandFactory):
                 logger.debug(f"binding ({tile_id}) physically to peers")
 
                 target_tile_id: str = f"tile_{local_x - 1}_{local_y}"
-                if target_tile_id in island.tiles:
+                if target_tile_id in island.tile_ids:
                     # load tile
                     local_tile: Tile = self.tiledao.get(
                         world_id=world_id, island_id=island.id, tile_id=target_tile_id
@@ -208,14 +212,14 @@ class FlatIslandFactory(AbstractIslandFactory):
                     # update tile
                     local_tile.next[TileConnectionType.LEFT] = f"tile_{local_x - 1}_{local_y}"
                     logger.debug(
-                        f"tile {tile_id} -> {TileConnectionType.LEFT} -> {island.tiles[tile_id].next[TileConnectionType.LEFT]}"
+                        f"tile {tile_id} -> {TileConnectionType.LEFT} -> {local_tile.next[TileConnectionType.LEFT]}"
                     )
 
                     # store tile
                     self.tiledao.put(world_id=world_id, island_id=island.id, tile=local_tile)
 
                 target_tile_id: str = f"tile_{local_x + 1}_{local_y}"
-                if target_tile_id in island.tiles:
+                if target_tile_id in island.tile_ids:
                     # load tile
                     local_tile: Tile = self.tiledao.get(
                         world_id=world_id, island_id=island.id, tile_id=target_tile_id
@@ -225,14 +229,14 @@ class FlatIslandFactory(AbstractIslandFactory):
                     local_tile.next[TileConnectionType.RIGHT] = f"tile_{local_x + 1}_{local_y}"
 
                     logger.debug(
-                        f"tile {tile_id} -> {TileConnectionType.RIGHT} -> {island.tiles[tile_id].next[TileConnectionType.RIGHT]}"
+                        f"tile {tile_id} -> {TileConnectionType.RIGHT} -> {local_tile.next[TileConnectionType.RIGHT]}"
                     )
 
                     # store tile
                     self.tiledao.put(world_id=world_id, island_id=island.id, tile=local_tile)
 
                 target_tile_id: str = f"tile_{local_x}_{local_y - 1}"
-                if target_tile_id in island.tiles:
+                if target_tile_id in island.tile_ids:
                     # load tile
                     local_tile: Tile = self.tiledao.get(
                         world_id=world_id, island_id=island.id, tile_id=target_tile_id
@@ -241,14 +245,14 @@ class FlatIslandFactory(AbstractIslandFactory):
                     # update tile
                     local_tile.next[TileConnectionType.UP] = f"tile_{local_x}_{local_y - 1}"
                     logger.debug(
-                        f"tile {tile_id} -> {TileConnectionType.UP} -> {island.tiles[tile_id].next[TileConnectionType.UP]}"
+                        f"tile {tile_id} -> {TileConnectionType.UP} -> {local_tile.next[TileConnectionType.UP]}"
                     )
 
                     # store tile
                     self.tiledao.put(world_id=world_id, island_id=island.id, tile=local_tile)
 
                 target_tile_id: str = f"tile_{local_x}_{local_y + 1}"
-                if target_tile_id in island.tiles:
+                if target_tile_id in island.tile_ids:
                     # load tile
                     local_tile: Tile = self.tiledao.get(
                         world_id=world_id, island_id=island.id, tile_id=target_tile_id
@@ -257,7 +261,7 @@ class FlatIslandFactory(AbstractIslandFactory):
                     # update tile
                     local_tile.next[TileConnectionType.DOWN] = f"tile_{local_x}_{local_y + 1}"
                     logger.debug(
-                        f"tile {tile_id} -> {TileConnectionType.DOWN} -> {island.tiles[tile_id].next[TileConnectionType.DOWN]}"
+                        f"tile {tile_id} -> {TileConnectionType.DOWN} -> {local_tile.next[TileConnectionType.DOWN]}"
                     )
 
                     # store tile
