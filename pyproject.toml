@@ -27,9 +27,9 @@ authors = [
   { name="Joshua C. Burt", email="joshburt@shapeandshare.com" },
 ]
 license.file = "LICENSE"
-description = "Darkness Voxel Engine"
+description = "Darkness"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
