@@ -2,7 +2,7 @@ import logging
 import shutil
 import uuid
 from pathlib import Path
-
+from pydantic import BaseModel
 from ... import TileType
 from ...sdk.contracts.dtos.island_lite import IslandLite
 from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
@@ -10,7 +10,7 @@ from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 logger = logging.getLogger()
 
 
-class IslandService:
+class IslandStorage(BaseModel):
     # ["base"]  / "worlds" / "world_id" / "islands" / "island_id" / metadata.json
     storage_base_path: Path
 
@@ -89,62 +89,3 @@ class IslandService:
             raise Exception("[IslandService] island metadata does not exist - 404, not found")
         # remove "island_id"/ and lower
         shutil.rmtree(island_metadata_path.parent.resolve().as_posix())
-
-    # def _read(self) -> None:
-    #     logger.debug("[IslandService] loading island data from storage")
-    #     try:
-    #         if self.island:
-    #             del self.island
-    #             self.island = None
-    #         self.island = Island.parse_file(path=METADATA_PATH)
-    #     except json.decoder.JSONDecodeError as error:
-    #         error_message: str = f"[IslandService] Unable to load island data from ({self.storage_base_path})"
-    #         logger.error(error_message)
-    #         raise ServiceError(error_message) from error
-    #
-    # def _commit(self):
-    #     logger.debug("[IslandService] writing island data to storage")
-    #     island_data: str = self.island.model_dump_json(indent=4)
-    #     with open(file=self.storage_base_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
-    #         file.write(island_data)
-    #
-    # ### Islands ##################################
-    #
-    # def island_create(self, request: IslandCreateRequest) -> str:
-    #     logger.debug("[IslandService] creating island")
-    #     # discover an island and return its id.
-    #     island_id: str = IslandFactory.island_discover(
-    #         target_island=self.island, dimensions=request.dimensions, biome=request.biome
-    #     )
-    #     self._commit()
-    #     return island_id
-    #
-    # def island_delete(self, id: str) -> None:
-    #     msg: str = f"[IslandService] deleting island {id}"
-    #     logger.debug(msg)
-    #     if id in self.island.islands:
-    #         del self.island.islands[id]
-    #     self._commit()
-    #
-    # def island_get(self, id: str) -> Island:
-    #     msg: str = f"[IslandService] getting island {id}"
-    #     logger.debug(msg)
-    #
-    #     try:
-    #         island: Island = self.island.islands[id]
-    #     except KeyError as error:
-    #         msg: str = f"Unable to find island {id}"
-    #         logger.error(msg)
-    #         raise ServiceError(msg) from error
-    #     return island
-    #
-    # def island_put(self, island: Island) -> None:
-    #     msg: str = f"[IslandService] putting island {island.id} into island storage"
-    #     logger.debug(msg)
-    #     self.island.islands[island.id] = island
-    #     self._commit()
-    #
-    # # def islands_get(self) -> list[str]:
-    # #     results = [key for key in self.island.islands.keys()]
-    # #     print(results)
-    # #     return results
