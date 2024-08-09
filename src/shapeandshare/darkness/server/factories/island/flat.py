@@ -218,7 +218,7 @@ class FlatIslandFactory:
             name = "roshar"
 
         # 1. blank, named island
-        island: Island = Island(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
+        islaxnd: Island = Island(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
 
         # Define the maximum size
         max_x, max_y = dimensions
