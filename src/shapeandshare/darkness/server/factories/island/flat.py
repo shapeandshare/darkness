@@ -2,7 +2,7 @@ import logging
 import secrets
 import uuid
 
-from .... import WrappedData
+from .... import Island, WrappedData
 from ....sdk.contracts.dtos.coordinate import Coordinate
 from ....sdk.contracts.dtos.island_lite import IslandLite
 from ....sdk.contracts.dtos.tile import Tile
@@ -221,7 +221,7 @@ class FlatIslandFactory(AbstractIslandFactory):
                     # print(f"tile {tile_id}:{previous_type} converted to {TileType.SHORE}")
 
     # def generate_ocean_block(self, world_id: str, island: IslandLite, window: Window):
-    def generate_ocean_block(self, world_id: str, island: IslandLite, window: Window):
+    def generate_ocean_block(self, world_id: str, island_id: str, window: Window):
         # 1. fill a blank nXm area with ocean
         range_x_min: int = window.min.x - 1
         range_x_max: int = window.max.x
@@ -235,14 +235,14 @@ class FlatIslandFactory(AbstractIslandFactory):
                 tile_id: str = f"tile_{local_x}_{local_y}"
                 local_tile: Tile = Tile(id=tile_id, tile_type=TileType.OCEAN)
 
-                # store tile
-                self.tiledao.post(world_id=world_id, island_id=island.id, tile=local_tile)
+                # create tile
+                self.tiledao.post(world_id=world_id, island_id=island_id, tile=local_tile)
                 logger.debug(f"({tile_id}) brought into existence as {TileType.OCEAN}")
 
                 # Update the island --
 
                 # get
-                wrapped_island: WrappedData[IslandLite] = self.islanddao.get(world_id=world_id, island_id=island.id)
+                wrapped_island: WrappedData[IslandLite] = self.islanddao.get(world_id=world_id, island_id=island_id)
 
                 # Patch - Add tile_id to in-memory representation before storing
                 wrapped_island.data.tile_ids.add(tile_id)
@@ -251,6 +251,7 @@ class FlatIslandFactory(AbstractIslandFactory):
                 self.islanddao.put_safe(world_id=world_id, wrapped_island=wrapped_island)
 
         # 2. connect the tiles (nXm)
+        wrapped_island: WrappedData[IslandLite] = self.islanddao.get(world_id=world_id, island_id=island_id)
         for x in range(range_x_min, range_x_max):
             for y in range(range_y_min, range_y_max):
                 local_x = x + 1
@@ -259,10 +260,10 @@ class FlatIslandFactory(AbstractIslandFactory):
                 logger.debug(f"binding ({tile_id}) physically to peers")
 
                 target_tile_id: str = f"tile_{local_x - 1}_{local_y}"
-                if target_tile_id in island.tile_ids:
+                if target_tile_id in wrapped_island.data.tile_ids:
                     # load tile
                     local_tile: WrappedData[Tile] = self.tiledao.get(
-                        world_id=world_id, island_id=island.id, tile_id=target_tile_id
+                        world_id=world_id, island_id=wrapped_island.data.id, tile_id=target_tile_id
                     )
 
                     # update tile
@@ -272,14 +273,14 @@ class FlatIslandFactory(AbstractIslandFactory):
                     )
 
                     # store tile
-                    self.tiledao.put_safe(world_id=world_id, island_id=island.id, wrapped_tile=local_tile)
+                    self.tiledao.put_safe(world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile)
                     # self.tiledao.put(world_id=world_id, island_id=island.id, tile=local_tile.data)
 
                 target_tile_id: str = f"tile_{local_x + 1}_{local_y}"
-                if target_tile_id in island.tile_ids:
+                if target_tile_id in wrapped_island.data.tile_ids:
                     # load tile
                     local_tile: WrappedData[Tile] = self.tiledao.get(
-                        world_id=world_id, island_id=island.id, tile_id=target_tile_id
+                        world_id=world_id, island_id=wrapped_island.data.id, tile_id=target_tile_id
                     )
 
                     # update tile
@@ -290,14 +291,14 @@ class FlatIslandFactory(AbstractIslandFactory):
                     )
 
                     # store tile
-                    self.tiledao.put_safe(world_id=world_id, island_id=island.id, wrapped_tile=local_tile)
+                    self.tiledao.put_safe(world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile)
                     # self.tiledao.put(world_id=world_id, island_id=island.id, tile=local_tile.data)
 
                 target_tile_id: str = f"tile_{local_x}_{local_y - 1}"
-                if target_tile_id in island.tile_ids:
+                if target_tile_id in wrapped_island.data.tile_ids:
                     # load tile
                     local_tile: WrappedData[Tile] = self.tiledao.get(
-                        world_id=world_id, island_id=island.id, tile_id=target_tile_id
+                        world_id=world_id, island_id=wrapped_island.data.id, tile_id=target_tile_id
                     )
 
                     # update tile
@@ -307,14 +308,14 @@ class FlatIslandFactory(AbstractIslandFactory):
                     )
 
                     # store tile
-                    self.tiledao.put_safe(world_id=world_id, island_id=island.id, wrapped_tile=local_tile)
+                    self.tiledao.put_safe(world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile)
                     # self.tiledao.put(world_id=world_id, island_id=island.id, tile=local_tile.data)
 
                 target_tile_id: str = f"tile_{local_x}_{local_y + 1}"
-                if target_tile_id in island.tile_ids:
+                if target_tile_id in wrapped_island.data.tile_ids:
                     # load tile
                     local_tile: WrappedData[Tile] = self.tiledao.get(
-                        world_id=world_id, island_id=island.id, tile_id=target_tile_id
+                        world_id=world_id, island_id=wrapped_island.data.id, tile_id=target_tile_id
                     )
 
                     # update tile
@@ -324,7 +325,7 @@ class FlatIslandFactory(AbstractIslandFactory):
                     )
 
                     # store tile
-                    self.tiledao.put_safe(world_id=world_id, island_id=island.id, wrapped_tile=local_tile)
+                    self.tiledao.put_safe(world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile)
                     # self.tiledao.put(world_id=world_id, island_id=island.id, tile=local_tile.data)
 
     def create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> IslandLite:
@@ -342,11 +343,12 @@ class FlatIslandFactory(AbstractIslandFactory):
         # Generate an empty 2D block of ocean
         window: Window = Window(min=Coordinate(x=1, y=1), max=Coordinate(x=max_x, y=max_y))
         # print(window.model_dump_json())
-        self.generate_ocean_block(world_id=world_id, island=island, window=window)
+        self.generate_ocean_block(world_id=world_id, island_id=island.id, window=window)
 
         # Apply our terrain generation
         window = Window(min=Coordinate(x=2, y=2), max=Coordinate(x=max_x - 1, y=max_y - 1))
         # print(window.model_dump_json())
         self.tiles_process(world_id=world_id, island=island, window=window)
 
-        return island
+        # get final state and return
+        return self.islanddao.get(world_id=world_id, island_id=island.id).data
