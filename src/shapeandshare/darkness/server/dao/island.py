@@ -7,6 +7,9 @@ from pydantic import BaseModel
 
 from ...sdk.contracts.dtos.island_lite import IslandLite
 from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
+from ...sdk.contracts.errors.server.dao.conflict import DaoConflictError
+from ...sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
+from ...sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
 from ...sdk.contracts.types.tile import TileType
 
 logger = logging.getLogger()
@@ -38,7 +41,7 @@ class IslandDao(BaseModel):
         logger.debug("[IslandService] getting island metadata from storage")
         island_metadata_path: Path = self._island_metadata_path(world_id=world_id, island_id=island_id)
         if not island_metadata_path.exists():
-            raise Exception("[IslandService] island metadata does not exist - 404, not found, put or patch instead?")
+            raise DaoDoesNotExistError("island metadata does not exist")
         with open(file=island_metadata_path.resolve().as_posix(), mode="r", encoding="utf-8") as file:
             json_data: str = file.read()
         return WrappedData[IslandLite].model_validate_json(json_data)
@@ -47,7 +50,7 @@ class IslandDao(BaseModel):
         logger.debug("[IslandService] posting island metadata to storage")
         island_metadata_path: Path = self._island_metadata_path(world_id=world_id, island_id=island.id)
         if island_metadata_path.exists():
-            raise Exception("[IslandService] island metadata already exists - 403, conflict, put or patch instead?")
+            raise DaoConflictError("island metadata already exists")
         if not island_metadata_path.parent.exists():
             logger.debug("[IslandService] island metadata folder creating ..")
             island_metadata_path.parent.mkdir(parents=True, exist_ok=True)
@@ -61,9 +64,8 @@ class IslandDao(BaseModel):
         # now validate we stored
         stored_island: WrappedData[IslandLite] = self.get(world_id=world_id, island_id=island.id)
         if stored_island.nonce != nonce:
-            raise Exception(
-                f"[IslandService] Storage inconsistency detected while storing island {island.id} - nonce mismatch!"
-            )
+            msg: str = f"storage inconsistency detected while storing island {island.id} - nonce mismatch!"
+            raise DaoInconsistencyError(msg)
 
     def put(self, world_id: str, island: IslandLite) -> None:
         logger.debug("[IslandService] putting island metadata to storage")
@@ -81,14 +83,13 @@ class IslandDao(BaseModel):
         # now validate we stored
         stored_island: WrappedData[IslandLite] = self.get(world_id=world_id, island_id=island.id)
         if stored_island.nonce != nonce:
-            raise Exception(
-                f"[IslandService] Storage inconsistency detected while storing island {island.id} - nonce mismatch!"
-            )
+            msg: str = f"storage inconsistency detected while storing island {island.id} - nonce mismatch!"
+            raise DaoInconsistencyError(msg)
 
     def delete(self, world_id: str, island_id: str) -> None:
         logger.debug("[IslandService] deleting island data from storage")
         island_metadata_path: Path = self._island_metadata_path(world_id=world_id, island_id=island_id)
         if not island_metadata_path.exists():
-            raise Exception("[IslandService] island metadata does not exist - 404, not found")
+            raise DaoDoesNotExistError("island metadata does not exist")
         # remove "island_id"/ and lower
         shutil.rmtree(island_metadata_path.parent.resolve().as_posix())

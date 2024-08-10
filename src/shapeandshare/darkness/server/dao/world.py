@@ -7,6 +7,9 @@ from pydantic import BaseModel
 
 from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from ...sdk.contracts.dtos.world_lite import WorldLite
+from ...sdk.contracts.errors.server.dao.conflict import DaoConflictError
+from ...sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
+from ...sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
 
 logger = logging.getLogger()
 
@@ -33,7 +36,7 @@ class WorldDao(BaseModel):
         logger.debug("[WorldService] getting world metadata from storage")
         world_metadata_path: Path = self._world_metadata_path(world_id=world_id)
         if not world_metadata_path.exists():
-            raise Exception("[WorldService] world metadata does not exist - 404, not found, put or patch instead?")
+            raise DaoDoesNotExistError("world metadata does not exist")
         with open(file=world_metadata_path.resolve().as_posix(), mode="r", encoding="utf-8") as file:
             json_data: str = file.read()
         return WrappedData[WorldLite].model_validate_json(json_data)
@@ -42,7 +45,7 @@ class WorldDao(BaseModel):
         logger.debug("[WorldService] posting world metadata to storage")
         world_metadata_path: Path = self._world_metadata_path(world_id=world.id)
         if world_metadata_path.exists():
-            raise Exception("[WorldService] world metadata already exists - 403, conflict, put or patch instead?")
+            raise DaoConflictError("world metadata already exists")
         if not world_metadata_path.parent.exists():
             logger.debug("[WorldService] world metadata folder creating ..")
             world_metadata_path.parent.mkdir(parents=True, exist_ok=True)
@@ -56,9 +59,8 @@ class WorldDao(BaseModel):
         # now validate we stored
         stored_world: WrappedData[WorldLite] = self.get(world_id=world.id)
         if stored_world.nonce != nonce:
-            raise Exception(
-                f"[WorldService] Storage inconsistency detected while storing world {world.id} - nonce mismatch!"
-            )
+            msg: str = f"storage inconsistency detected while storing world {world.id} - nonce mismatch!"
+            raise DaoInconsistencyError(msg)
 
     def put(self, world: WorldLite) -> None:
         logger.debug("[WorldService] putting world metadata to storage")
@@ -76,14 +78,13 @@ class WorldDao(BaseModel):
         # now validate we stored
         stored_world: WrappedData[WorldLite] = self.get(world_id=world.id)
         if stored_world.nonce != nonce:
-            raise Exception(
-                f"[WorldService] Storage inconsistency detected while storing world {world.id} - nonce mismatch!"
-            )
+            msg = f"storage inconsistency detected while storing world {world.id} - nonce mismatch!"
+            raise DaoInconsistencyError(msg)
 
     def delete(self, world_id: str) -> None:
         logger.debug("[WorldService] deleting world data from storage")
         world_metadata_path: Path = self._world_metadata_path(world_id=world_id)
         if not world_metadata_path.exists():
-            raise Exception("[WorldService] world metadata does not exist - 404, not found")
+            raise DaoDoesNotExistError("world metadata does not exist")
         # remove "world_id"/ and lower
         shutil.rmtree(world_metadata_path.parent.resolve().as_posix())
