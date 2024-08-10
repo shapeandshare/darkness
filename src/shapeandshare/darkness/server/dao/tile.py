@@ -64,7 +64,6 @@ class TileDao(BaseModel):
             msg: str = f"storage inconsistency detected while storing tile {tile.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
 
-    # This is unsafe but MUCH faster
     def put(self, world_id: str, island_id: str, tile: Tile) -> None:
         logger.debug("[TileService] putting tile data to storage")
         tile_metadata_path: Path = self._tile_path(world_id=world_id, island_id=island_id, tile_id=tile.id)
