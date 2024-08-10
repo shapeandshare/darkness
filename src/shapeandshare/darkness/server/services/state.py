@@ -45,11 +45,19 @@ class StateService(BaseModel):
         return self.worlddao.get(world_id=request.id).data
 
     def world_get(self, request: WorldGetRequest) -> World:
+        # logger.info("- 1 -----------------------------------------")
+
         # Build a complete World from Lite objects
         world_lite: WorldLite = self.worlddao.get(world_id=request.id).data
         island_ids: set[str] = world_lite.island_ids
+        # logger.info(f"island_ids={island_ids}")
         partial_world = world_lite.model_dump(exclude={"island_ids"})
-        world: World = World().model_load(partial_world)
+        # logger.info("- 2 -----------------------------------------")
+        # logger.info(partial_world)
+        world: World = World.model_validate(partial_world)
+        # logger.info("- 3 -----------------------------------------")
+        # logger.info(world)
+        # logger.info("- 4 -----------------------------------------")
         for island_id in island_ids:
             local_island: Island = self.island_get(request=IslandGetRequest(world_id=request.id, island_id=island_id))
             world.islands[island_id] = local_island

@@ -29,6 +29,7 @@ router: APIRouter = APIRouter(
     tags=["world"],
 )
 
+
 ### /world
 
 
@@ -96,7 +97,6 @@ async def world_create(request: WorldCreateRequest) -> Response[WorldCreateRespo
 
 @router.post("/{world_id}/island")
 async def island_create(world_id: str, island_create_request: IslandCreateRequest) -> Response[IslandCreateResponse]:
-
     # we ignore any passed in world_ids in this condition and over-write based on path.
     # Due to this world_id is optional within the DTO.
     island_create_request.world_id = world_id
