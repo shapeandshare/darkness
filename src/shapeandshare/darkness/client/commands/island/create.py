@@ -7,7 +7,7 @@ from ..abstract import AbstractCommand
 
 
 class IslandCreateCommand(AbstractCommand):
-    def execute(self, request: IslandCreateRequest) -> IslandCreateResponse:
+    async def execute(self, request: IslandCreateRequest) -> IslandCreateResponse:
         response: requests.Response = requests.post(
             url=f"http://{self.options.tld}/world/{request.world_id}/island",
             timeout=self.options.timeout,

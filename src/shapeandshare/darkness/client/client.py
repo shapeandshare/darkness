@@ -57,7 +57,7 @@ class Client:
 
     # metrics
 
-    def health_get(self) -> dict:
+    async def health_get(self) -> dict:
         """
         Gets the server health.
 
@@ -67,38 +67,38 @@ class Client:
             The server health (true or false).
         """
 
-        return self.health_get_command.execute()
+        return await self.health_get_command.execute()
 
     # island
 
-    def island_create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> str:
+    async def island_create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> str:
         request: IslandCreateRequest = IslandCreateRequest(
             world_id=world_id, name=name, dimensions=dimensions, biome=biome
         )
-        response: IslandCreateResponse = self.island_create_command.execute(request=request)
+        response: IslandCreateResponse = await self.island_create_command.execute(request=request)
         return response.id
 
-    def island_get(self, world_id: str, island_id: str, full: bool = False) -> Island | IslandLite:
+    async def island_get(self, world_id: str, island_id: str, full: bool = False) -> Island | IslandLite:
         request: IslandGetRequest = IslandGetRequest(world_id=world_id, island_id=island_id, full=full)
-        response: IslandGetResponse = self.island_get_command.execute(request=request)
+        response: IslandGetResponse = await self.island_get_command.execute(request=request)
         return response.island
 
-    def island_delete(self, world_id: str, island_id: str) -> None:
+    async def island_delete(self, world_id: str, island_id: str) -> None:
         request: IslandDeleteRequest = IslandDeleteRequest(world_id=world_id, island_id=island_id)
-        self.island_delete_command.execute(request=request)
+        await self.island_delete_command.execute(request=request)
 
     # world
 
-    def world_create(self, name: str | None) -> str:
+    async def world_create(self, name: str | None) -> str:
         request: WorldCreateRequest = WorldCreateRequest(name=name)
-        response: WorldCreateResponse = self.world_create_command.execute(request)
+        response: WorldCreateResponse = await self.world_create_command.execute(request)
         return response.id
 
-    def world_delete(self, world_id: str) -> None:
+    async def world_delete(self, world_id: str) -> None:
         request: WorldDeleteRequest = WorldDeleteRequest(world_id=world_id)
-        self.world_delete_command.execute(request=request)
+        await self.world_delete_command.execute(request=request)
 
-    def world_get(self, world_id: str, full: bool) -> World | WorldLite:
+    async def world_get(self, world_id: str, full: bool) -> World | WorldLite:
         request: WorldGetRequest = WorldGetRequest(world_id=world_id, full=full)
-        response: WorldGetResponse = self.world_get_command.execute(request)
+        response: WorldGetResponse = await self.world_get_command.execute(request)
         return response.world

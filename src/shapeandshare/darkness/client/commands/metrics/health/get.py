@@ -17,7 +17,7 @@ class HealthGetCommand(AbstractCommand):
         Executes the command.
     """
 
-    def execute(self) -> dict:
+    async def execute(self) -> dict:
         """
         Executes the command.
 

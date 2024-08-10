@@ -33,7 +33,7 @@ class AbstractCommand(BaseModel):
             )
 
     @abstractmethod
-    def execute(self, *args, **kwargs) -> any:
+    async def execute(self, *args, **kwargs) -> any:
         """Command entry point"""
 
     def _build_requests_params(self, request: WrappedRequest) -> dict:
@@ -61,7 +61,7 @@ class AbstractCommand(BaseModel):
             params["params"] = request.params
         return params
 
-    def _api_caller(self, request: WrappedRequest, depth: int) -> dict | None:
+    async def _api_caller(self, request: WrappedRequest, depth: int) -> dict | None:
         """
         Wrapper for calls with `requests` to external APIs.
 
@@ -97,11 +97,11 @@ class AbstractCommand(BaseModel):
         except requests.exceptions.ConnectionError as error:
             logging.debug("Connection Error (%s) - Retrying.. %i", str(error), depth)
             time.sleep(self.options.sleep_time)
-            return self._api_caller(request=request, depth=depth)
+            return await self._api_caller(request=request, depth=depth)
         except Exception as error:
             logging.debug("Exception needed to cover: %s", str(error))
             time.sleep(self.options.sleep_time)
-            return self._api_caller(request=request, depth=depth)
+            return await self._api_caller(request=request, depth=depth)
 
         if response.status_code in request.statuses.allow:
             if response.content == b"":
@@ -110,11 +110,11 @@ class AbstractCommand(BaseModel):
 
         if response.status_code in request.statuses.retry:
             time.sleep(self.options.sleep_time)
-            return self._api_caller(request=request, depth=depth)
+            return await self._api_caller(request=request, depth=depth)
 
         if response.status_code in request.statuses.reauth:
-            self._authenticate()
-            return self._api_caller(request=request, depth=depth)
+            # await self._authenticate()
+            return await self._api_caller(request=request, depth=depth)
 
         raise RequestFailureError(
             json.dumps(
@@ -126,7 +126,7 @@ class AbstractCommand(BaseModel):
             )
         )
 
-    def wrapped_request(self, request: WrappedRequest) -> dict | None:
+    async def wrapped_request(self, request: WrappedRequest) -> dict | None:
         """
         High level request method.  Entry point for consumption.
 
@@ -142,4 +142,4 @@ class AbstractCommand(BaseModel):
             The response as a dictionary.
         """
 
-        return self._api_caller(request=request, depth=self.options.retry_count)
+        return await self._api_caller(request=request, depth=self.options.retry_count)
