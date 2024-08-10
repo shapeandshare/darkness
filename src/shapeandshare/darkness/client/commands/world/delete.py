@@ -5,5 +5,5 @@ from ..abstract import AbstractCommand
 
 
 class WorldDeleteCommand(AbstractCommand):
-    def execute(self, request: WorldDeleteRequest) -> None:
+    async def execute(self, request: WorldDeleteRequest) -> None:
         requests.delete(url=f"http://{self.options.tld}/world/{request.id}", timeout=self.options.timeout)

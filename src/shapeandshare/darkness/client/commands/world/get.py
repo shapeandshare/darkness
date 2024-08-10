@@ -7,7 +7,7 @@ from ..abstract import AbstractCommand
 
 
 class WorldGetCommand(AbstractCommand):
-    def execute(self, request: WorldGetRequest) -> WorldGetResponse:
+    async def execute(self, request: WorldGetRequest) -> WorldGetResponse:
         response: requests.Response = requests.get(
             url=f"http://{self.options.tld}/world/{request.id}", timeout=self.options.timeout
         )
