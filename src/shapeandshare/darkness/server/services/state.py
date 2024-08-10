@@ -82,7 +82,7 @@ class StateService(BaseModel):
         wrapped_world_lite: WrappedData[WorldLite] = self.worlddao.get(world_id=request.world_id)
 
         # patch
-        wrapped_world_lite.island_ids.add(new_island.id)
+        wrapped_world_lite.data.island_ids.add(new_island.id)
 
         # put
         self.worlddao.put_safe(wrapped_world=wrapped_world_lite)
