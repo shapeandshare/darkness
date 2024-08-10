@@ -39,10 +39,10 @@ async def world_get(world_id: str, full: bool = False) -> Response[WorldGetRespo
 
     try:
         if full:
-            world: World = ContextManager.state_service.world_get(request=request)
+            world: World = await ContextManager.state_service.world_get(request=request)
             response = Response[WorldGetResponse](data=WorldGetResponse(world=world))
         else:
-            world_lite: WorldLite = ContextManager.state_service.world_lite_get(request=request)
+            world_lite: WorldLite = await ContextManager.state_service.world_lite_get(request=request)
             response = Response[WorldGetResponse](data=WorldGetResponse(world=world_lite))
     except DaoConflictError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
@@ -62,7 +62,7 @@ async def world_delete(world_id: str) -> None:
     request: WorldDeleteRequest = WorldDeleteRequest(id=world_id)
 
     try:
-        ContextManager.state_service.world_delete(request=request)
+        await ContextManager.state_service.world_delete(request=request)
     except DaoConflictError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
@@ -77,7 +77,7 @@ async def world_delete(world_id: str) -> None:
 @router.post("")
 async def world_create(request: WorldCreateRequest) -> Response[WorldCreateResponse]:
     try:
-        world_id: str = ContextManager.state_service.world_create(request=request)
+        world_id: str = await ContextManager.state_service.world_create(request=request)
     except DaoConflictError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
@@ -102,7 +102,7 @@ async def island_create(world_id: str, island_create_request: IslandCreateReques
     island_create_request.world_id = world_id
 
     try:
-        island_id: str = ContextManager.state_service.island_create(request=island_create_request)
+        island_id: str = await ContextManager.state_service.island_create(request=island_create_request)
     except DaoConflictError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
@@ -122,10 +122,10 @@ async def island_get(world_id: str, island_id: str, full: bool = True) -> Respon
 
     try:
         if full:
-            island: Island = ContextManager.state_service.island_get(request=request)
+            island: Island = await ContextManager.state_service.island_get(request=request)
             response = Response[IslandGetResponse](data=IslandGetResponse(island=island))
         else:
-            island_lite: IslandLite = ContextManager.state_service.island_lite_get(request=request)
+            island_lite: IslandLite = await ContextManager.state_service.island_lite_get(request=request)
             response = Response[IslandGetResponse](data=IslandGetResponse(island=island_lite))
     except DaoConflictError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
@@ -144,7 +144,7 @@ async def island_get(world_id: str, island_id: str, full: bool = True) -> Respon
 async def island_delete(world_id: str, island_id: str) -> None:
     request: IslandDeleteRequest = IslandDeleteRequest(world_id=world_id, island_id=island_id)
     try:
-        ContextManager.state_service.island_delete(request=request)
+        await ContextManager.state_service.island_delete(request=request)
     except DaoConflictError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
