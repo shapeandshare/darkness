@@ -2,10 +2,19 @@ from ..sdk.contracts.dtos.island import Island
 from ..sdk.contracts.dtos.island_lite import IslandLite
 from ..sdk.contracts.dtos.sdk.command_options import CommandOptions
 from ..sdk.contracts.dtos.sdk.requests.island.create import IslandCreateRequest
+from ..sdk.contracts.dtos.sdk.requests.island.delete import IslandDeleteRequest
 from ..sdk.contracts.dtos.sdk.requests.island.get import IslandGetRequest
+from ..sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
+from ..sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
+from ..sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
 from ..sdk.contracts.dtos.sdk.responses.island.create import IslandCreateResponse
+from ..sdk.contracts.dtos.sdk.responses.island.delete import IslandDeleteResponse
 from ..sdk.contracts.dtos.sdk.responses.island.get import IslandGetResponse
 from ..sdk.contracts.dtos.sdk.responses.islands.get import IslandsGetResponse
+from ..sdk.contracts.dtos.sdk.responses.world.create import WorldCreateResponse
+from ..sdk.contracts.dtos.sdk.responses.world.get import WorldGetResponse
+from ..sdk.contracts.dtos.world import World
+from ..sdk.contracts.dtos.world_lite import WorldLite
 from ..sdk.contracts.types.tile import TileType
 from .commands.island.create import IslandCreateCommand
 from .commands.island.delete import IslandDeleteCommand
@@ -48,6 +57,8 @@ class Client:
         self.world_get_command = WorldGetCommand.model_validate(command_dict)
         self.world_delete_command = WorldDeleteCommand.model_validate(command_dict)
 
+    # metrics
+
     def health_get(self) -> dict:
         """
         Gets the server health.
@@ -59,6 +70,8 @@ class Client:
         """
 
         return self.health_get_command.execute()
+
+    # island
 
     def island_create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> str:
         request: IslandCreateRequest = IslandCreateRequest(
@@ -72,6 +85,22 @@ class Client:
         response: IslandGetResponse = self.island_get_command.execute(request=request)
         return response.island
 
-    # def islands_get(self) -> list[str]:
-    #     response: IslandsGetResponse = self.islands_get_command.execute()
-    #     return response.ids
+    def island_delete(self, world_id: str, island_id: str) -> None:
+        request: IslandDeleteRequest = IslandDeleteRequest(world_id=world_id, island_id=island_id)
+        self.island_delete_command.execute(request=request)
+
+    # world
+
+    def world_create(self, name: str | None) -> str:
+        request: WorldCreateRequest = WorldCreateRequest(name=name)
+        response: WorldCreateResponse = self.world_create_command.execute(request)
+        return response.id
+
+    def world_delete(self, world_id: str) -> None:
+        request: WorldDeleteRequest = WorldDeleteRequest(world_id=world_id)
+        self.world_delete_command.execute(request=request)
+
+    def world_get(self, world_id: str, full: bool) -> World | WorldLite:
+        request: WorldGetRequest = WorldGetRequest(world_id=world_id, full=full)
+        response: WorldGetResponse = self.world_get_command.execute(request)
+        return response.world
