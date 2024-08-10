@@ -10,7 +10,6 @@ from ...sdk.contracts.dtos.tile import Tile
 from ...sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from ...sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from ...sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
-from ...sdk.contracts.types.tile import TileType
 
 logger = logging.getLogger()
 

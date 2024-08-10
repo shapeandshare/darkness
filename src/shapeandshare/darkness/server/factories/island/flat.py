@@ -30,7 +30,6 @@ class FlatIslandFactory(AbstractIslandFactory):
                 local_x = x + 1
                 local_y = y + 1
                 tile_id: str = f"tile_{local_x}_{local_y}"
-                # print(tile_id)
 
                 # Mutate tiles to biome default (or dirt)
                 await self.mutate_tile(
@@ -47,7 +46,6 @@ class FlatIslandFactory(AbstractIslandFactory):
                 local_x = x + 1
                 local_y = y + 1
                 tile_id: str = f"tile_{local_x}_{local_y}"
-                # print(tile_id)
                 await self.mutate_tile(
                     world_id=world_id,
                     island_id=island.id,
@@ -63,7 +61,6 @@ class FlatIslandFactory(AbstractIslandFactory):
                 local_x = x + 1
                 local_y = y + 1
                 tile_id: str = f"tile_{local_x}_{local_y}"
-                # print(tile_id)
 
                 # Convert inner Ocean to Water Tiles
                 await self.brackish_tile(world_id=world_id, island_id=island.id, tile_id=tile_id)
@@ -74,7 +71,6 @@ class FlatIslandFactory(AbstractIslandFactory):
                 local_x = x + 1
                 local_y = y + 1
                 tile_id: str = f"tile_{local_x}_{local_y}"
-                # print(tile_id)
 
                 # Erode Tiles
                 await self.erode_tile(world_id=world_id, island_id=island.id, tile_id=tile_id)
@@ -85,7 +81,6 @@ class FlatIslandFactory(AbstractIslandFactory):
                 local_x = x + 1
                 local_y = y + 1
                 tile_id: str = f"tile_{local_x}_{local_y}"
-                # print(tile_id)
 
                 # Grow Tiles
                 await self.grow_tile(world_id=world_id, island_id=island.id, tile_id=tile_id)
@@ -133,15 +128,15 @@ class FlatIslandFactory(AbstractIslandFactory):
 
         target_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
         for _, adjecent_id in target_tile.data.next.items():
-            # assert adjecent_id == island.tiles[adjecent_id].id
-            # print(f"tile {tile_id} -> {adjecent_dir} -> {adjecent_id}:{island.tiles[adjecent_id].id} -> {island.tiles[adjecent_id].tile_type}")
 
             adjecent_tile: WrappedData[Tile] = await self.tiledao.get(
                 world_id=world_id, island_id=island_id, tile_id=adjecent_id
             )
+            # logger.debug(f"tile {tile_id} -> {adjecent_dir} -> {adjecent_id} -> {adjecent_tile.data.tile_type}")
+
             if adjecent_tile.data.tile_type in types and adjecent_tile.data.tile_type not in adjecent_targets:
                 adjecent_targets.append(adjecent_tile.data.tile_type)
-        # print(f"tile {tile_id} is adjecent to: {adjecent_targets}")
+        # logger.debug(f"tile {tile_id} is adjecent to: {adjecent_targets}")
         return adjecent_targets
 
     async def grow_tile(self, world_id: str, island_id: str, tile_id: str) -> None:
@@ -204,6 +199,9 @@ class FlatIslandFactory(AbstractIslandFactory):
             )
 
     async def erode_tile(self, world_id: str, island_id: str, tile_id: str) -> None:
+        msg: str = f"eroding tile: {tile_id}"
+        logger.debug(msg)
+
         # get
         target_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
 
@@ -215,7 +213,7 @@ class FlatIslandFactory(AbstractIslandFactory):
             # Apply erosion - rocks and be left by oceans, everything else becomes shore
             if TileType.OCEAN in adjecent_liquids:
                 if target_tile.data.tile_type not in (TileType.ROCK, TileType.SHORE):
-                    # previous_type = target_tile.tile_type
+                    previous_type = target_tile.data.tile_type
 
                     # patch
                     target_tile.data.tile_type = TileType.SHORE
@@ -223,7 +221,8 @@ class FlatIslandFactory(AbstractIslandFactory):
                     # put
                     await self.tiledao.put_safe(world_id=world_id, island_id=island_id, wrapped_tile=target_tile)
 
-                    # print(f"tile {tile_id}:{previous_type} converted to {TileType.SHORE}")
+                    msg: str = f"tile {tile_id}:{previous_type} converted to {TileType.SHORE}"
+                    logger.debug(msg)
 
     async def generate_ocean_block(self, world_id: str, island_id: str, window: Window):
         # 1. fill a blank nXm area with ocean
@@ -267,15 +266,16 @@ class FlatIslandFactory(AbstractIslandFactory):
                 msg: str = f"binding ({tile_id}) physically to peers"
                 logger.debug(msg)
 
+                # Bind LEFT
                 target_tile_id: str = f"tile_{local_x - 1}_{local_y}"
                 if target_tile_id in wrapped_island.data.tile_ids:
                     # load tile
                     local_tile: WrappedData[Tile] = await self.tiledao.get(
-                        world_id=world_id, island_id=wrapped_island.data.id, tile_id=target_tile_id
+                        world_id=world_id, island_id=wrapped_island.data.id, tile_id=tile_id
                     )
 
                     # update tile
-                    local_tile.data.next[TileConnectionType.LEFT] = f"tile_{local_x - 1}_{local_y}"
+                    local_tile.data.next[TileConnectionType.LEFT] = target_tile_id
                     msg: str = (
                         f"tile {tile_id} -> {TileConnectionType.LEFT} -> {local_tile.data.next[TileConnectionType.LEFT]}"
                     )
@@ -286,15 +286,16 @@ class FlatIslandFactory(AbstractIslandFactory):
                         world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile
                     )
 
+                # Bind RIGHT
                 target_tile_id: str = f"tile_{local_x + 1}_{local_y}"
                 if target_tile_id in wrapped_island.data.tile_ids:
                     # load tile
                     local_tile: WrappedData[Tile] = await self.tiledao.get(
-                        world_id=world_id, island_id=wrapped_island.data.id, tile_id=target_tile_id
+                        world_id=world_id, island_id=wrapped_island.data.id, tile_id=tile_id
                     )
 
                     # update tile
-                    local_tile.data.next[TileConnectionType.RIGHT] = f"tile_{local_x + 1}_{local_y}"
+                    local_tile.data.next[TileConnectionType.RIGHT] = target_tile_id
 
                     msg: str = (
                         f"tile {tile_id} -> {TileConnectionType.RIGHT} -> {local_tile.data.next[TileConnectionType.RIGHT]}"
@@ -305,17 +306,17 @@ class FlatIslandFactory(AbstractIslandFactory):
                     await self.tiledao.put_safe(
                         world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile
                     )
-                    # self.tiledao.put(world_id=world_id, island_id=island.id, tile=local_tile.data)
 
+                # Bind UP
                 target_tile_id: str = f"tile_{local_x}_{local_y - 1}"
                 if target_tile_id in wrapped_island.data.tile_ids:
                     # load tile
                     local_tile: WrappedData[Tile] = await self.tiledao.get(
-                        world_id=world_id, island_id=wrapped_island.data.id, tile_id=target_tile_id
+                        world_id=world_id, island_id=wrapped_island.data.id, tile_id=tile_id
                     )
 
                     # update tile
-                    local_tile.data.next[TileConnectionType.UP] = f"tile_{local_x}_{local_y - 1}"
+                    local_tile.data.next[TileConnectionType.UP] = target_tile_id
                     msg: str = (
                         f"tile {tile_id} -> {TileConnectionType.UP} -> {local_tile.data.next[TileConnectionType.UP]}"
                     )
@@ -326,15 +327,16 @@ class FlatIslandFactory(AbstractIslandFactory):
                         world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile
                     )
 
+                # Bind DOWN
                 target_tile_id: str = f"tile_{local_x}_{local_y + 1}"
                 if target_tile_id in wrapped_island.data.tile_ids:
                     # load tile
                     local_tile: WrappedData[Tile] = await self.tiledao.get(
-                        world_id=world_id, island_id=wrapped_island.data.id, tile_id=target_tile_id
+                        world_id=world_id, island_id=wrapped_island.data.id, tile_id=tile_id
                     )
 
                     # update tile
-                    local_tile.data.next[TileConnectionType.DOWN] = f"tile_{local_x}_{local_y + 1}"
+                    local_tile.data.next[TileConnectionType.DOWN] = target_tile_id
                     msg: str = (
                         f"tile {tile_id} -> {TileConnectionType.DOWN} -> {local_tile.data.next[TileConnectionType.DOWN]}"
                     )
@@ -359,12 +361,12 @@ class FlatIslandFactory(AbstractIslandFactory):
 
         # Generate an empty 2D block of ocean
         window: Window = Window(min=Coordinate(x=1, y=1), max=Coordinate(x=max_x, y=max_y))
-        # print(window.model_dump_json())
+
         await self.generate_ocean_block(world_id=world_id, island_id=island.id, window=window)
 
         # Apply our terrain generation
         window = Window(min=Coordinate(x=2, y=2), max=Coordinate(x=max_x - 1, y=max_y - 1))
-        # print(window.model_dump_json())
+
         await self.tiles_process(world_id=world_id, island=island, window=window)
 
         # get final state and return
