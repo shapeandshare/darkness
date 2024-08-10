@@ -11,6 +11,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
 
+# pylint: disable=too-many-arguments,no-value-for-parameter
 @click.command()
 @click.option("--hostname", type=click.STRING, default="0.0.0.0", help="host address to bind to")
 @click.option("--port", type=click.INT, default=8000, help="port to bind to")

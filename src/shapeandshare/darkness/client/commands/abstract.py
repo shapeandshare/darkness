@@ -14,6 +14,7 @@ from ...sdk.contracts.dtos.sdk.command_options import CommandOptions
 from ...sdk.contracts.dtos.sdk.wrapped_request import WrappedRequest
 from ...sdk.contracts.errors.sdk.exceeded_retry_count import ExceededRetryCountError
 from ...sdk.contracts.errors.sdk.request_failure import RequestFailureError
+from ...sdk.contracts.errors.sdk.unknown_verb import UnknownVerbError
 from ...sdk.contracts.types.sdk.request_verb import RequestVerbType
 
 
@@ -91,7 +92,8 @@ class AbstractCommand(BaseModel):
             elif request.verb == RequestVerbType.DELETE:
                 response: Response = requests.delete(**params)
             else:
-                raise Exception("Unknown Verb")
+                msg = f"Unknown verb: ({request.verb})"
+                raise UnknownVerbError(msg)
         except requests.exceptions.ConnectionError as error:
             logging.debug("Connection Error (%s) - Retrying.. %i", str(error), depth)
             time.sleep(self.options.sleep_time)
