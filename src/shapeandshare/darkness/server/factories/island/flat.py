@@ -102,6 +102,7 @@ class FlatIslandFactory(AbstractIslandFactory):
             target_tile.data.tile_type = type
             # put
             self.tiledao.put_safe(world_id=world_id, island_id=island.id, wrapped_tile=target_tile)
+            # self.tiledao.put(world_id=world_id, island_id=island.id, tile=target_tile.data)
 
     def convert_tile(self, world_id: str, island: IslandLite, tile_id: str, source: TileType, target: TileType) -> None:
         # get
@@ -114,6 +115,7 @@ class FlatIslandFactory(AbstractIslandFactory):
 
             # put
             self.tiledao.put_safe(world_id=world_id, island_id=island.id, wrapped_tile=target_tile)
+            # self.tiledao.put(world_id=world_id, island_id=island.id, tile=target_tile.data)
 
     def adjecent_liquids(self, world_id: str, island: IslandLite, tile_id: str) -> list[TileType]:
         return self.adjecent_to(
@@ -153,6 +155,7 @@ class FlatIslandFactory(AbstractIslandFactory):
 
                 # put
                 self.tiledao.put_safe(world_id=world_id, island_id=island.id, wrapped_tile=target_tile)
+                # self.tiledao.put(world_id=world_id, island_id=island.id, tile=target_tile.data)
 
         # grass+water (no dirt/ocean) -> forest
         if target_tile.data.tile_type == TileType.GRASS:
@@ -175,6 +178,7 @@ class FlatIslandFactory(AbstractIslandFactory):
 
                 # put
                 self.tiledao.put_safe(world_id=world_id, island_id=island.id, wrapped_tile=target_tile)
+                # self.tiledao.put(world_id=world_id, island_id=island.id, tile=target_tile.data)
 
         # # grass+(dirt)
         # if island.tiles[tile_id].tile_type == TileType.GRASS:
@@ -212,6 +216,7 @@ class FlatIslandFactory(AbstractIslandFactory):
 
                     # put
                     self.tiledao.put_safe(world_id=world_id, island_id=island.id, wrapped_tile=target_tile)
+                    # self.tiledao.put(world_id=world_id, island_id=island.id, tile=target_tile.data)
 
                     # print(f"tile {tile_id}:{previous_type} converted to {TileType.SHORE}")
 
@@ -262,6 +267,7 @@ class FlatIslandFactory(AbstractIslandFactory):
 
                     # store tile
                     self.tiledao.put_safe(world_id=world_id, island_id=island.id, wrapped_tile=local_tile)
+                    # self.tiledao.put(world_id=world_id, island_id=island.id, tile=local_tile.data)
 
                 target_tile_id: str = f"tile_{local_x + 1}_{local_y}"
                 if target_tile_id in island.tile_ids:
@@ -279,6 +285,7 @@ class FlatIslandFactory(AbstractIslandFactory):
 
                     # store tile
                     self.tiledao.put_safe(world_id=world_id, island_id=island.id, wrapped_tile=local_tile)
+                    # self.tiledao.put(world_id=world_id, island_id=island.id, tile=local_tile.data)
 
                 target_tile_id: str = f"tile_{local_x}_{local_y - 1}"
                 if target_tile_id in island.tile_ids:
@@ -295,6 +302,7 @@ class FlatIslandFactory(AbstractIslandFactory):
 
                     # store tile
                     self.tiledao.put_safe(world_id=world_id, island_id=island.id, wrapped_tile=local_tile)
+                    # self.tiledao.put(world_id=world_id, island_id=island.id, tile=local_tile.data)
 
                 target_tile_id: str = f"tile_{local_x}_{local_y + 1}"
                 if target_tile_id in island.tile_ids:
@@ -311,6 +319,7 @@ class FlatIslandFactory(AbstractIslandFactory):
 
                     # store tile
                     self.tiledao.put_safe(world_id=world_id, island_id=island.id, wrapped_tile=local_tile)
+                    # self.tiledao.put(world_id=world_id, island_id=island.id, tile=local_tile.data)
 
     def create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> IslandLite:
         if name is None:
