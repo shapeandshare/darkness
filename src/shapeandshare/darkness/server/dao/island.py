@@ -86,6 +86,41 @@ class IslandDao(BaseModel):
             msg: str = f"storage inconsistency detected while storing island {island.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
 
+    def put_safe(self, world_id: str, wrapped_island: WrappedData[IslandLite]) -> None:
+        logger.debug("[IslandService] putting island data to storage")
+        island_metadata_path: Path = self._island_metadata_path(world_id=world_id, island_id=wrapped_island.data.id)
+        if not island_metadata_path.parent.exists():
+            logger.debug("[IslandService] island metadata folder creating ..")
+            island_metadata_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # see if we have a pre-existing nonce to verify against
+        try:
+            previous_state = self.get(world_id=world_id, island_id=wrapped_island.data.id)
+            if previous_state.nonce != wrapped_island.nonce:
+                msg: str = (
+                    f"storage inconsistency detected while putting island {wrapped_island.data.id} - nonce mismatch!"
+                )
+                raise DaoInconsistencyError(msg)
+        except DaoDoesNotExistError:
+            # then no nonce to verify against.
+            pass
+
+        # if we made it this far we are safe to update
+
+        nonce: str = str(uuid.uuid4())
+        wrapped_data: WrappedData[IslandLite] = WrappedData[IslandLite](data=wrapped_island.data, nonce=nonce)
+        wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
+        with open(file=island_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
+            file.write(wrapped_data_raw)
+
+        # now validate we stored
+        stored_island: WrappedData[IslandLite] = self.get(world_id=world_id, island_id=wrapped_data.data.id)
+        if stored_island.nonce != nonce:
+            msg: str = (
+                f"storage inconsistency detected while verifying put island {wrapped_data.data.id} - nonce mismatch!"
+            )
+            raise DaoInconsistencyError(msg)
+
     def delete(self, world_id: str, island_id: str) -> None:
         logger.debug("[IslandService] deleting island data from storage")
         island_metadata_path: Path = self._island_metadata_path(world_id=world_id, island_id=island_id)
