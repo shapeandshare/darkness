@@ -1,4 +1,4 @@
-# Project Maintenance and Documentation
+# Project Maintenance
 pylint
 black
 isort

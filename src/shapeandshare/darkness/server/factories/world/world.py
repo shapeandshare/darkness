@@ -1,22 +1,17 @@
 import uuid
 
-from ....sdk.contracts.dtos.island import Island
-from ....sdk.contracts.dtos.world import World
-from ....sdk.contracts.types.tile import TileType
-from ..island.island import IslandFactory
+from pydantic import BaseModel
+
+from ....sdk.contracts.dtos.world_lite import WorldLite
+from ...dao.world import WorldDao
 
 
-class WorldFactory:
-    @staticmethod
-    def generate() -> World:
-        # 1. blank, named world
-        return World(
-            id=str(uuid.uuid4()),
-            name="darkness",
-        )
+class WorldFactory(BaseModel):
+    worlddao: WorldDao
 
-    @staticmethod
-    def island_discover(target_world: World, dimensions: tuple[int, int], biome: TileType) -> str:
-        local_island: Island = IslandFactory.basic(dimensions=dimensions, biome=biome)
-        target_world.islands[local_island.id] = local_island
-        return local_island.id
+    def create(self, name: str | None = None) -> str:
+        if name is None:
+            name = "darkness"
+        world: WorldLite = WorldLite(id=str(uuid.uuid4()), name=name)
+        self.worlddao.post(world=world)
+        return world.id

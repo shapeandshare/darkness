@@ -2,4 +2,8 @@ from pydantic import BaseModel
 
 
 class IslandGetRequest(BaseModel):
-    id: str
+    world_id: str
+    island_id: str
+
+    # Used by command sdk
+    full: bool | None = None
