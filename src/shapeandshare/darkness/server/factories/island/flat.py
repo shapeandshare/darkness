@@ -220,6 +220,7 @@ class FlatIslandFactory(AbstractIslandFactory):
 
                     # print(f"tile {tile_id}:{previous_type} converted to {TileType.SHORE}")
 
+    # def generate_ocean_block(self, world_id: str, island: IslandLite, window: Window):
     def generate_ocean_block(self, world_id: str, island: IslandLite, window: Window):
         # 1. fill a blank nXm area with ocean
         range_x_min: int = window.min.x - 1
@@ -238,11 +239,16 @@ class FlatIslandFactory(AbstractIslandFactory):
                 self.tiledao.post(world_id=world_id, island_id=island.id, tile=local_tile)
                 logger.debug(f"({tile_id}) brought into existence as {TileType.OCEAN}")
 
-                # Add tile_id to in-memory representation before storing
-                island.tile_ids.add(tile_id)
+                # Update the island --
 
-                # store island update (tile addition)
-                self.islanddao.put(world_id=world_id, island=island)
+                # get
+                wrapped_island: WrappedData[IslandLite] = self.islanddao.get(world_id=world_id, island_id=island.id)
+
+                # Patch - Add tile_id to in-memory representation before storing
+                wrapped_island.data.tile_ids.add(tile_id)
+
+                # put -- store island update (tile addition)
+                self.islanddao.put_safe(world_id=world_id, wrapped_island=wrapped_island)
 
         # 2. connect the tiles (nXm)
         for x in range(range_x_min, range_x_max):

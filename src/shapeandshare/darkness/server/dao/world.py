@@ -81,6 +81,41 @@ class WorldDao(BaseModel):
             msg = f"storage inconsistency detected while storing world {world.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
 
+    def put_safe(self, wrapped_world: WrappedData[WorldLite]) -> None:
+        world_id: str = wrapped_world.data.id
+
+        logger.debug("[WorldService] putting world data to storage")
+        world_metadata_path: Path = self._world_metadata_path(world_id=world_id)
+        if not world_metadata_path.parent.exists():
+            logger.debug("[WorldService] world metadata folder creating ..")
+            world_metadata_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # see if we have a pre-existing nonce to verify against
+        try:
+            previous_state: WrappedData[WorldLite] = self.get(world_id=world_id)
+            if previous_state.nonce != wrapped_world.nonce:
+                msg: str = f"storage inconsistency detected while putting world {world_id} - nonce mismatch!"
+                raise DaoInconsistencyError(msg)
+        except DaoDoesNotExistError:
+            # then no nonce to verify against.
+            pass
+
+        # if we made it this far we are safe to update
+
+        nonce: str = str(uuid.uuid4())
+        wrapped_data: WrappedData[WorldLite] = WrappedData[WorldLite](data=wrapped_world.data, nonce=nonce)
+        wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
+        with open(file=world_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
+            file.write(wrapped_data_raw)
+
+        # now validate we stored
+        stored_world: WrappedData[WorldLite] = self.get(world_id=world_id)
+        if stored_world.nonce != nonce:
+            msg: str = (
+                f"storage inconsistency detected while verifying put world {wrapped_data.data.id} - nonce mismatch!"
+            )
+            raise DaoInconsistencyError(msg)
+
     def delete(self, world_id: str) -> None:
         logger.debug("[WorldService] deleting world data from storage")
         world_metadata_path: Path = self._world_metadata_path(world_id=world_id)

@@ -2,6 +2,7 @@ import logging
 
 from pydantic import BaseModel
 
+from ... import WrappedData
 from ...sdk.contracts.dtos.island import Island
 from ...sdk.contracts.dtos.island_lite import IslandLite
 from ...sdk.contracts.dtos.sdk.requests.island.create import IslandCreateRequest
@@ -76,9 +77,15 @@ class StateService(BaseModel):
         )
         # add new island to world
         # add island to world and store
-        world_lite: WorldLite = self.worlddao.get(world_id=request.world_id).data
-        world_lite.island_ids.add(new_island.id)
-        self.worlddao.put(world=world_lite)
+
+        # get
+        wrapped_world_lite: WrappedData[WorldLite] = self.worlddao.get(world_id=request.world_id)
+
+        # patch
+        wrapped_world_lite.island_ids.add(new_island.id)
+
+        # put
+        self.worlddao.put_safe(wrapped_world=wrapped_world_lite)
 
         return new_island.id
 
