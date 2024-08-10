@@ -8,8 +8,8 @@ from ..sdk.contracts.dtos.sdk.responses.islands.get import IslandsGetResponse
 from ..sdk.contracts.types.tile import TileType
 from .commands.island.create import IslandCreateCommand
 from .commands.island.get import IslandGetCommand
-from .commands.islands.get import IslandsGetCommand
 from .commands.metrics.health.get import HealthGetCommand
+from .commands.world.get import IslandsGetCommand
 
 
 class Client:

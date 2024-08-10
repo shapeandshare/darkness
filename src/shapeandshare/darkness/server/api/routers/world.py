@@ -13,6 +13,7 @@ from ....sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
 from ....sdk.contracts.dtos.sdk.responses.island.create import IslandCreateResponse
 from ....sdk.contracts.dtos.sdk.responses.island.get import IslandGetResponse
 from ....sdk.contracts.dtos.sdk.responses.response import Response
+from ....sdk.contracts.dtos.sdk.responses.world.create import WorldCreateResponse
 from ....sdk.contracts.dtos.sdk.responses.world.get import WorldGetResponse
 from ....sdk.contracts.dtos.world import World
 from ....sdk.contracts.dtos.world_lite import WorldLite
@@ -31,7 +32,7 @@ router: APIRouter = APIRouter(
 @router.get("/{world_id}")
 async def world_get(world_id: str, full: bool = False) -> Response[WorldGetResponse]:
     request: WorldGetRequest = WorldGetRequest(id=world_id)
-    logger.debug(f"[GET][/world], full? {full}")
+    # logger.debug(f"[GET][/world], full? {full}")
 
     if full:
         world: World = ContextManager.state_service.world_get(request=request)
@@ -40,8 +41,8 @@ async def world_get(world_id: str, full: bool = False) -> Response[WorldGetRespo
         world_lite: WorldLite = ContextManager.state_service.world_lite_get(request=request)
         response = Response[WorldGetResponse](data=WorldGetResponse(world=world_lite))
 
-    msg: str = f"[GET][/islands] {response}"
-    logger.debug(msg)
+    # msg: str = f"[GET][/islands] {response}"
+    # logger.debug(msg)
     return response
 
 
@@ -53,8 +54,10 @@ async def world_delete(world_id: str) -> None:
 
 
 @router.post("/")
-async def world_create(request: WorldCreateRequest) -> str:
-    return ContextManager.state_service.world_create(request=request)
+async def world_create(request: WorldCreateRequest) -> Response[WorldCreateResponse]:
+    world_id: str = ContextManager.state_service.world_create(request=request)
+    response = Response[WorldCreateResponse](data=WorldCreateResponse(world_id=world_id))
+    return response
 
 
 ### /world/world_id/island/
@@ -73,7 +76,7 @@ async def island_create(world_id: str, island_create_request: IslandCreateReques
     return response
 
 
-@router.get("/world/{world_id}/island/{island_id}")
+@router.get("/{world_id}/island/{island_id}")
 async def island_get(world_id: str, island_id: str, full: bool = True) -> Response[IslandGetResponse]:
     request: IslandGetRequest = IslandGetRequest(world_id=world_id, island_id=island_id)
     # msg: str = f"[GET][/island/{island_get_request.island_id}] full? {full}"
@@ -96,7 +99,7 @@ async def island_get(world_id: str, island_id: str, full: bool = True) -> Respon
     return response
 
 
-@router.delete("/world/{world_id}/island/{island_id}")
+@router.delete("/{world_id}/island/{island_id}")
 async def island_delete(world_id: str, island_id: str) -> None:
     # msg: str = f"[DELETE][/island/{island_delete_request.island_id}]"
     # logger.debug(msg)

@@ -9,6 +9,7 @@ from ..abstract import AbstractCommand
 class IslandDeleteCommand(AbstractCommand):
     def execute(self, request: IslandDeleteRequest) -> IslandDeleteResponse:
         response: requests.Response = requests.delete(
-            url=f"http://{self.options.tld}/island/{request.id}", timeout=self.options.timeout
+            url=f"http://{self.options.tld}/world/{request.world_id}/island/{request.island_id}",
+            timeout=self.options.timeout,
         )
         return Response[IslandDeleteResponse].model_validate(response.json()).data
