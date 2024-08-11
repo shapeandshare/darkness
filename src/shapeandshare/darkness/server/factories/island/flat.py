@@ -52,11 +52,8 @@ class FlatIslandFactory(AbstractIslandFactory):
                     )
                     queue.task_done()
 
-            async def process():
-                queue = asyncio.Queue()
-                await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
-
-            await process()
+            queue = asyncio.Queue()
+            await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
 
         await step_one()
 
@@ -74,11 +71,8 @@ class FlatIslandFactory(AbstractIslandFactory):
                     )
                     queue.task_done()
 
-            async def process():
-                queue = asyncio.Queue()
-                await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
-
-            await process()
+            queue = asyncio.Queue()
+            await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
 
         await step_two()
 
@@ -92,11 +86,8 @@ class FlatIslandFactory(AbstractIslandFactory):
                     await self.brackish_tile(world_id=world_id, island_id=island.id, tile_id=local_tile_id)
                     queue.task_done()
 
-            async def process():
-                queue = asyncio.Queue()
-                await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
-
-            await process()
+            queue = asyncio.Queue()
+            await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
 
         await step_three()
 
@@ -108,11 +99,8 @@ class FlatIslandFactory(AbstractIslandFactory):
                     await self.erode_tile(world_id=world_id, island_id=island.id, tile_id=local_tile_id)
                     queue.task_done()
 
-            async def process():
-                queue = asyncio.Queue()
-                await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
-
-            await process()
+            queue = asyncio.Queue()
+            await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
 
         await step_four()
 
@@ -124,11 +112,8 @@ class FlatIslandFactory(AbstractIslandFactory):
                     await self.grow_tile(world_id=world_id, island_id=island.id, tile_id=local_tile_id)
                     queue.task_done()
 
-            async def process():
-                queue = asyncio.Queue()
-                await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
-
-            await process()
+            queue = asyncio.Queue()
+            await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
 
         await step_five()
 
@@ -369,12 +354,8 @@ class FlatIslandFactory(AbstractIslandFactory):
 
                     queue.task_done()
 
-            async def create():
-                queue = asyncio.Queue()
-                await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
-
-            # Create 2D ocean surface
-            await create()
+            queue = asyncio.Queue()
+            await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
 
         await step_one()
 
@@ -477,12 +458,8 @@ class FlatIslandFactory(AbstractIslandFactory):
 
                     queue.task_done()
 
-            async def process():
-                queue = asyncio.Queue()
-                await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
-
-            # Create 2D ocean surface
-            await process()
+            queue = asyncio.Queue()
+            await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
 
         await step_two()
 
