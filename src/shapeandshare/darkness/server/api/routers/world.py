@@ -2,6 +2,7 @@ import logging
 import traceback
 
 from fastapi import APIRouter, HTTPException
+from pyinstrument import Profiler
 
 from ....sdk.contracts.dtos.island import Island
 from ....sdk.contracts.dtos.island_full import IslandFull
@@ -127,7 +128,9 @@ async def island_create(world_id: str, island_create_request: IslandCreateReques
     island_create_request.world_id = world_id
 
     try:
-        island_id: str = await ContextManager.state_service.island_create(request=island_create_request)
+        with Profiler() as profiler:
+            island_id: str = await ContextManager.state_service.island_create(request=island_create_request)
+        profiler.print()
     except DaoConflictError as error:
         traceback.print_exc()
         logger.error(str(error))
