@@ -139,6 +139,32 @@ class FlatIslandFactory(AbstractIslandFactory):
         # logger.debug(f"tile {tile_id} is adjecent to: {adjecent_targets}")
         return adjecent_targets
 
+    # async def get_adjecent_tiles(
+    #     self,
+    #     world_id: str,
+    #     island_id: str,
+    #     tile_id: str,
+    #     types: list[TileType] | None = None
+    # ) -> list[WrappedData[Tile]]:
+    #     adjecent_targets: list[WrappedData[Tile]] = []
+    #
+    #     target_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
+    #     for _, adjecent_id in target_tile.data.next.items():
+    #
+    #         adjecent_tile: WrappedData[Tile] = await self.tiledao.get(
+    #             world_id=world_id, island_id=island_id, tile_id=adjecent_id
+    #         )
+    #         # logger.debug(f"tile {tile_id} -> {adjecent_dir} -> {adjecent_id} -> {adjecent_tile.data.tile_type}")
+    #
+    #         # if omitted then include all types
+    #         if types is not None:
+    #             types: list[TileType] = [TileType(local_type) for local_type in TileType]
+    #
+    #         if adjecent_tile.data.tile_type in types:
+    #             adjecent_targets.append(adjecent_tile)
+    #     # logger.debug(f"tile {tile_id} is adjecent to: {adjecent_targets}")
+    #     return adjecent_targets
+
     async def grow_tile(self, world_id: str, island_id: str, tile_id: str) -> None:
         # if island.tiles[tile_id].tile_type not in [TileType.UNKNOWN, TileType.OCEAN, TileType.WATER]:
 
@@ -189,7 +215,7 @@ class FlatIslandFactory(AbstractIslandFactory):
     async def brackish_tile(self, world_id: str, island_id: str, tile_id: str):
         # Convert inner Ocean to Water Tiles
 
-        # See if we are next to ocean
+        # See if we are next to another ocean tile
         neighbors: list[TileType] = await self.adjecent_to(
             world_id=world_id, island_id=island_id, tile_id=tile_id, types=[TileType.OCEAN]
         )
@@ -197,6 +223,46 @@ class FlatIslandFactory(AbstractIslandFactory):
             await self.convert_tile(
                 world_id=world_id, island_id=island_id, tile_id=tile_id, source=TileType.OCEAN, target=TileType.WATER
             )
+
+        # # are we an isolated ocean body? if so then we are water
+        #
+        # # 1. For each next that is liquid (recusively), can we get to the edge?
+        # root_tile_id: str = tile_id
+        #
+        # # async def check_if_ocean(root_tile_id: str) -> bool:
+        # #     # 1. Are we ocean? - if no then return False
+        # #     target_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=root_tile_id)
+        # #     if target_tile.data.tile_type != TileType.OCEAN:
+        # #         return False
+        # #
+        # #     # 2. Are we edge? - if yes then return True
+        # #     #
+        # #     # 1d space
+        # #     # nexts? len=0, then - True
+        # #     #
+        # #     # 2d space
+        # #     # nexts? len=1->4,
+        # #     # if nexts < max of 4, then - True
+        # #     if len(target_tile.data.next) < 4:
+        # #         return True
+        # #
+        # #     # local = [ [conn, con_id] for conn in target_tile.data.next]
+        # #
+        # #     # 3. then check my nexts
+        # #     #       if check all nexts is True, then True
+        # #
+        # #     # 4. Return False (not ocean)
+        # #     return False
+        #
+        # if not await check_if_ocean(root_tile_id=root_tile_id):
+        #     # if True then we are water,
+        #     await self.convert_tile(
+        #         world_id=world_id, island_id=island_id, tile_id=tile_id, source=TileType.OCEAN, target=TileType.WATER
+        #     )
+        #
+        #     # root_tile: Tile = (await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=root_tile_id)).data
+
+
 
     async def erode_tile(self, world_id: str, island_id: str, tile_id: str) -> None:
         msg: str = f"eroding tile: {tile_id}"

@@ -43,7 +43,7 @@ class StateService(BaseModel):
         return await self.worldfactory.create(name=request.name)
 
     async def world_lite_get(self, request: WorldGetRequest) -> WorldLite:
-        return await self.worlddao.get(world_id=request.id).data
+        return (await self.worlddao.get(world_id=request.id)).data
 
     async def world_get(self, request: WorldGetRequest) -> World:
         # logger.info("- 1 -----------------------------------------")
