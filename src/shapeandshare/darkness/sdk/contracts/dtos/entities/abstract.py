@@ -2,14 +2,15 @@ import time
 
 from pydantic import BaseModel
 
-from ..types.entity import EntityType
+from ...types.entity import EntityType
 
 
-class Entity(BaseModel):
+class AbstractEntity(BaseModel):
     id: str
-    entity_type: EntityType
-    updated: float | None = None  # unix timestamp
+    name: str | None = None
     rbac: dict = {}
+    entity_type: EntityType = EntityType.UNKNOWN
+    updated: float | None = None  # unix timestamp
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

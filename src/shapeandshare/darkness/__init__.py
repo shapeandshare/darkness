@@ -17,7 +17,7 @@ from .sdk.common.config.environment import (
     get_env_var,
 )
 from .sdk.contracts.dtos.coordinate import Coordinate
-from .sdk.contracts.dtos.entity import Entity
+from .sdk.contracts.dtos.entities.abstract import AbstractEntity
 from .sdk.contracts.dtos.island import Island
 from .sdk.contracts.dtos.island_full import IslandFull
 from .sdk.contracts.dtos.sdk.command_options import CommandOptions
