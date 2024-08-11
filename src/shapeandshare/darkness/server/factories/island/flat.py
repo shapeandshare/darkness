@@ -22,79 +22,121 @@ logger = logging.getLogger()
 class FlatIslandFactory(AbstractIslandFactory):
     tiledao: TileDao
 
-    async def tiles_process(self, world_id: str, island: Island, window: Window) -> None:
+    @staticmethod
+    async def producer(window: Window, queue: Queue):
         range_x_min: int = window.min.x - 1
         range_x_max: int = window.max.x
         range_y_min: int = window.min.x - 1
         range_y_max: int = window.max.y
 
-        # Lets shovel in some biome default or dirt tiles!
         for x in range(range_x_min, range_x_max):
             for y in range(range_y_min, range_y_max):
                 local_x = x + 1
                 local_y = y + 1
                 tile_id: str = f"tile_{local_x}_{local_y}"
+                await queue.put(tile_id)
 
-                # Mutate tiles to biome default (or dirt)
-                await self.mutate_tile(
-                    world_id=world_id,
-                    island_id=island.id,
-                    tile_id=tile_id,
-                    mutate=90,  # percentage of 100%
-                    tile_type=(island.biome if island.biome else TileType.DIRT),
-                )
+    async def tiles_process(self, world_id: str, island: Island, window: Window) -> None:
+        # Lets shovel in some biome default or dirt tiles!
+        async def step_one():
+            async def consumer(queue: Queue):
+                while not queue.empty():
+                    local_tile_id: str = await queue.get()
+                    # Mutate tiles to biome default (or dirt)
+                    await self.mutate_tile(
+                        world_id=world_id,
+                        island_id=island.id,
+                        tile_id=local_tile_id,
+                        mutate=90,  # percentage of 100%
+                        tile_type=(island.biome if island.biome else TileType.DIRT),
+                    )
+                    queue.task_done()
+
+            async def process():
+                queue = asyncio.Queue()
+                await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
+
+            await process()
+
+        await step_one()
 
         # Add Eradicates (rocks)
-        for x in range(range_x_min, range_x_max):
-            for y in range(range_y_min, range_y_max):
-                local_x = x + 1
-                local_y = y + 1
-                tile_id: str = f"tile_{local_x}_{local_y}"
-                await self.mutate_tile(
-                    world_id=world_id,
-                    island_id=island.id,
-                    tile_id=tile_id,
-                    mutate=0.5,  # 0.5% change (very low)
-                    tile_type=TileType.ROCK,
-                )
+        async def step_two():
+            async def consumer(queue: Queue):
+                while not queue.empty():
+                    local_tile_id: str = await queue.get()
+                    await self.mutate_tile(
+                        world_id=world_id,
+                        island_id=island.id,
+                        tile_id=local_tile_id,
+                        mutate=0.5,  # 0.5% change (very low)
+                        tile_type=TileType.ROCK,
+                    )
+                    queue.task_done()
+
+            async def process():
+                queue = asyncio.Queue()
+                await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
+
+            await process()
+
+        await step_two()
 
         # TODO: isolated ocean is NOT ocean, we MUST have path to the edge
         # Convert inner Ocean to Water Tiles
-        for x in range(range_x_min, range_x_max):
-            for y in range(range_y_min, range_y_max):
-                local_x = x + 1
-                local_y = y + 1
-                tile_id: str = f"tile_{local_x}_{local_y}"
+        async def step_three():
+            async def consumer(queue: Queue):
+                while not queue.empty():
+                    local_tile_id: str = await queue.get()
+                    # Convert inner Ocean to Water Tiles
+                    await self.brackish_tile(world_id=world_id, island_id=island.id, tile_id=local_tile_id)
+                    queue.task_done()
 
-                # Convert inner Ocean to Water Tiles
-                await self.brackish_tile(world_id=world_id, island_id=island.id, tile_id=tile_id)
+            async def process():
+                queue = asyncio.Queue()
+                await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
+
+            await process()
+
+        await step_three()
 
         # Erode Tiles (to make shore)
-        for x in range(range_x_min, range_x_max):
-            for y in range(range_y_min, range_y_max):
-                local_x = x + 1
-                local_y = y + 1
-                tile_id: str = f"tile_{local_x}_{local_y}"
+        async def step_four():
+            async def consumer(queue: Queue):
+                while not queue.empty():
+                    local_tile_id: str = await queue.get()
+                    await self.erode_tile(world_id=world_id, island_id=island.id, tile_id=local_tile_id)
+                    queue.task_done()
 
-                # Erode Tiles
-                await self.erode_tile(world_id=world_id, island_id=island.id, tile_id=tile_id)
+            async def process():
+                queue = asyncio.Queue()
+                await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
+
+            await process()
+
+        await step_four()
 
         # Grow Tiles
-        for x in range(range_x_min, range_x_max):
-            for y in range(range_y_min, range_y_max):
-                local_x = x + 1
-                local_y = y + 1
-                tile_id: str = f"tile_{local_x}_{local_y}"
+        async def step_five():
+            async def consumer(queue: Queue):
+                while not queue.empty():
+                    local_tile_id: str = await queue.get()
+                    await self.grow_tile(world_id=world_id, island_id=island.id, tile_id=local_tile_id)
+                    queue.task_done()
 
-                # Grow Tiles
-                await self.grow_tile(world_id=world_id, island_id=island.id, tile_id=tile_id)
+            async def process():
+                queue = asyncio.Queue()
+                await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
+
+            await process()
+
+        await step_five()
 
     async def mutate_tile(
         self, world_id: str, island_id: str, tile_id: str, mutate: float, tile_type: TileType
     ) -> None:
         if secrets.randbelow(100) <= mutate:
             # then we spawn the tile type
-            # island.tiles[tile_id].tile_type = type
 
             # We don't current have a patch, so get and put..
             # get
@@ -300,20 +342,6 @@ class FlatIslandFactory(AbstractIslandFactory):
                     logger.debug(msg)
 
     async def generate_ocean_block(self, world_id: str, island_id: str, window: Window):
-
-        range_x_min: int = window.min.x - 1
-        range_x_max: int = window.max.x
-        range_y_min: int = window.min.x - 1
-        range_y_max: int = window.max.y
-
-        async def producer(queue: Queue):
-            for x in range(range_x_min, range_x_max):
-                for y in range(range_y_min, range_y_max):
-                    local_x = x + 1
-                    local_y = y + 1
-                    tile_id: str = f"tile_{local_x}_{local_y}"
-                    await queue.put(tile_id)
-
         # 1. fill a blank nXm area with ocean
         async def step_one():
             async def consumer(queue: Queue):
@@ -343,13 +371,14 @@ class FlatIslandFactory(AbstractIslandFactory):
 
             async def create():
                 queue = asyncio.Queue()
-                await asyncio.gather(producer(queue), consumer(queue))
+                await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
 
             # Create 2D ocean surface
             await create()
 
         await step_one()
 
+        # 2. Connect everything together
         async def step_two():
             wrapped_island: WrappedData[Island] = await self.islanddao.get(world_id=world_id, island_id=island_id)
             pattern: re.Pattern = re.compile("^tile_([a-zA-Z0-9-]+)_([a-zA-Z0-9-]+)$")
@@ -450,7 +479,7 @@ class FlatIslandFactory(AbstractIslandFactory):
 
             async def process():
                 queue = asyncio.Queue()
-                await asyncio.gather(producer(queue), consumer(queue))
+                await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
 
             # Create 2D ocean surface
             await process()
