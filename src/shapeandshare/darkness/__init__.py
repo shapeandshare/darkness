@@ -19,7 +19,7 @@ from .sdk.common.config.environment import (
 from .sdk.contracts.dtos.coordinate import Coordinate
 from .sdk.contracts.dtos.entity import Entity
 from .sdk.contracts.dtos.island import Island
-from .sdk.contracts.dtos.island_lite import IslandLite
+from .sdk.contracts.dtos.island_full import IslandFull
 from .sdk.contracts.dtos.sdk.command_options import CommandOptions
 from .sdk.contracts.dtos.sdk.request_status_codes import RequestStatusCodes
 from .sdk.contracts.dtos.sdk.requests.island.create import IslandCreateRequest
@@ -36,13 +36,15 @@ from .sdk.contracts.dtos.sdk.responses.world.create import WorldCreateResponse
 from .sdk.contracts.dtos.sdk.responses.world.get import WorldGetResponse
 from .sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from .sdk.contracts.dtos.sdk.wrapped_request import WrappedRequest
-from .sdk.contracts.dtos.tile import Tile
+from .sdk.contracts.dtos.tiles.abtract import AbstractTile
+from .sdk.contracts.dtos.tiles.tile import Tile
 from .sdk.contracts.dtos.window import Window
 from .sdk.contracts.dtos.world import World
-from .sdk.contracts.dtos.world_lite import WorldLite
+from .sdk.contracts.dtos.world_full import WorldFull
 from .sdk.contracts.errors.common.environment_variable_not_found import EnvironmentVariableNotFoundError
 from .sdk.contracts.errors.sdk.exceeded_retry_count import ExceededRetryCountError
 from .sdk.contracts.errors.sdk.request_failure import RequestFailureError
+from .sdk.contracts.errors.sdk.unknown_verb import UnknownVerbError
 from .sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from .sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from .sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError

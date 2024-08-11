@@ -1,12 +1,16 @@
+import asyncio
 import logging
+import re
 import secrets
 import uuid
+from asyncio import Queue
 
 from ....sdk.contracts.dtos.coordinate import Coordinate
-from ....sdk.contracts.dtos.island_lite import IslandLite
+from ....sdk.contracts.dtos.island import Island
 from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
-from ....sdk.contracts.dtos.tile import Tile
+from ....sdk.contracts.dtos.tiles.tile import Tile
 from ....sdk.contracts.dtos.window import Window
+from ....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
 from ....sdk.contracts.types.connection import TileConnectionType
 from ....sdk.contracts.types.tile import TileType
 from ...dao.tile import TileDao
@@ -18,79 +22,106 @@ logger = logging.getLogger()
 class FlatIslandFactory(AbstractIslandFactory):
     tiledao: TileDao
 
-    async def tiles_process(self, world_id: str, island: IslandLite, window: Window) -> None:
+    @staticmethod
+    async def producer(window: Window, queue: Queue):
         range_x_min: int = window.min.x - 1
         range_x_max: int = window.max.x
         range_y_min: int = window.min.x - 1
         range_y_max: int = window.max.y
 
-        # Lets shovel in some biome default or dirt tiles!
         for x in range(range_x_min, range_x_max):
             for y in range(range_y_min, range_y_max):
                 local_x = x + 1
                 local_y = y + 1
                 tile_id: str = f"tile_{local_x}_{local_y}"
+                await queue.put(tile_id)
 
-                # Mutate tiles to biome default (or dirt)
-                await self.mutate_tile(
-                    world_id=world_id,
-                    island_id=island.id,
-                    tile_id=tile_id,
-                    mutate=90,  # percentage of 100%
-                    tile_type=(island.biome if island.biome else TileType.DIRT),
-                )
+    async def tiles_process(self, world_id: str, island: Island, window: Window) -> None:
+        # Lets shovel in some biome default or dirt tiles!
+        async def step_one():
+            async def consumer(queue: Queue):
+                while not queue.empty():
+                    local_tile_id: str = await queue.get()
+                    # Mutate tiles to biome default (or dirt)
+                    await self.mutate_tile(
+                        world_id=world_id,
+                        island_id=island.id,
+                        tile_id=local_tile_id,
+                        mutate=90,  # percentage of 100%
+                        tile_type=(island.biome if island.biome else TileType.DIRT),
+                    )
+                    queue.task_done()
+
+            queue = asyncio.Queue()
+            await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
+
+        await step_one()
 
         # Add Eradicates (rocks)
-        for x in range(range_x_min, range_x_max):
-            for y in range(range_y_min, range_y_max):
-                local_x = x + 1
-                local_y = y + 1
-                tile_id: str = f"tile_{local_x}_{local_y}"
-                await self.mutate_tile(
-                    world_id=world_id,
-                    island_id=island.id,
-                    tile_id=tile_id,
-                    mutate=0.5,  # 0.5% change (very low)
-                    tile_type=TileType.ROCK,
-                )
+        async def step_two():
+            async def consumer(queue: Queue):
+                while not queue.empty():
+                    local_tile_id: str = await queue.get()
+                    await self.mutate_tile(
+                        world_id=world_id,
+                        island_id=island.id,
+                        tile_id=local_tile_id,
+                        mutate=0.5,  # 0.5% change (very low)
+                        tile_type=TileType.ROCK,
+                    )
+                    queue.task_done()
+
+            queue = asyncio.Queue()
+            await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
+
+        await step_two()
 
         # TODO: isolated ocean is NOT ocean, we MUST have path to the edge
         # Convert inner Ocean to Water Tiles
-        for x in range(range_x_min, range_x_max):
-            for y in range(range_y_min, range_y_max):
-                local_x = x + 1
-                local_y = y + 1
-                tile_id: str = f"tile_{local_x}_{local_y}"
+        async def step_three():
+            async def consumer(queue: Queue):
+                while not queue.empty():
+                    local_tile_id: str = await queue.get()
+                    # Convert inner Ocean to Water Tiles
+                    await self.brackish_tile(world_id=world_id, island_id=island.id, tile_id=local_tile_id)
+                    queue.task_done()
 
-                # Convert inner Ocean to Water Tiles
-                await self.brackish_tile(world_id=world_id, island_id=island.id, tile_id=tile_id)
+            queue = asyncio.Queue()
+            await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
+
+        await step_three()
 
         # Erode Tiles (to make shore)
-        for x in range(range_x_min, range_x_max):
-            for y in range(range_y_min, range_y_max):
-                local_x = x + 1
-                local_y = y + 1
-                tile_id: str = f"tile_{local_x}_{local_y}"
+        async def step_four():
+            async def consumer(queue: Queue):
+                while not queue.empty():
+                    local_tile_id: str = await queue.get()
+                    await self.erode_tile(world_id=world_id, island_id=island.id, tile_id=local_tile_id)
+                    queue.task_done()
 
-                # Erode Tiles
-                await self.erode_tile(world_id=world_id, island_id=island.id, tile_id=tile_id)
+            queue = asyncio.Queue()
+            await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
+
+        await step_four()
 
         # Grow Tiles
-        for x in range(range_x_min, range_x_max):
-            for y in range(range_y_min, range_y_max):
-                local_x = x + 1
-                local_y = y + 1
-                tile_id: str = f"tile_{local_x}_{local_y}"
+        async def step_five():
+            async def consumer(queue: Queue):
+                while not queue.empty():
+                    local_tile_id: str = await queue.get()
+                    await self.grow_tile(world_id=world_id, island_id=island.id, tile_id=local_tile_id)
+                    queue.task_done()
 
-                # Grow Tiles
-                await self.grow_tile(world_id=world_id, island_id=island.id, tile_id=tile_id)
+            queue = asyncio.Queue()
+            await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
+
+        await step_five()
 
     async def mutate_tile(
         self, world_id: str, island_id: str, tile_id: str, mutate: float, tile_type: TileType
     ) -> None:
         if secrets.randbelow(100) <= mutate:
             # then we spawn the tile type
-            # island.tiles[tile_id].tile_type = type
 
             # We don't current have a patch, so get and put..
             # get
@@ -139,6 +170,32 @@ class FlatIslandFactory(AbstractIslandFactory):
         # logger.debug(f"tile {tile_id} is adjecent to: {adjecent_targets}")
         return adjecent_targets
 
+    # async def get_adjecent_tiles(
+    #     self,
+    #     world_id: str,
+    #     island_id: str,
+    #     tile_id: str,
+    #     types: list[TileType] | None = None
+    # ) -> list[WrappedData[Tile]]:
+    #     adjecent_targets: list[WrappedData[Tile]] = []
+    #
+    #     target_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
+    #     for _, adjecent_id in target_tile.data.next.items():
+    #
+    #         adjecent_tile: WrappedData[Tile] = await self.tiledao.get(
+    #             world_id=world_id, island_id=island_id, tile_id=adjecent_id
+    #         )
+    #         # logger.debug(f"tile {tile_id} -> {adjecent_dir} -> {adjecent_id} -> {adjecent_tile.data.tile_type}")
+    #
+    #         # if omitted then include all types
+    #         if types is not None:
+    #             types: list[TileType] = [TileType(local_type) for local_type in TileType]
+    #
+    #         if adjecent_tile.data.tile_type in types:
+    #             adjecent_targets.append(adjecent_tile)
+    #     # logger.debug(f"tile {tile_id} is adjecent to: {adjecent_targets}")
+    #     return adjecent_targets
+
     async def grow_tile(self, world_id: str, island_id: str, tile_id: str) -> None:
         # if island.tiles[tile_id].tile_type not in [TileType.UNKNOWN, TileType.OCEAN, TileType.WATER]:
 
@@ -156,6 +213,9 @@ class FlatIslandFactory(AbstractIslandFactory):
 
                 # put
                 await self.tiledao.put_safe(world_id=world_id, island_id=island_id, wrapped_tile=target_tile)
+
+                # get updated local tile
+                target_tile = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
 
         # grass+water (no dirt/ocean) -> forest
         if target_tile.data.tile_type == TileType.GRASS:
@@ -177,7 +237,11 @@ class FlatIslandFactory(AbstractIslandFactory):
                 target_tile.data.tile_type = TileType.FOREST
 
                 # put
-                await self.tiledao.put_safe(world_id=world_id, island_id=island_id, wrapped_tile=target_tile)
+                try:
+                    await self.tiledao.put_safe(world_id=world_id, island_id=island_id, wrapped_tile=target_tile)
+                except DaoInconsistencyError as error:
+                    logger.error(target_tile.model_dump_json())
+                    raise error
 
         # # grass+(dirt)
         # if island.tiles[tile_id].tile_type == TileType.GRASS:
@@ -189,7 +253,7 @@ class FlatIslandFactory(AbstractIslandFactory):
     async def brackish_tile(self, world_id: str, island_id: str, tile_id: str):
         # Convert inner Ocean to Water Tiles
 
-        # See if we are next to ocean
+        # See if we are next to another ocean tile
         neighbors: list[TileType] = await self.adjecent_to(
             world_id=world_id, island_id=island_id, tile_id=tile_id, types=[TileType.OCEAN]
         )
@@ -197,6 +261,44 @@ class FlatIslandFactory(AbstractIslandFactory):
             await self.convert_tile(
                 world_id=world_id, island_id=island_id, tile_id=tile_id, source=TileType.OCEAN, target=TileType.WATER
             )
+
+        # # are we an isolated ocean body? if so then we are water
+        #
+        # # 1. For each next that is liquid (recusively), can we get to the edge?
+        # root_tile_id: str = tile_id
+        #
+        # # async def check_if_ocean(root_tile_id: str) -> bool:
+        # #     # 1. Are we ocean? - if no then return False
+        # #     target_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=root_tile_id)
+        # #     if target_tile.data.tile_type != TileType.OCEAN:
+        # #         return False
+        # #
+        # #     # 2. Are we edge? - if yes then return True
+        # #     #
+        # #     # 1d space
+        # #     # nexts? len=0, then - True
+        # #     #
+        # #     # 2d space
+        # #     # nexts? len=1->4,
+        # #     # if nexts < max of 4, then - True
+        # #     if len(target_tile.data.next) < 4:
+        # #         return True
+        # #
+        # #     # local = [ [conn, con_id] for conn in target_tile.data.next]
+        # #
+        # #     # 3. then check my nexts
+        # #     #       if check all nexts is True, then True
+        # #
+        # #     # 4. Return False (not ocean)
+        # #     return False
+        #
+        # if not await check_if_ocean(root_tile_id=root_tile_id):
+        #     # if True then we are water,
+        #     await self.convert_tile(
+        #         world_id=world_id, island_id=island_id, tile_id=tile_id, source=TileType.OCEAN, target=TileType.WATER
+        #     )
+        #
+        #     # root_tile: Tile = (await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=root_tile_id)).data
 
     async def erode_tile(self, world_id: str, island_id: str, tile_id: str) -> None:
         msg: str = f"eroding tile: {tile_id}"
@@ -226,147 +328,158 @@ class FlatIslandFactory(AbstractIslandFactory):
 
     async def generate_ocean_block(self, world_id: str, island_id: str, window: Window):
         # 1. fill a blank nXm area with ocean
-        range_x_min: int = window.min.x - 1
-        range_x_max: int = window.max.x
-        range_y_min: int = window.min.x - 1
-        range_y_max: int = window.max.y
-        for x in range(range_x_min, range_x_max):
-            for y in range(range_y_min, range_y_max):
-                local_x = x + 1
-                local_y = y + 1
+        async def step_one():
+            async def consumer(queue: Queue):
+                while not queue.empty():
+                    local_tile_id: str = await queue.get()
+                    local_tile: Tile = Tile(id=local_tile_id, tile_type=TileType.OCEAN)
 
-                tile_id: str = f"tile_{local_x}_{local_y}"
-                local_tile: Tile = Tile(id=tile_id, tile_type=TileType.OCEAN)
-
-                # create tile
-                await self.tiledao.post(world_id=world_id, island_id=island_id, tile=local_tile)
-                msg: str = f"({tile_id}) brought into existence as {TileType.OCEAN}"
-                logger.debug(msg)
-
-                # Update the island --
-
-                # get
-                wrapped_island: WrappedData[IslandLite] = await self.islanddao.get(
-                    world_id=world_id, island_id=island_id
-                )
-
-                # Patch - Add tile_id to in-memory representation before storing
-                wrapped_island.data.tile_ids.add(tile_id)
-
-                # put -- store island update (tile addition)
-                await self.islanddao.put_safe(world_id=world_id, wrapped_island=wrapped_island)
-
-        # 2. connect the tiles (nXm)
-        wrapped_island: WrappedData[IslandLite] = await self.islanddao.get(world_id=world_id, island_id=island_id)
-        for x in range(range_x_min, range_x_max):
-            for y in range(range_y_min, range_y_max):
-                local_x = x + 1
-                local_y = y + 1
-                tile_id: str = f"tile_{local_x}_{local_y}"
-                msg: str = f"binding ({tile_id}) physically to peers"
-                logger.debug(msg)
-
-                # Bind LEFT
-                target_tile_id: str = f"tile_{local_x - 1}_{local_y}"
-                if target_tile_id in wrapped_island.data.tile_ids:
-                    # load tile
-                    local_tile: WrappedData[Tile] = await self.tiledao.get(
-                        world_id=world_id, island_id=wrapped_island.data.id, tile_id=tile_id
-                    )
-
-                    # update tile
-                    local_tile.data.next[TileConnectionType.LEFT] = target_tile_id
-                    msg: str = (
-                        f"tile {tile_id} -> {TileConnectionType.LEFT} -> {local_tile.data.next[TileConnectionType.LEFT]}"
-                    )
+                    # create tile
+                    await self.tiledao.post(world_id=world_id, island_id=island_id, tile=local_tile)
+                    msg: str = f"({local_tile_id}) brought into existence as {TileType.OCEAN}"
                     logger.debug(msg)
 
-                    # store tile
-                    await self.tiledao.put_safe(
-                        world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile
+                    # Update the island --
+
+                    # get
+                    wrapped_island: WrappedData[Island] = await self.islanddao.get(
+                        world_id=world_id, island_id=island_id
                     )
 
-                # Bind RIGHT
-                target_tile_id: str = f"tile_{local_x + 1}_{local_y}"
-                if target_tile_id in wrapped_island.data.tile_ids:
-                    # load tile
-                    local_tile: WrappedData[Tile] = await self.tiledao.get(
-                        world_id=world_id, island_id=wrapped_island.data.id, tile_id=tile_id
-                    )
+                    # Patch - Add tile_id to in-memory representation before storing
+                    wrapped_island.data.ids.add(local_tile_id)
 
-                    # update tile
-                    local_tile.data.next[TileConnectionType.RIGHT] = target_tile_id
+                    # put -- store island update (tile addition)
+                    await self.islanddao.put_safe(world_id=world_id, wrapped_island=wrapped_island)
 
-                    msg: str = (
-                        f"tile {tile_id} -> {TileConnectionType.RIGHT} -> {local_tile.data.next[TileConnectionType.RIGHT]}"
-                    )
-                    logger.debug(msg)
+                    queue.task_done()
 
-                    # store tile
-                    await self.tiledao.put_safe(
-                        world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile
-                    )
+            queue = asyncio.Queue()
+            await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
 
-                # Bind UP
-                target_tile_id: str = f"tile_{local_x}_{local_y - 1}"
-                if target_tile_id in wrapped_island.data.tile_ids:
-                    # load tile
-                    local_tile: WrappedData[Tile] = await self.tiledao.get(
-                        world_id=world_id, island_id=wrapped_island.data.id, tile_id=tile_id
-                    )
+        await step_one()
 
-                    # update tile
-                    local_tile.data.next[TileConnectionType.UP] = target_tile_id
-                    msg: str = (
-                        f"tile {tile_id} -> {TileConnectionType.UP} -> {local_tile.data.next[TileConnectionType.UP]}"
-                    )
-                    logger.debug(msg)
+        # 2. Connect everything together
+        async def step_two():
+            wrapped_island: WrappedData[Island] = await self.islanddao.get(world_id=world_id, island_id=island_id)
+            pattern: re.Pattern = re.compile("^tile_([a-zA-Z0-9-]+)_([a-zA-Z0-9-]+)$")
 
-                    # store tile
-                    await self.tiledao.put_safe(
-                        world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile
-                    )
+            async def consumer(queue):
+                while not queue.empty():
+                    local_tile_id: str = await queue.get()
+                    match = pattern.search(local_tile_id)
+                    # tile_id: str = f"tile_{local_x}_{local_y}"
+                    local_x: int = int(match.group(1))
+                    local_y: int = int(match.group(2))
 
-                # Bind DOWN
-                target_tile_id: str = f"tile_{local_x}_{local_y + 1}"
-                if target_tile_id in wrapped_island.data.tile_ids:
-                    # load tile
-                    local_tile: WrappedData[Tile] = await self.tiledao.get(
-                        world_id=world_id, island_id=wrapped_island.data.id, tile_id=tile_id
-                    )
+                    # msg: str = f"binding ({local_tile_id}) physically to peers"
+                    # logger.debug(msg)
 
-                    # update tile
-                    local_tile.data.next[TileConnectionType.DOWN] = target_tile_id
-                    msg: str = (
-                        f"tile {tile_id} -> {TileConnectionType.DOWN} -> {local_tile.data.next[TileConnectionType.DOWN]}"
-                    )
-                    logger.debug(msg)
+                    # Bind LEFT
+                    target_tile_id: str = f"tile_{local_x - 1}_{local_y}"
+                    if target_tile_id in wrapped_island.data.ids:
+                        # load tile
+                        local_tile: WrappedData[Tile] = await self.tiledao.get(
+                            world_id=world_id, island_id=wrapped_island.data.id, tile_id=local_tile_id
+                        )
 
-                    # store tile
-                    await self.tiledao.put_safe(
-                        world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile
-                    )
+                        # update tile
+                        local_tile.data.next[TileConnectionType.LEFT] = target_tile_id
+                        msg: str = (
+                            f"tile {local_tile_id} -> {TileConnectionType.LEFT} -> {local_tile.data.next[TileConnectionType.LEFT]}"
+                        )
+                        logger.debug(msg)
 
-    async def create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> IslandLite:
+                        # store tile
+                        await self.tiledao.put_safe(
+                            world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile
+                        )
+
+                    # Bind RIGHT
+                    target_tile_id: str = f"tile_{local_x + 1}_{local_y}"
+                    if target_tile_id in wrapped_island.data.ids:
+                        # load tile
+                        local_tile: WrappedData[Tile] = await self.tiledao.get(
+                            world_id=world_id, island_id=wrapped_island.data.id, tile_id=local_tile_id
+                        )
+
+                        # update tile
+                        local_tile.data.next[TileConnectionType.RIGHT] = target_tile_id
+
+                        msg: str = (
+                            f"tile {local_tile_id} -> {TileConnectionType.RIGHT} -> {local_tile.data.next[TileConnectionType.RIGHT]}"
+                        )
+                        logger.debug(msg)
+
+                        # store tile
+                        await self.tiledao.put_safe(
+                            world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile
+                        )
+
+                    # Bind UP
+                    target_tile_id: str = f"tile_{local_x}_{local_y - 1}"
+                    if target_tile_id in wrapped_island.data.ids:
+                        # load tile
+                        local_tile: WrappedData[Tile] = await self.tiledao.get(
+                            world_id=world_id, island_id=wrapped_island.data.id, tile_id=local_tile_id
+                        )
+
+                        # update tile
+                        local_tile.data.next[TileConnectionType.UP] = target_tile_id
+                        msg: str = (
+                            f"tile {local_tile_id} -> {TileConnectionType.UP} -> {local_tile.data.next[TileConnectionType.UP]}"
+                        )
+                        logger.debug(msg)
+
+                        # store tile
+                        await self.tiledao.put_safe(
+                            world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile
+                        )
+
+                    # Bind DOWN
+                    target_tile_id: str = f"tile_{local_x}_{local_y + 1}"
+                    if target_tile_id in wrapped_island.data.ids:
+                        # load tile
+                        local_tile: WrappedData[Tile] = await self.tiledao.get(
+                            world_id=world_id, island_id=wrapped_island.data.id, tile_id=local_tile_id
+                        )
+
+                        # update tile
+                        local_tile.data.next[TileConnectionType.DOWN] = target_tile_id
+                        msg: str = (
+                            f"tile {local_tile_id} -> {TileConnectionType.DOWN} -> {local_tile.data.next[TileConnectionType.DOWN]}"
+                        )
+                        logger.debug(msg)
+
+                        # store tile
+                        await self.tiledao.put_safe(
+                            world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile
+                        )
+
+                    queue.task_done()
+
+            queue = asyncio.Queue()
+            await asyncio.gather(FlatIslandFactory.producer(window, queue), consumer(queue))
+
+        await step_two()
+
+    async def create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> Island:
         if name is None:
             name = "roshar"
 
         # 1. blank, named island
-        island: IslandLite = IslandLite(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
+        island: Island = Island(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
         await self.islanddao.post(world_id=world_id, island=island)
-        # island: Island = Island(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
 
         # Define the maximum size
         max_x, max_y = dimensions
 
         # Generate an empty 2D block of ocean
         window: Window = Window(min=Coordinate(x=1, y=1), max=Coordinate(x=max_x, y=max_y))
-
         await self.generate_ocean_block(world_id=world_id, island_id=island.id, window=window)
 
         # Apply our terrain generation
         window = Window(min=Coordinate(x=2, y=2), max=Coordinate(x=max_x - 1, y=max_y - 1))
-
         await self.tiles_process(world_id=world_id, island=island, window=window)
 
         # get final state and return

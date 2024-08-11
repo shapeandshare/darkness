@@ -6,7 +6,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
-from ...sdk.contracts.dtos.tile import Tile
+from ...sdk.contracts.dtos.tiles.tile import Tile
 from ...sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from ...sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from ...sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
@@ -33,7 +33,8 @@ class TileDao(BaseModel):
         tile_metadata_path: Path = self._tile_path(world_id=world_id, island_id=island_id, tile_id=tile_id)
         if not tile_metadata_path.exists():
             raise DaoDoesNotExistError("tile metadata does not exist")
-        with open(file=tile_metadata_path.resolve().as_posix(), mode="r", encoding="utf-8") as file:
+        with open(file=tile_metadata_path, mode="r", encoding="utf-8") as file:
+            os.fsync(file)
             json_data: str = file.read()
         return WrappedData[Tile].model_validate_json(json_data)
 
@@ -42,16 +43,19 @@ class TileDao(BaseModel):
         tile_metadata_path: Path = self._tile_path(world_id=world_id, island_id=island_id, tile_id=tile.id)
         if tile_metadata_path.exists():
             raise DaoConflictError("tile metadata already exists")
+        if not tile_metadata_path.parents[1].exists():
+            raise DaoDoesNotExistError("tile container (island) does not exist")
         if not tile_metadata_path.parent.exists():
             logger.debug("[TileDAO] tile metadata folder creating ..")
             tile_metadata_path.parent.mkdir(parents=True, exist_ok=True)
         nonce: str = str(uuid.uuid4())
         wrapped_data: WrappedData[Tile] = WrappedData[Tile](data=tile, nonce=nonce)
-        wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
-        with open(file=tile_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
+        wrapped_data_raw: str = wrapped_data.model_dump_json(exclude={"data": {"contents"}}, exclude_none=True)
+        with open(file=tile_metadata_path, mode="w", encoding="utf-8") as file:
             file.write(wrapped_data_raw)
+            os.fsync(file)
 
-        # now validate we stored
+            # now validate we stored
         stored_tile: WrappedData[Tile] = await self.get(world_id=world_id, island_id=island_id, tile_id=tile.id)
         if stored_tile.nonce != nonce:
             msg: str = f"storage inconsistency detected while storing tile {tile.id} - nonce mismatch!"
@@ -60,13 +64,17 @@ class TileDao(BaseModel):
     async def put_safe(self, world_id: str, island_id: str, wrapped_tile: WrappedData[Tile]) -> None:
         logger.debug("[TileDAO] putting tile data to storage")
         tile_metadata_path: Path = self._tile_path(world_id=world_id, island_id=island_id, tile_id=wrapped_tile.data.id)
+        if not tile_metadata_path.parents[1].exists():
+            raise DaoDoesNotExistError("tile container (island) does not exist")
         if not tile_metadata_path.parent.exists():
             logger.debug("[TileDAO] tile metadata folder creating ..")
             tile_metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
         # see if we have a pre-existing nonce to verify against
         try:
-            previous_state = await self.get(world_id=world_id, island_id=island_id, tile_id=wrapped_tile.data.id)
+            previous_state: WrappedData[Tile] = await self.get(
+                world_id=world_id, island_id=island_id, tile_id=wrapped_tile.data.id
+            )
             if previous_state.nonce != wrapped_tile.nonce:
                 msg: str = f"storage inconsistency detected while putting tile {wrapped_tile.data.id} - nonce mismatch!"
                 raise DaoInconsistencyError(msg)
@@ -78,9 +86,10 @@ class TileDao(BaseModel):
 
         nonce: str = str(uuid.uuid4())
         wrapped_data: WrappedData[Tile] = WrappedData[Tile](data=wrapped_tile.data, nonce=nonce)
-        wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
-        with open(file=tile_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
+        wrapped_data_raw: str = wrapped_data.model_dump_json(exclude={"data": {"contents"}}, exclude_none=True)
+        with open(file=tile_metadata_path, mode="w", encoding="utf-8") as file:
             file.write(wrapped_data_raw)
+            os.fsync(file)
 
         # now validate we stored
         stored_tile: WrappedData[Tile] = await self.get(
@@ -97,4 +106,4 @@ class TileDao(BaseModel):
         tile_metadata_path: Path = self._tile_path(world_id=world_id, island_id=island_id, tile_id=tile_id)
         if not tile_metadata_path.exists():
             raise DaoDoesNotExistError("tile metadata does not exist")
-        os.remove(path=tile_metadata_path.resolve().as_posix())
+        os.remove(path=tile_metadata_path)
