@@ -7,6 +7,7 @@ from ....sdk.contracts.dtos.island import Island
 from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from ....sdk.contracts.dtos.tiles.tile import Tile
 from ....sdk.contracts.dtos.window import Window
+from ....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
 from ....sdk.contracts.types.connection import TileConnectionType
 from ....sdk.contracts.types.tile import TileType
 from ...dao.tile import TileDao
@@ -183,6 +184,9 @@ class FlatIslandFactory(AbstractIslandFactory):
                 # put
                 await self.tiledao.put_safe(world_id=world_id, island_id=island_id, wrapped_tile=target_tile)
 
+                # get updated local tile
+                target_tile = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
+
         # grass+water (no dirt/ocean) -> forest
         if target_tile.data.tile_type == TileType.GRASS:
             neighbors: list[TileType] = await self.adjecent_to(
@@ -203,7 +207,11 @@ class FlatIslandFactory(AbstractIslandFactory):
                 target_tile.data.tile_type = TileType.FOREST
 
                 # put
-                await self.tiledao.put_safe(world_id=world_id, island_id=island_id, wrapped_tile=target_tile)
+                try:
+                    await self.tiledao.put_safe(world_id=world_id, island_id=island_id, wrapped_tile=target_tile)
+                except DaoInconsistencyError as error:
+                    logger.error(target_tile.model_dump_json())
+                    raise error
 
         # # grass+(dirt)
         # if island.tiles[tile_id].tile_type == TileType.GRASS:

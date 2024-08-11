@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 from fastapi import APIRouter, HTTPException
 
@@ -45,12 +46,20 @@ async def world_get(world_id: str, full: bool = False) -> Response[WorldGetRespo
             world_lite: World = await ContextManager.state_service.world_lite_get(request=request)
             response = Response[WorldGetResponse](data=WorldGetResponse(world=world_lite))
     except DaoConflictError as error:
+        traceback.print_exc()
+        logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
+        traceback.print_exc()
+        logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
+        traceback.print_exc()
+        logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
+        traceback.print_exc()
+        logger.error(str(error))
         # catch everything else
         raise HTTPException(status_code=500, detail=f"Uncaught exception: {str(error)}") from error
 
@@ -64,12 +73,20 @@ async def world_delete(world_id: str) -> None:
     try:
         await ContextManager.state_service.world_delete(request=request)
     except DaoConflictError as error:
+        traceback.print_exc()
+        logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
+        traceback.print_exc()
+        logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
+        traceback.print_exc()
+        logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
+        traceback.print_exc()
+        logger.error(str(error))
         # catch everything else
         raise HTTPException(status_code=500, detail=f"Uncaught exception: {str(error)}") from error
 
@@ -79,12 +96,20 @@ async def world_create(request: WorldCreateRequest) -> Response[WorldCreateRespo
     try:
         world_id: str = await ContextManager.state_service.world_create(request=request)
     except DaoConflictError as error:
+        traceback.print_exc()
+        logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
+        traceback.print_exc()
+        logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
+        traceback.print_exc()
+        logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
+        traceback.print_exc()
+        logger.error(str(error))
         # catch everything else
         raise HTTPException(status_code=500, detail=f"Uncaught exception: {str(error)}") from error
 
@@ -104,12 +129,20 @@ async def island_create(world_id: str, island_create_request: IslandCreateReques
     try:
         island_id: str = await ContextManager.state_service.island_create(request=island_create_request)
     except DaoConflictError as error:
+        traceback.print_exc()
+        logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
+        traceback.print_exc()
+        logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
+        traceback.print_exc()
+        logger.error(error)
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
+        traceback.print_exc()
+        logger.error(str(error))
         # catch everything else
         raise HTTPException(status_code=500, detail=f"Uncaught exception: {str(error)}") from error
 
@@ -128,13 +161,21 @@ async def island_get(world_id: str, island_id: str, full: bool = True) -> Respon
             island_lite: Island = await ContextManager.state_service.island_lite_get(request=request)
             response = Response[IslandGetResponse](data=IslandGetResponse(island=island_lite))
     except DaoConflictError as error:
+        traceback.print_exc()
+        logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
+        traceback.print_exc()
+        logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
+        traceback.print_exc()
+        logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
-        # catch everything else
+        traceback.print_exc()
+        logger.error(str(error))
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Uncaught exception: {str(error)}") from error
 
     return response
@@ -146,11 +187,19 @@ async def island_delete(world_id: str, island_id: str) -> None:
     try:
         await ContextManager.state_service.island_delete(request=request)
     except DaoConflictError as error:
+        traceback.print_exc()
+        logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
+        traceback.print_exc()
+        logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
+        traceback.print_exc()
+        logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
+        traceback.print_exc()
+        logger.error(str(error))
         # catch everything else
         raise HTTPException(status_code=500, detail=f"Uncaught exception: {str(error)}") from error

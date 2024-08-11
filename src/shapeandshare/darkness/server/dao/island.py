@@ -1,4 +1,5 @@
 import logging
+import os
 import shutil
 import uuid
 from pathlib import Path
@@ -34,6 +35,7 @@ class IslandDao(BaseModel):
         if not island_metadata_path.exists():
             raise DaoDoesNotExistError("island metadata does not exist")
         with open(file=island_metadata_path.resolve().as_posix(), mode="r", encoding="utf-8") as file:
+            os.fsync(file)
             json_data: str = file.read()
         return WrappedData[Island].model_validate_json(json_data)
 
@@ -51,6 +53,7 @@ class IslandDao(BaseModel):
         wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
         with open(file=island_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
             file.write(wrapped_data_raw)
+            os.fsync(file)
 
         # now validate we stored
         stored_island: WrappedData[Island] = await self.get(world_id=world_id, island_id=island.id)
@@ -84,6 +87,7 @@ class IslandDao(BaseModel):
         wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
         with open(file=island_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
             file.write(wrapped_data_raw)
+            os.fsync(file)
 
         # now validate we stored
         stored_island: WrappedData[Island] = await self.get(world_id=world_id, island_id=wrapped_data.data.id)

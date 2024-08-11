@@ -1,4 +1,5 @@
 import logging
+import os
 import shutil
 import uuid
 from pathlib import Path
@@ -30,6 +31,7 @@ class WorldDao(BaseModel):
         if not world_metadata_path.exists():
             raise DaoDoesNotExistError("world metadata does not exist")
         with open(file=world_metadata_path.resolve().as_posix(), mode="r", encoding="utf-8") as file:
+            os.fsync(file)
             json_data: str = file.read()
         return WrappedData[World].model_validate_json(json_data)
 
@@ -47,6 +49,7 @@ class WorldDao(BaseModel):
         wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
         with open(file=world_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
             file.write(wrapped_data_raw)
+            os.fsync(file)
 
         # now validate we stored
         stored_world: WrappedData[World] = await self.get(world_id=world.id)
@@ -80,6 +83,7 @@ class WorldDao(BaseModel):
         wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
         with open(file=world_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
             file.write(wrapped_data_raw)
+            os.fsync(file)
 
         # now validate we stored
         stored_world: WrappedData[World] = await self.get(world_id=world_id)

@@ -1,6 +1,7 @@
 import logging
 import os
 import uuid
+from copy import deepcopy
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -34,41 +35,51 @@ class TileDao(BaseModel):
         if not tile_metadata_path.exists():
             raise DaoDoesNotExistError("tile metadata does not exist")
         with open(file=tile_metadata_path.resolve().as_posix(), mode="r", encoding="utf-8") as file:
+            os.fsync(file)
             json_data: str = file.read()
         return WrappedData[Tile].model_validate_json(json_data)
 
     async def post(self, world_id: str, island_id: str, tile: Tile) -> None:
+        local_tile = deepcopy(tile)
         logger.debug("[TileDAO] posting tile data to storage")
-        tile_metadata_path: Path = self._tile_path(world_id=world_id, island_id=island_id, tile_id=tile.id)
+        tile_metadata_path: Path = self._tile_path(world_id=world_id, island_id=island_id, tile_id=local_tile.id)
         if tile_metadata_path.exists():
             raise DaoConflictError("tile metadata already exists")
         if not tile_metadata_path.parent.exists():
             logger.debug("[TileDAO] tile metadata folder creating ..")
             tile_metadata_path.parent.mkdir(parents=True, exist_ok=True)
         nonce: str = str(uuid.uuid4())
-        wrapped_data: WrappedData[Tile] = WrappedData[Tile](data=tile, nonce=nonce)
+        wrapped_data: WrappedData[Tile] = WrappedData[Tile](data=local_tile, nonce=nonce)
         wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
         with open(file=tile_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
             file.write(wrapped_data_raw)
+            os.fsync(file)
 
-        # now validate we stored
-        stored_tile: WrappedData[Tile] = await self.get(world_id=world_id, island_id=island_id, tile_id=tile.id)
+            # now validate we stored
+        stored_tile: WrappedData[Tile] = await self.get(world_id=world_id, island_id=island_id, tile_id=local_tile.id)
         if stored_tile.nonce != nonce:
-            msg: str = f"storage inconsistency detected while storing tile {tile.id} - nonce mismatch!"
+            msg: str = f"storage inconsistency detected while storing tile {local_tile.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
 
     async def put_safe(self, world_id: str, island_id: str, wrapped_tile: WrappedData[Tile]) -> None:
+        local_wrapped_tile = deepcopy(wrapped_tile)
         logger.debug("[TileDAO] putting tile data to storage")
-        tile_metadata_path: Path = self._tile_path(world_id=world_id, island_id=island_id, tile_id=wrapped_tile.data.id)
+        tile_metadata_path: Path = self._tile_path(
+            world_id=world_id, island_id=island_id, tile_id=local_wrapped_tile.data.id
+        )
         if not tile_metadata_path.parent.exists():
             logger.debug("[TileDAO] tile metadata folder creating ..")
             tile_metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
         # see if we have a pre-existing nonce to verify against
         try:
-            previous_state = await self.get(world_id=world_id, island_id=island_id, tile_id=wrapped_tile.data.id)
-            if previous_state.nonce != wrapped_tile.nonce:
-                msg: str = f"storage inconsistency detected while putting tile {wrapped_tile.data.id} - nonce mismatch!"
+            previous_state: WrappedData[Tile] = await self.get(
+                world_id=world_id, island_id=island_id, tile_id=local_wrapped_tile.data.id
+            )
+            if previous_state.nonce != local_wrapped_tile.nonce:
+                msg: str = (
+                    f"storage inconsistency detected while putting tile {local_wrapped_tile.data.id} - nonce mismatch!"
+                )
                 raise DaoInconsistencyError(msg)
         except DaoDoesNotExistError:
             # then no nonce to verify against.
@@ -77,10 +88,11 @@ class TileDao(BaseModel):
         # if we made it this far we are safe to update
 
         nonce: str = str(uuid.uuid4())
-        wrapped_data: WrappedData[Tile] = WrappedData[Tile](data=wrapped_tile.data, nonce=nonce)
+        wrapped_data: WrappedData[Tile] = WrappedData[Tile](data=local_wrapped_tile.data, nonce=nonce)
         wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
         with open(file=tile_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
             file.write(wrapped_data_raw)
+            os.fsync(file)
 
         # now validate we stored
         stored_tile: WrappedData[Tile] = await self.get(
