@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import uuid
@@ -45,12 +46,14 @@ class TileDao(BaseModel):
         tile_metadata_path: Path = self._tile_path(world_id=world_id, island_id=island_id, tile_id=local_tile.id)
         if tile_metadata_path.exists():
             raise DaoConflictError("tile metadata already exists")
+        if not tile_metadata_path.parents[1].exists():
+            raise DaoDoesNotExistError("tile container (island) does not exist")
         if not tile_metadata_path.parent.exists():
             logger.debug("[TileDAO] tile metadata folder creating ..")
             tile_metadata_path.parent.mkdir(parents=True, exist_ok=True)
         nonce: str = str(uuid.uuid4())
         wrapped_data: WrappedData[Tile] = WrappedData[Tile](data=local_tile, nonce=nonce)
-        wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
+        wrapped_data_raw: str = wrapped_data.model_dump_json(exclude={"data": {"contents"}}, exclude_none=True)
         with open(file=tile_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
             file.write(wrapped_data_raw)
             os.fsync(file)
@@ -67,6 +70,8 @@ class TileDao(BaseModel):
         tile_metadata_path: Path = self._tile_path(
             world_id=world_id, island_id=island_id, tile_id=local_wrapped_tile.data.id
         )
+        if not tile_metadata_path.parents[1].exists():
+            raise DaoDoesNotExistError("tile container (island) does not exist")
         if not tile_metadata_path.parent.exists():
             logger.debug("[TileDAO] tile metadata folder creating ..")
             tile_metadata_path.parent.mkdir(parents=True, exist_ok=True)
@@ -89,7 +94,7 @@ class TileDao(BaseModel):
 
         nonce: str = str(uuid.uuid4())
         wrapped_data: WrappedData[Tile] = WrappedData[Tile](data=local_wrapped_tile.data, nonce=nonce)
-        wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
+        wrapped_data_raw: str = wrapped_data.model_dump_json(exclude={"data": {"contents"}}, exclude_none=True)
         with open(file=tile_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
             file.write(wrapped_data_raw)
             os.fsync(file)

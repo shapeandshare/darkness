@@ -2,6 +2,7 @@ import logging
 import os
 import shutil
 import uuid
+from copy import deepcopy
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -40,40 +41,48 @@ class IslandDao(BaseModel):
         return WrappedData[Island].model_validate_json(json_data)
 
     async def post(self, world_id: str, island: Island) -> None:
+        local_island = deepcopy(island)
         logger.debug("[IslandDAO] posting island metadata to storage")
-        island_metadata_path: Path = self._island_metadata_path(world_id=world_id, island_id=island.id)
+        island_metadata_path: Path = self._island_metadata_path(world_id=world_id, island_id=local_island.id)
         if island_metadata_path.exists():
             raise DaoConflictError("island metadata already exists")
+        if not island_metadata_path.parents[2].exists():
+            raise DaoDoesNotExistError("island container (world) does not exist")
         if not island_metadata_path.parent.exists():
             logger.debug("[IslandDAO] island metadata folder creating ..")
             island_metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
         nonce: str = str(uuid.uuid4())
-        wrapped_data: WrappedData[Island] = WrappedData[Island](data=island, nonce=nonce)
-        wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
+        wrapped_data: WrappedData[Island] = WrappedData[Island](data=local_island, nonce=nonce)
+        wrapped_data_raw: str = wrapped_data.model_dump_json(exclude={"data": {"next", "contents"}})
         with open(file=island_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
             file.write(wrapped_data_raw)
             os.fsync(file)
 
         # now validate we stored
-        stored_island: WrappedData[Island] = await self.get(world_id=world_id, island_id=island.id)
+        stored_island: WrappedData[Island] = await self.get(world_id=world_id, island_id=local_island.id)
         if stored_island.nonce != nonce:
-            msg: str = f"storage inconsistency detected while storing island {island.id} - nonce mismatch!"
+            msg: str = f"storage inconsistency detected while storing island {local_island.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
 
     async def put_safe(self, world_id: str, wrapped_island: WrappedData[Island]) -> None:
+        local_wrapped_island = deepcopy(wrapped_island)
         logger.debug("[IslandDAO] putting island data to storage")
-        island_metadata_path: Path = self._island_metadata_path(world_id=world_id, island_id=wrapped_island.data.id)
+        island_metadata_path: Path = self._island_metadata_path(
+            world_id=world_id, island_id=local_wrapped_island.data.id
+        )
+        if not island_metadata_path.parents[2].exists():
+            raise DaoDoesNotExistError("island container (world) does not exist")
         if not island_metadata_path.parent.exists():
             logger.debug("[IslandDAO] island metadata folder creating ..")
             island_metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
         # see if we have a pre-existing nonce to verify against
         try:
-            previous_state = await self.get(world_id=world_id, island_id=wrapped_island.data.id)
-            if previous_state.nonce != wrapped_island.nonce:
+            previous_state = await self.get(world_id=world_id, island_id=local_wrapped_island.data.id)
+            if previous_state.nonce != local_wrapped_island.nonce:
                 msg: str = (
-                    f"storage inconsistency detected while putting island {wrapped_island.data.id} - nonce mismatch!"
+                    f"storage inconsistency detected while putting island {local_wrapped_island.data.id} - nonce mismatch!"
                 )
                 raise DaoInconsistencyError(msg)
         except DaoDoesNotExistError:
@@ -83,8 +92,8 @@ class IslandDao(BaseModel):
         # if we made it this far we are safe to update
 
         nonce: str = str(uuid.uuid4())
-        wrapped_data: WrappedData[Island] = WrappedData[Island](data=wrapped_island.data, nonce=nonce)
-        wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
+        wrapped_data: WrappedData[Island] = WrappedData[Island](data=local_wrapped_island.data, nonce=nonce)
+        wrapped_data_raw: str = wrapped_data.model_dump_json(exclude={"data": {"next", "contents"}})
         with open(file=island_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
             file.write(wrapped_data_raw)
             os.fsync(file)

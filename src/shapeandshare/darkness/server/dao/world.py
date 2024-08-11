@@ -2,6 +2,7 @@ import logging
 import os
 import shutil
 import uuid
+from copy import deepcopy
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -36,8 +37,9 @@ class WorldDao(BaseModel):
         return WrappedData[World].model_validate_json(json_data)
 
     async def post(self, world: World) -> None:
+        local_world = deepcopy(world)
         logger.debug("[WorldDAO] posting world metadata to storage")
-        world_metadata_path: Path = self._world_metadata_path(world_id=world.id)
+        world_metadata_path: Path = self._world_metadata_path(world_id=local_world.id)
         if world_metadata_path.exists():
             raise DaoConflictError("world metadata already exists")
         if not world_metadata_path.parent.exists():
@@ -45,20 +47,21 @@ class WorldDao(BaseModel):
             world_metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
         nonce: str = str(uuid.uuid4())
-        wrapped_data: WrappedData[World] = WrappedData[World](data=world, nonce=nonce)
-        wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
+        wrapped_data: WrappedData[World] = WrappedData[World](data=local_world, nonce=nonce)
+        wrapped_data_raw: str = wrapped_data.model_dump_json(exclude={"data": {"next", "contents"}})
         with open(file=world_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
             file.write(wrapped_data_raw)
             os.fsync(file)
 
         # now validate we stored
-        stored_world: WrappedData[World] = await self.get(world_id=world.id)
+        stored_world: WrappedData[World] = await self.get(world_id=local_world.id)
         if stored_world.nonce != nonce:
-            msg: str = f"storage inconsistency detected while storing world {world.id} - nonce mismatch!"
+            msg: str = f"storage inconsistency detected while storing world {local_world.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
 
     async def put_safe(self, wrapped_world: WrappedData[World]) -> None:
-        world_id: str = wrapped_world.data.id
+        local_wrapped_world = deepcopy(wrapped_world)
+        world_id: str = local_wrapped_world.data.id
 
         logger.debug("[WorldDAO] putting world data to storage")
         world_metadata_path: Path = self._world_metadata_path(world_id=world_id)
@@ -69,7 +72,7 @@ class WorldDao(BaseModel):
         # see if we have a pre-existing nonce to verify against
         try:
             previous_state: WrappedData[World] = await self.get(world_id=world_id)
-            if previous_state.nonce != wrapped_world.nonce:
+            if previous_state.nonce != local_wrapped_world.nonce:
                 msg: str = f"storage inconsistency detected while putting world {world_id} - nonce mismatch!"
                 raise DaoInconsistencyError(msg)
         except DaoDoesNotExistError:
@@ -79,8 +82,8 @@ class WorldDao(BaseModel):
         # if we made it this far we are safe to update
 
         nonce: str = str(uuid.uuid4())
-        wrapped_data: WrappedData[World] = WrappedData[World](data=wrapped_world.data, nonce=nonce)
-        wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
+        wrapped_data: WrappedData[World] = WrappedData[World](data=local_wrapped_world.data, nonce=nonce)
+        wrapped_data_raw: str = wrapped_data.model_dump_json(exclude={"data": {"next", "contents"}})
         with open(file=world_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
             file.write(wrapped_data_raw)
             os.fsync(file)

@@ -1,8 +1,9 @@
-from pydantic import BaseModel
+from ..types.tile import TileType
+from .island import Island
+from .tiles.abtract import AbstractTile
 
 
-class World(BaseModel):
-    id: str
-    name: str
-    rbac: dict = {}
-    ids: set[str] = set()
+class World(AbstractTile[str, Island]):
+    """Basic World"""
+
+    tile_type: TileType = TileType.WORLD
