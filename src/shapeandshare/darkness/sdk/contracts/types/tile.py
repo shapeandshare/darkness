@@ -2,6 +2,9 @@ from enum import Enum
 
 
 class TileType(str, Enum):
+    WORLD = "world"
+    ISLAND = "island"
+
     UNKNOWN = "unknown"
 
     OCEAN = "ocean"

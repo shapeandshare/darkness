@@ -2,7 +2,7 @@ import uuid
 
 from pydantic import BaseModel
 
-from ....sdk.contracts.dtos.world_lite import WorldLite
+from ....sdk.contracts.dtos.world import World
 from ...dao.world import WorldDao
 
 
@@ -12,6 +12,6 @@ class WorldFactory(BaseModel):
     async def create(self, name: str | None = None) -> str:
         if name is None:
             name = "darkness"
-        world: WorldLite = WorldLite(id=str(uuid.uuid4()), name=name)
+        world: World = World(id=str(uuid.uuid4()), name=name)
         await self.worlddao.post(world=world)
         return world.id

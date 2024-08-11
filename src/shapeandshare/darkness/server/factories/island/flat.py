@@ -3,9 +3,9 @@ import secrets
 import uuid
 
 from ....sdk.contracts.dtos.coordinate import Coordinate
-from ....sdk.contracts.dtos.island_lite import IslandLite
+from ....sdk.contracts.dtos.island import Island
 from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
-from ....sdk.contracts.dtos.tile import Tile
+from ....sdk.contracts.dtos.tiles.tile import Tile
 from ....sdk.contracts.dtos.window import Window
 from ....sdk.contracts.types.connection import TileConnectionType
 from ....sdk.contracts.types.tile import TileType
@@ -18,7 +18,7 @@ logger = logging.getLogger()
 class FlatIslandFactory(AbstractIslandFactory):
     tiledao: TileDao
 
-    async def tiles_process(self, world_id: str, island: IslandLite, window: Window) -> None:
+    async def tiles_process(self, world_id: str, island: Island, window: Window) -> None:
         range_x_min: int = window.min.x - 1
         range_x_max: int = window.max.x
         range_y_min: int = window.min.x - 1
@@ -262,8 +262,6 @@ class FlatIslandFactory(AbstractIslandFactory):
         #
         #     # root_tile: Tile = (await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=root_tile_id)).data
 
-
-
     async def erode_tile(self, world_id: str, island_id: str, tile_id: str) -> None:
         msg: str = f"eroding tile: {tile_id}"
         logger.debug(msg)
@@ -312,18 +310,16 @@ class FlatIslandFactory(AbstractIslandFactory):
                 # Update the island --
 
                 # get
-                wrapped_island: WrappedData[IslandLite] = await self.islanddao.get(
-                    world_id=world_id, island_id=island_id
-                )
+                wrapped_island: WrappedData[Island] = await self.islanddao.get(world_id=world_id, island_id=island_id)
 
                 # Patch - Add tile_id to in-memory representation before storing
-                wrapped_island.data.tile_ids.add(tile_id)
+                wrapped_island.data.ids.add(tile_id)
 
                 # put -- store island update (tile addition)
                 await self.islanddao.put_safe(world_id=world_id, wrapped_island=wrapped_island)
 
         # 2. connect the tiles (nXm)
-        wrapped_island: WrappedData[IslandLite] = await self.islanddao.get(world_id=world_id, island_id=island_id)
+        wrapped_island: WrappedData[Island] = await self.islanddao.get(world_id=world_id, island_id=island_id)
         for x in range(range_x_min, range_x_max):
             for y in range(range_y_min, range_y_max):
                 local_x = x + 1
@@ -334,7 +330,7 @@ class FlatIslandFactory(AbstractIslandFactory):
 
                 # Bind LEFT
                 target_tile_id: str = f"tile_{local_x - 1}_{local_y}"
-                if target_tile_id in wrapped_island.data.tile_ids:
+                if target_tile_id in wrapped_island.data.ids:
                     # load tile
                     local_tile: WrappedData[Tile] = await self.tiledao.get(
                         world_id=world_id, island_id=wrapped_island.data.id, tile_id=tile_id
@@ -354,7 +350,7 @@ class FlatIslandFactory(AbstractIslandFactory):
 
                 # Bind RIGHT
                 target_tile_id: str = f"tile_{local_x + 1}_{local_y}"
-                if target_tile_id in wrapped_island.data.tile_ids:
+                if target_tile_id in wrapped_island.data.ids:
                     # load tile
                     local_tile: WrappedData[Tile] = await self.tiledao.get(
                         world_id=world_id, island_id=wrapped_island.data.id, tile_id=tile_id
@@ -375,7 +371,7 @@ class FlatIslandFactory(AbstractIslandFactory):
 
                 # Bind UP
                 target_tile_id: str = f"tile_{local_x}_{local_y - 1}"
-                if target_tile_id in wrapped_island.data.tile_ids:
+                if target_tile_id in wrapped_island.data.ids:
                     # load tile
                     local_tile: WrappedData[Tile] = await self.tiledao.get(
                         world_id=world_id, island_id=wrapped_island.data.id, tile_id=tile_id
@@ -395,7 +391,7 @@ class FlatIslandFactory(AbstractIslandFactory):
 
                 # Bind DOWN
                 target_tile_id: str = f"tile_{local_x}_{local_y + 1}"
-                if target_tile_id in wrapped_island.data.tile_ids:
+                if target_tile_id in wrapped_island.data.ids:
                     # load tile
                     local_tile: WrappedData[Tile] = await self.tiledao.get(
                         world_id=world_id, island_id=wrapped_island.data.id, tile_id=tile_id
@@ -413,12 +409,12 @@ class FlatIslandFactory(AbstractIslandFactory):
                         world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile
                     )
 
-    async def create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> IslandLite:
+    async def create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> Island:
         if name is None:
             name = "roshar"
 
         # 1. blank, named island
-        island: IslandLite = IslandLite(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
+        island: Island = Island(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
         await self.islanddao.post(world_id=world_id, island=island)
         # island: Island = Island(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
 

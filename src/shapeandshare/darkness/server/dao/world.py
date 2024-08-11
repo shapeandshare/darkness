@@ -6,7 +6,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
-from ...sdk.contracts.dtos.world_lite import WorldLite
+from ...sdk.contracts.dtos.world import World
 from ...sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from ...sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from ...sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
@@ -24,16 +24,16 @@ class WorldDao(BaseModel):
 
     ### Internal ##################################
 
-    async def get(self, world_id: str) -> WrappedData[WorldLite]:
+    async def get(self, world_id: str) -> WrappedData[World]:
         logger.debug("[WorldDAO] getting world metadata from storage")
         world_metadata_path: Path = self._world_metadata_path(world_id=world_id)
         if not world_metadata_path.exists():
             raise DaoDoesNotExistError("world metadata does not exist")
         with open(file=world_metadata_path.resolve().as_posix(), mode="r", encoding="utf-8") as file:
             json_data: str = file.read()
-        return WrappedData[WorldLite].model_validate_json(json_data)
+        return WrappedData[World].model_validate_json(json_data)
 
-    async def post(self, world: WorldLite) -> None:
+    async def post(self, world: World) -> None:
         logger.debug("[WorldDAO] posting world metadata to storage")
         world_metadata_path: Path = self._world_metadata_path(world_id=world.id)
         if world_metadata_path.exists():
@@ -43,18 +43,18 @@ class WorldDao(BaseModel):
             world_metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
         nonce: str = str(uuid.uuid4())
-        wrapped_data: WrappedData[WorldLite] = WrappedData[WorldLite](data=world, nonce=nonce)
+        wrapped_data: WrappedData[World] = WrappedData[World](data=world, nonce=nonce)
         wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
         with open(file=world_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
             file.write(wrapped_data_raw)
 
         # now validate we stored
-        stored_world: WrappedData[WorldLite] = await self.get(world_id=world.id)
+        stored_world: WrappedData[World] = await self.get(world_id=world.id)
         if stored_world.nonce != nonce:
             msg: str = f"storage inconsistency detected while storing world {world.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
 
-    async def put_safe(self, wrapped_world: WrappedData[WorldLite]) -> None:
+    async def put_safe(self, wrapped_world: WrappedData[World]) -> None:
         world_id: str = wrapped_world.data.id
 
         logger.debug("[WorldDAO] putting world data to storage")
@@ -65,7 +65,7 @@ class WorldDao(BaseModel):
 
         # see if we have a pre-existing nonce to verify against
         try:
-            previous_state: WrappedData[WorldLite] = await self.get(world_id=world_id)
+            previous_state: WrappedData[World] = await self.get(world_id=world_id)
             if previous_state.nonce != wrapped_world.nonce:
                 msg: str = f"storage inconsistency detected while putting world {world_id} - nonce mismatch!"
                 raise DaoInconsistencyError(msg)
@@ -76,13 +76,13 @@ class WorldDao(BaseModel):
         # if we made it this far we are safe to update
 
         nonce: str = str(uuid.uuid4())
-        wrapped_data: WrappedData[WorldLite] = WrappedData[WorldLite](data=wrapped_world.data, nonce=nonce)
+        wrapped_data: WrappedData[World] = WrappedData[World](data=wrapped_world.data, nonce=nonce)
         wrapped_data_raw: str = wrapped_data.model_dump_json(indent=4)
         with open(file=world_metadata_path.resolve().as_posix(), mode="w", encoding="utf-8") as file:
             file.write(wrapped_data_raw)
 
         # now validate we stored
-        stored_world: WrappedData[WorldLite] = await self.get(world_id=world_id)
+        stored_world: WrappedData[World] = await self.get(world_id=world_id)
         if stored_world.nonce != nonce:
             msg: str = (
                 f"storage inconsistency detected while verifying put world {wrapped_data.data.id} - nonce mismatch!"

@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 
 from ....sdk.contracts.dtos.island import Island
-from ....sdk.contracts.dtos.island_lite import IslandLite
+from ....sdk.contracts.dtos.island_full import IslandFull
 from ....sdk.contracts.dtos.sdk.requests.island.create import IslandCreateRequest
 from ....sdk.contracts.dtos.sdk.requests.island.delete import IslandDeleteRequest
 from ....sdk.contracts.dtos.sdk.requests.island.get import IslandGetRequest
@@ -16,7 +16,7 @@ from ....sdk.contracts.dtos.sdk.responses.response import Response
 from ....sdk.contracts.dtos.sdk.responses.world.create import WorldCreateResponse
 from ....sdk.contracts.dtos.sdk.responses.world.get import WorldGetResponse
 from ....sdk.contracts.dtos.world import World
-from ....sdk.contracts.dtos.world_lite import WorldLite
+from ....sdk.contracts.dtos.world_full import WorldFull
 from ....sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from ....sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from ....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
@@ -39,10 +39,10 @@ async def world_get(world_id: str, full: bool = False) -> Response[WorldGetRespo
 
     try:
         if full:
-            world: World = await ContextManager.state_service.world_get(request=request)
+            world: WorldFull = await ContextManager.state_service.world_get(request=request)
             response = Response[WorldGetResponse](data=WorldGetResponse(world=world))
         else:
-            world_lite: WorldLite = await ContextManager.state_service.world_lite_get(request=request)
+            world_lite: World = await ContextManager.state_service.world_lite_get(request=request)
             response = Response[WorldGetResponse](data=WorldGetResponse(world=world_lite))
     except DaoConflictError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
@@ -122,10 +122,10 @@ async def island_get(world_id: str, island_id: str, full: bool = True) -> Respon
 
     try:
         if full:
-            island: Island = await ContextManager.state_service.island_get(request=request)
+            island: IslandFull = await ContextManager.state_service.island_get(request=request)
             response = Response[IslandGetResponse](data=IslandGetResponse(island=island))
         else:
-            island_lite: IslandLite = await ContextManager.state_service.island_lite_get(request=request)
+            island_lite: Island = await ContextManager.state_service.island_lite_get(request=request)
             response = Response[IslandGetResponse](data=IslandGetResponse(island=island_lite))
     except DaoConflictError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
