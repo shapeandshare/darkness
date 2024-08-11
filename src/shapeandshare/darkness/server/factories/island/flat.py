@@ -470,19 +470,16 @@ class FlatIslandFactory(AbstractIslandFactory):
         # 1. blank, named island
         island: Island = Island(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
         await self.islanddao.post(world_id=world_id, island=island)
-        # island: Island = Island(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
 
         # Define the maximum size
         max_x, max_y = dimensions
 
         # Generate an empty 2D block of ocean
         window: Window = Window(min=Coordinate(x=1, y=1), max=Coordinate(x=max_x, y=max_y))
-
         await self.generate_ocean_block(world_id=world_id, island_id=island.id, window=window)
 
         # Apply our terrain generation
         window = Window(min=Coordinate(x=2, y=2), max=Coordinate(x=max_x - 1, y=max_y - 1))
-
         await self.tiles_process(world_id=world_id, island=island, window=window)
 
         # get final state and return
