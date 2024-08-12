@@ -15,7 +15,7 @@ logger = logging.getLogger()
 
 
 class TileDao(BaseModel):
-    # ["base"] / "worlds" / "wold_id" / "islands" / "island_id" / "tiles" / "tile_id.json"
+    # ["base"] / "worlds" / "wold_id" / "islands" / "island_id" / "tiles" / "tile_id" / "metadata.json"
     storage_base_path: Path
 
     def __init__(self, **kwargs):
@@ -26,7 +26,9 @@ class TileDao(BaseModel):
 
     def _tile_path(self, world_id: str, island_id: str, tile_id: str) -> Path:
         # ["base"] / "worlds" / "wold_id" / "islands" / "island_id" / "tiles" / "tile_id.json"
-        return self.storage_base_path / "worlds" / world_id / "islands" / island_id / "tiles" / f"{tile_id}.json"
+        return (
+            self.storage_base_path / "worlds" / world_id / "islands" / island_id / "tiles" / tile_id / "metadata.json"
+        )
 
     async def get(self, world_id: str, island_id: str, tile_id: str) -> WrappedData[Tile]:
         logger.debug("[TileDAO] getting tile data from storage")
@@ -43,7 +45,7 @@ class TileDao(BaseModel):
         tile_metadata_path: Path = self._tile_path(world_id=world_id, island_id=island_id, tile_id=tile.id)
         if tile_metadata_path.exists():
             raise DaoConflictError("tile metadata already exists")
-        if not tile_metadata_path.parents[1].exists():
+        if not tile_metadata_path.parents[2].exists():
             raise DaoDoesNotExistError("tile container (island) does not exist")
         if not tile_metadata_path.parent.exists():
             logger.debug("[TileDAO] tile metadata folder creating ..")
@@ -64,7 +66,7 @@ class TileDao(BaseModel):
     async def put_safe(self, world_id: str, island_id: str, wrapped_tile: WrappedData[Tile]) -> None:
         logger.debug("[TileDAO] putting tile data to storage")
         tile_metadata_path: Path = self._tile_path(world_id=world_id, island_id=island_id, tile_id=wrapped_tile.data.id)
-        if not tile_metadata_path.parents[1].exists():
+        if not tile_metadata_path.parents[2].exists():
             raise DaoDoesNotExistError("tile container (island) does not exist")
         if not tile_metadata_path.parent.exists():
             logger.debug("[TileDAO] tile metadata folder creating ..")
