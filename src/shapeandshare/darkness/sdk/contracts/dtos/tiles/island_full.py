@@ -1,6 +1,6 @@
-from ..types.tile import TileType
-from .tiles.abtract import AbstractTile
-from .tiles.tile import Tile
+from ...types.tile import TileType
+from .abtract import AbstractTile
+from .tile import Tile
 
 
 class IslandFull(AbstractTile[str, Tile]):

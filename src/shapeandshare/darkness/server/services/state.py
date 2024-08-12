@@ -2,8 +2,6 @@ import logging
 
 from pydantic import BaseModel
 
-from ...sdk.contracts.dtos.island import Island
-from ...sdk.contracts.dtos.island_full import IslandFull
 from ...sdk.contracts.dtos.sdk.requests.island.create import IslandCreateRequest
 from ...sdk.contracts.dtos.sdk.requests.island.delete import IslandDeleteRequest
 from ...sdk.contracts.dtos.sdk.requests.island.get import IslandGetRequest
@@ -11,9 +9,11 @@ from ...sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
 from ...sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
 from ...sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
 from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
+from ...sdk.contracts.dtos.tiles.island import Island
+from ...sdk.contracts.dtos.tiles.island_full import IslandFull
 from ...sdk.contracts.dtos.tiles.tile import Tile
-from ...sdk.contracts.dtos.world import World
-from ...sdk.contracts.dtos.world_full import WorldFull
+from ...sdk.contracts.dtos.tiles.world import World
+from ...sdk.contracts.dtos.tiles.world_full import WorldFull
 from ..dao.island import IslandDao
 from ..dao.tile import TileDao
 from ..dao.world import WorldDao

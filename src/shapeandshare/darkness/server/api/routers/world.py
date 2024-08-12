@@ -3,8 +3,6 @@ import traceback
 
 from fastapi import APIRouter, HTTPException
 
-from ....sdk.contracts.dtos.island import Island
-from ....sdk.contracts.dtos.island_full import IslandFull
 from ....sdk.contracts.dtos.sdk.requests.island.create import IslandCreateRequest
 from ....sdk.contracts.dtos.sdk.requests.island.delete import IslandDeleteRequest
 from ....sdk.contracts.dtos.sdk.requests.island.get import IslandGetRequest
@@ -16,8 +14,10 @@ from ....sdk.contracts.dtos.sdk.responses.island.get import IslandGetResponse
 from ....sdk.contracts.dtos.sdk.responses.response import Response
 from ....sdk.contracts.dtos.sdk.responses.world.create import WorldCreateResponse
 from ....sdk.contracts.dtos.sdk.responses.world.get import WorldGetResponse
-from ....sdk.contracts.dtos.world import World
-from ....sdk.contracts.dtos.world_full import WorldFull
+from ....sdk.contracts.dtos.tiles.island import Island
+from ....sdk.contracts.dtos.tiles.island_full import IslandFull
+from ....sdk.contracts.dtos.tiles.world import World
+from ....sdk.contracts.dtos.tiles.world_full import WorldFull
 from ....sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from ....sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from ....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError

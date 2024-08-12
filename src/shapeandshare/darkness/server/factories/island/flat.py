@@ -6,8 +6,8 @@ import uuid
 from asyncio import Queue
 
 from ....sdk.contracts.dtos.coordinate import Coordinate
-from ....sdk.contracts.dtos.island import Island
 from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
+from ....sdk.contracts.dtos.tiles.island import Island
 from ....sdk.contracts.dtos.tiles.tile import Tile
 from ....sdk.contracts.dtos.window import Window
 from ....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
