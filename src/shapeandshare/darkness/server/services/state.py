@@ -36,9 +36,7 @@ class StateService(BaseModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.worldfactory = WorldFactory(worlddao=self.worlddao)
-        self.flatislandfactory = FlatIslandFactory(
-            islanddao=self.islanddao, tiledao=self.tiledao, entitydao=self.entitydao
-        )
+        self.flatislandfactory = FlatIslandFactory(islanddao=self.islanddao, tiledao=self.tiledao, entitydao=self.entitydao)
 
     ### World ##################################
 
@@ -56,9 +54,7 @@ class StateService(BaseModel):
         partial_world = world_lite.model_dump(exclude={"island_ids"})
         world: WorldFull = WorldFull.model_validate(partial_world)
         for island_id in island_ids:
-            local_island: IslandFull = await self.island_get(
-                request=IslandGetRequest(world_id=request.id, island_id=island_id)
-            )
+            local_island: IslandFull = await self.island_get(request=IslandGetRequest(world_id=request.id, island_id=island_id))
             world.contents[island_id] = local_island
         return world
 
@@ -70,9 +66,7 @@ class StateService(BaseModel):
 
     async def island_create(self, request: IslandCreateRequest) -> str:
         logger.debug("[StateService] creating island")
-        new_island: Island = await self.flatislandfactory.create(
-            world_id=request.world_id, name=request.name, dimensions=request.dimensions, biome=request.biome
-        )
+        new_island: Island = await self.flatislandfactory.create(world_id=request.world_id, name=request.name, dimensions=request.dimensions, biome=request.biome)
         # add new island to world
         # add island to world and store
 

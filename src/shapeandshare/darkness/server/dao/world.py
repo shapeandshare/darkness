@@ -88,9 +88,7 @@ class WorldDao(BaseModel):
         # now validate we stored
         stored_world: WrappedData[World] = await self.get(world_id=world_id)
         if stored_world.nonce != nonce:
-            msg: str = (
-                f"storage inconsistency detected while verifying put world {wrapped_data.data.id} - nonce mismatch!"
-            )
+            msg: str = f"storage inconsistency detected while verifying put world {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
 
     async def delete(self, world_id: str) -> None:

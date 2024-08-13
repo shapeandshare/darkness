@@ -72,9 +72,7 @@ class Client:
     # island
 
     async def island_create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> str:
-        request: IslandCreateRequest = IslandCreateRequest(
-            world_id=world_id, name=name, dimensions=dimensions, biome=biome
-        )
+        request: IslandCreateRequest = IslandCreateRequest(world_id=world_id, name=name, dimensions=dimensions, biome=biome)
         response: IslandCreateResponse = await self.island_create_command.execute(request=request)
         return response.id
 

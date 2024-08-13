@@ -26,9 +26,7 @@ class TileDao(BaseModel):
 
     def _tile_path(self, world_id: str, island_id: str, tile_id: str) -> Path:
         # ["base"] / "worlds" / "wold_id" / "islands" / "island_id" / "tiles" / "tile_id.json"
-        return (
-            self.storage_base_path / "worlds" / world_id / "islands" / island_id / "tiles" / tile_id / "metadata.json"
-        )
+        return self.storage_base_path / "worlds" / world_id / "islands" / island_id / "tiles" / tile_id / "metadata.json"
 
     async def get(self, world_id: str, island_id: str, tile_id: str) -> WrappedData[Tile]:
         logger.debug("[TileDAO] getting tile data from storage")
@@ -74,9 +72,7 @@ class TileDao(BaseModel):
 
         # see if we have a pre-existing nonce to verify against
         try:
-            previous_state: WrappedData[Tile] = await self.get(
-                world_id=world_id, island_id=island_id, tile_id=wrapped_tile.data.id
-            )
+            previous_state: WrappedData[Tile] = await self.get(world_id=world_id, island_id=island_id, tile_id=wrapped_tile.data.id)
             if previous_state.nonce != wrapped_tile.nonce:
                 msg: str = f"storage inconsistency detected while putting tile {wrapped_tile.data.id} - nonce mismatch!"
                 raise DaoInconsistencyError(msg)
@@ -94,13 +90,9 @@ class TileDao(BaseModel):
             os.fsync(file)
 
         # now validate we stored
-        stored_tile: WrappedData[Tile] = await self.get(
-            world_id=world_id, island_id=island_id, tile_id=wrapped_data.data.id
-        )
+        stored_tile: WrappedData[Tile] = await self.get(world_id=world_id, island_id=island_id, tile_id=wrapped_data.data.id)
         if stored_tile.nonce != nonce:
-            msg: str = (
-                f"storage inconsistency detected while verifying put tile {wrapped_data.data.id} - nonce mismatch!"
-            )
+            msg: str = f"storage inconsistency detected while verifying put tile {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
 
     async def delete(self, world_id: str, island_id: str, tile_id: str) -> None:

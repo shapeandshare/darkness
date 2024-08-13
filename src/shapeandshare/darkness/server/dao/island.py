@@ -76,9 +76,7 @@ class IslandDao(BaseModel):
         try:
             previous_state = await self.get(world_id=world_id, island_id=wrapped_island.data.id)
             if previous_state.nonce != wrapped_island.nonce:
-                msg: str = (
-                    f"storage inconsistency detected while putting island {wrapped_island.data.id} - nonce mismatch!"
-                )
+                msg: str = f"storage inconsistency detected while putting island {wrapped_island.data.id} - nonce mismatch!"
                 raise DaoInconsistencyError(msg)
         except DaoDoesNotExistError:
             # then no nonce to verify against.
@@ -96,9 +94,7 @@ class IslandDao(BaseModel):
         # now validate we stored
         stored_island: WrappedData[Island] = await self.get(world_id=world_id, island_id=wrapped_data.data.id)
         if stored_island.nonce != nonce:
-            msg: str = (
-                f"storage inconsistency detected while verifying put island {wrapped_data.data.id} - nonce mismatch!"
-            )
+            msg: str = f"storage inconsistency detected while verifying put island {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
 
     async def delete(self, world_id: str, island_id: str) -> None:
