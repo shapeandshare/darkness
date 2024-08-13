@@ -14,6 +14,7 @@ from ...sdk.contracts.dtos.tiles.island_full import IslandFull
 from ...sdk.contracts.dtos.tiles.tile import Tile
 from ...sdk.contracts.dtos.tiles.world import World
 from ...sdk.contracts.dtos.tiles.world_full import WorldFull
+from ..dao.entity import EntityDao
 from ..dao.island import IslandDao
 from ..dao.tile import TileDao
 from ..dao.world import WorldDao
@@ -27,6 +28,7 @@ class StateService(BaseModel):
     worlddao: WorldDao
     islanddao: IslandDao
     tiledao: TileDao
+    entitydao: EntityDao
 
     worldfactory: WorldFactory | None = None
     flatislandfactory: FlatIslandFactory | None = None
@@ -34,7 +36,9 @@ class StateService(BaseModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.worldfactory = WorldFactory(worlddao=self.worlddao)
-        self.flatislandfactory = FlatIslandFactory(islanddao=self.islanddao, tiledao=self.tiledao)
+        self.flatislandfactory = FlatIslandFactory(
+            islanddao=self.islanddao, tiledao=self.tiledao, entitydao=self.entitydao
+        )
 
     ### World ##################################
 

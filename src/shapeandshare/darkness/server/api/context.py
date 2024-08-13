@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 from ...sdk.contracts.errors.server.service import ServiceError
+from ..dao.entity import EntityDao
 from ..dao.island import IslandDao
 from ..dao.tile import TileDao
 from ..dao.world import WorldDao
@@ -23,6 +24,7 @@ class ContextManager:
                 worlddao=WorldDao(storage_base_path=STORAGE_BASE_PATH),
                 islanddao=IslandDao(storage_base_path=STORAGE_BASE_PATH),
                 tiledao=TileDao(storage_base_path=STORAGE_BASE_PATH),
+                entitydao=EntityDao(storage_base_path=STORAGE_BASE_PATH),
             )
             logger.debug("[ContextManager] assigned new state service to context manager")
         else:

@@ -13,6 +13,7 @@ from ....sdk.contracts.dtos.window import Window
 from ....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
 from ....sdk.contracts.types.connection import TileConnectionType
 from ....sdk.contracts.types.tile import TileType
+from ...dao.entity import EntityDao
 from ...dao.tile import TileDao
 from .abstract import AbstractIslandFactory
 
@@ -21,6 +22,7 @@ logger = logging.getLogger()
 
 class FlatIslandFactory(AbstractIslandFactory):
     tiledao: TileDao
+    entitydao: EntityDao
 
     @staticmethod
     async def producer(window: Window, queue: Queue):
@@ -168,6 +170,7 @@ class FlatIslandFactory(AbstractIslandFactory):
             if adjecent_tile.data.tile_type in types and adjecent_tile.data.tile_type not in adjecent_targets:
                 adjecent_targets.append(adjecent_tile.data.tile_type)
         # logger.debug(f"tile {tile_id} is adjecent to: {adjecent_targets}")
+
         return adjecent_targets
 
     # async def get_adjecent_tiles(
