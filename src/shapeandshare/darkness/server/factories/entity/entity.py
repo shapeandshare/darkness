@@ -1,17 +1,9 @@
 import asyncio
 import logging
-import uuid
 from asyncio import Queue
 
-from ....sdk.contracts.dtos.coordinate import Coordinate
-from ....sdk.contracts.dtos.tiles.island import Island
 from ....sdk.contracts.dtos.window import Window
-from ....sdk.contracts.types.tile import TileType
-from ...dao.entity import EntityDao
-from ...dao.tile import TileDao
 from .abstract import AbstractEntityFactory
-
-# from .abstract import AbstractEntityFactory
 
 logger = logging.getLogger()
 

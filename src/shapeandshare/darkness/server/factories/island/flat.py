@@ -7,9 +7,6 @@ from ....sdk.contracts.dtos.coordinate import Coordinate
 from ....sdk.contracts.dtos.tiles.island import Island
 from ....sdk.contracts.dtos.window import Window
 from ....sdk.contracts.types.tile import TileType
-from ...dao.entity import EntityDao
-from ...dao.tile import TileDao
-from ..entity.entity import EntityFactory
 from .abstract import AbstractIslandFactory
 
 logger = logging.getLogger()
