@@ -9,15 +9,13 @@ from ....sdk.contracts.dtos.window import Window
 from ....sdk.contracts.types.tile import TileType
 from ...dao.entity import EntityDao
 from ...dao.tile import TileDao
+from ..entity.entity import EntityFactory
 from .abstract import AbstractIslandFactory
 
 logger = logging.getLogger()
 
 
 class FlatIslandFactory(AbstractIslandFactory):
-    tiledao: TileDao
-    entitydao: EntityDao
-
     async def terrain_generate(self, world_id: str, island: Island, window: Window) -> None:
         # Lets shovel in some biome default or dirt tiles!
         async def step_one():
@@ -79,12 +77,12 @@ class FlatIslandFactory(AbstractIslandFactory):
 
         # Apply a quantum time
         window = Window(min=Coordinate(x=1, y=1), max=Coordinate(x=max_x, y=max_y))
-        await self.quantum(world_id=world_id, island=island, window=window)
+        await self.quantum(world_id=world_id, island_id=island.id, window=window)
 
         # get final state and return
         return (await self.islanddao.get(world_id=world_id, island_id=island.id)).data
 
-    async def quantum(self, world_id: str, island: Island, window: Window):
+    async def quantum(self, world_id: str, island_id: str, window: Window):
         # TODO: isolated ocean is NOT ocean, we MUST have path to the edge
         # Convert inner Ocean to Water Tiles
         async def step_three():
@@ -92,7 +90,7 @@ class FlatIslandFactory(AbstractIslandFactory):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
                     # Convert inner Ocean to Water Tiles
-                    await self.brackish_tile(world_id=world_id, island_id=island.id, tile_id=local_tile_id)
+                    await self.brackish_tile(world_id=world_id, island_id=island_id, tile_id=local_tile_id)
                     queue.task_done()
 
             queue = asyncio.Queue()
@@ -105,7 +103,7 @@ class FlatIslandFactory(AbstractIslandFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    await self.erode_tile(world_id=world_id, island_id=island.id, tile_id=local_tile_id)
+                    await self.erode_tile(world_id=world_id, island_id=island_id, tile_id=local_tile_id)
                     queue.task_done()
 
             queue = asyncio.Queue()
@@ -118,10 +116,13 @@ class FlatIslandFactory(AbstractIslandFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    await self.grow_tile(world_id=world_id, island_id=island.id, tile_id=local_tile_id)
+                    await self.grow_tile(world_id=world_id, island_id=island_id, tile_id=local_tile_id)
                     queue.task_done()
 
             queue = asyncio.Queue()
             await asyncio.gather(self.producer(window, queue), consumer(queue))
 
         await step_five()
+
+        # Entity Factory Quantum
+        await self.entity_factory.quantum(world_id=world_id, island_id=island_id, window=window)

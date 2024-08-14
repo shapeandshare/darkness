@@ -7,7 +7,6 @@ from pydantic import BaseModel
 
 from ...sdk.contracts.dtos.entities.entity import Entity
 from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
-from ...sdk.contracts.dtos.tiles.tile import Tile
 from ...sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from ...sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from ...sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError

@@ -15,12 +15,16 @@ from ....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyEr
 from ....sdk.contracts.types.connection import TileConnectionType
 from ....sdk.contracts.types.tile import TileType
 from ...dao.island import IslandDao
+from ...dao.tile import TileDao
+from ..entity.entity import EntityFactory
 
 logger = logging.getLogger()
 
 
 class AbstractIslandFactory(BaseModel):
+    tiledao: TileDao
     islanddao: IslandDao
+    entity_factory: EntityFactory
 
     @staticmethod
     async def producer(window: Window, queue: Queue):
