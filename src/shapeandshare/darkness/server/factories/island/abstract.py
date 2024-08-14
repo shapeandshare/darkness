@@ -2,6 +2,7 @@ import asyncio
 import logging
 import re
 import secrets
+import uuid
 from abc import abstractmethod
 from asyncio import Queue
 
@@ -16,7 +17,6 @@ from ....sdk.contracts.types.connection import TileConnectionType
 from ....sdk.contracts.types.tile import TileType
 from ...dao.island import IslandDao
 from ...dao.tile import TileDao
-from ..entity.entity import EntityFactory
 
 logger = logging.getLogger()
 
@@ -24,21 +24,11 @@ logger = logging.getLogger()
 class AbstractIslandFactory(BaseModel):
     tiledao: TileDao
     islanddao: IslandDao
-    entity_factory: EntityFactory
 
     @staticmethod
-    async def producer(window: Window, queue: Queue):
-        range_x_min: int = window.min.x - 1
-        range_x_max: int = window.max.x
-        range_y_min: int = window.min.x - 1
-        range_y_max: int = window.max.y
-
-        for x in range(range_x_min, range_x_max):
-            for y in range(range_y_min, range_y_max):
-                local_x = x + 1
-                local_y = y + 1
-                tile_id: str = f"tile_{local_x}_{local_y}"
-                await queue.put(tile_id)
+    async def producer(ids: set[str], queue: Queue):
+        for local_id in ids:
+            await queue.put(local_id)
 
     @abstractmethod
     async def create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> str:
@@ -226,12 +216,28 @@ class AbstractIslandFactory(BaseModel):
                     logger.debug(msg)
 
     async def generate_ocean_block(self, world_id: str, island_id: str, window: Window):
+        tile_map: dict[str, str] = {}
+
+        async def flat_producer(window: Window, queue: Queue):
+            range_x_min: int = window.min.x - 1
+            range_x_max: int = window.max.x
+            range_y_min: int = window.min.x - 1
+            range_y_max: int = window.max.y
+
+            for x in range(range_x_min, range_x_max):
+                for y in range(range_y_min, range_y_max):
+                    local_x = x + 1
+                    local_y = y + 1
+                    tile_id: str = f"tile_{local_x}_{local_y}"
+                    await queue.put(tile_id)
+
         # 1. fill a blank nXm area with ocean
         async def step_one():
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    local_tile: Tile = Tile(id=local_tile_id, tile_type=TileType.OCEAN)
+                    tile_map[local_tile_id] = str(uuid.uuid4())
+                    local_tile: Tile = Tile(id=tile_map[local_tile_id], tile_type=TileType.OCEAN)
 
                     # create tile
                     await self.tiledao.post(world_id=world_id, island_id=island_id, tile=local_tile)
@@ -244,7 +250,7 @@ class AbstractIslandFactory(BaseModel):
                     wrapped_island: WrappedData[Island] = await self.islanddao.get(world_id=world_id, island_id=island_id)
 
                     # Patch - Add tile_id to in-memory representation before storing
-                    wrapped_island.data.ids.add(local_tile_id)
+                    wrapped_island.data.ids.add(tile_map[local_tile_id])
 
                     # put -- store island update (tile addition)
                     await self.islanddao.put_safe(world_id=world_id, wrapped_island=wrapped_island)
@@ -252,9 +258,15 @@ class AbstractIslandFactory(BaseModel):
                     queue.task_done()
 
             queue = asyncio.Queue()
-            await asyncio.gather(AbstractIslandFactory.producer(window, queue), consumer(queue))
+            await asyncio.gather(flat_producer(window, queue), consumer(queue))
 
         await step_one()
+
+        # set origin tile on island
+        wrapped_island: WrappedData[Island] = await self.islanddao.get(world_id=world_id, island_id=island_id)
+        # print(tile_map)
+        wrapped_island.data.origin = tile_map["tile_1_1"]
+        await self.islanddao.put_safe(world_id=world_id, wrapped_island=wrapped_island)
 
         # 2. Connect everything together
         async def step_two():
@@ -263,8 +275,10 @@ class AbstractIslandFactory(BaseModel):
 
             async def consumer(queue):
                 while not queue.empty():
-                    local_tile_id: str = await queue.get()
-                    match = pattern.search(local_tile_id)
+                    _local_tile_id: str = await queue.get()
+                    local_tile_id = tile_map[_local_tile_id]
+
+                    match = pattern.search(_local_tile_id)
                     # tile_id: str = f"tile_{local_x}_{local_y}"
                     local_x: int = int(match.group(1))
                     local_y: int = int(match.group(2))
@@ -273,8 +287,10 @@ class AbstractIslandFactory(BaseModel):
                     # logger.debug(msg)
 
                     # Bind LEFT
-                    target_tile_id: str = f"tile_{local_x - 1}_{local_y}"
-                    if target_tile_id in wrapped_island.data.ids:
+                    _target_tile_id: str = f"tile_{local_x - 1}_{local_y}"
+                    if _target_tile_id in tile_map:
+                        target_tile_id = tile_map[_target_tile_id]
+                        # if target_tile_id in wrapped_island.data.ids:
                         # load tile
                         local_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=wrapped_island.data.id, tile_id=local_tile_id)
 
@@ -287,8 +303,10 @@ class AbstractIslandFactory(BaseModel):
                         await self.tiledao.put_safe(world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile)
 
                     # Bind RIGHT
-                    target_tile_id: str = f"tile_{local_x + 1}_{local_y}"
-                    if target_tile_id in wrapped_island.data.ids:
+                    _target_tile_id: str = f"tile_{local_x + 1}_{local_y}"
+                    if _target_tile_id in tile_map:
+                        target_tile_id = tile_map[_target_tile_id]
+                        # if target_tile_id in wrapped_island.data.ids:
                         # load tile
                         local_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=wrapped_island.data.id, tile_id=local_tile_id)
 
@@ -302,8 +320,10 @@ class AbstractIslandFactory(BaseModel):
                         await self.tiledao.put_safe(world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile)
 
                     # Bind UP
-                    target_tile_id: str = f"tile_{local_x}_{local_y - 1}"
-                    if target_tile_id in wrapped_island.data.ids:
+                    _target_tile_id: str = f"tile_{local_x}_{local_y - 1}"
+                    if _target_tile_id in tile_map:
+                        target_tile_id = tile_map[_target_tile_id]
+                        # if target_tile_id in wrapped_island.data.ids:
                         # load tile
                         local_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=wrapped_island.data.id, tile_id=local_tile_id)
 
@@ -316,8 +336,10 @@ class AbstractIslandFactory(BaseModel):
                         await self.tiledao.put_safe(world_id=world_id, island_id=wrapped_island.data.id, wrapped_tile=local_tile)
 
                     # Bind DOWN
-                    target_tile_id: str = f"tile_{local_x}_{local_y + 1}"
-                    if target_tile_id in wrapped_island.data.ids:
+                    _target_tile_id: str = f"tile_{local_x}_{local_y + 1}"
+                    if _target_tile_id in tile_map:
+                        target_tile_id = tile_map[_target_tile_id]
+                        # if target_tile_id in wrapped_island.data.ids:
                         # load tile
                         local_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=wrapped_island.data.id, tile_id=local_tile_id)
 
@@ -332,6 +354,6 @@ class AbstractIslandFactory(BaseModel):
                     queue.task_done()
 
             queue = asyncio.Queue()
-            await asyncio.gather(AbstractIslandFactory.producer(window, queue), consumer(queue))
+            await asyncio.gather(flat_producer(window, queue), consumer(queue))
 
         await step_two()

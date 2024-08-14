@@ -29,10 +29,10 @@ class ContextManager:
             entitydao = EntityDao(storage_base_path=STORAGE_BASE_PATH)
 
             world_factory = WorldFactory(worlddao=worlddao)
-            entity_factory = EntityFactory(entitydao=entitydao)
-            flatisland_factory = FlatIslandFactory(islanddao=islanddao, tiledao=tiledao, entity_factory=entity_factory)
+            entity_factory = EntityFactory(entitydao=entitydao, tiledao=tiledao)
+            flatisland_factory = FlatIslandFactory(islanddao=islanddao, tiledao=tiledao)
 
-            ContextManager.state_service = StateService(worlddao=worlddao, islanddao=islanddao, tiledao=tiledao, world_factory=world_factory, flatisland_factory=flatisland_factory)
+            ContextManager.state_service = StateService(worlddao=worlddao, islanddao=islanddao, tiledao=tiledao, entity_factory=entity_factory, world_factory=world_factory, flatisland_factory=flatisland_factory)
             logger.debug("[ContextManager] assigned new state service to context manager")
         else:
             logger.debug("[ContextManager] state service already assigned")

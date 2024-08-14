@@ -1,52 +1,81 @@
-# import asyncio
+import asyncio
 import logging
+import uuid
 from asyncio import Queue
 
 from pydantic import BaseModel
 
-from ....sdk.contracts.dtos.window import Window
+from ....sdk.contracts.dtos.entities.entity import Entity
+from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
+from ....sdk.contracts.dtos.tiles.tile import Tile
+from ....sdk.contracts.errors.server.factory import FactoryError
+from ....sdk.contracts.types.entity import EntityType
+from ....sdk.contracts.types.tile import TileType
 from ...dao.entity import EntityDao
-
-# from src.shapeandshare.darkness.sdk.contracts.dtos.window import Window
-
-
-# import re
-# import secrets
-# from abc import abstractmethod
-# from asyncio import Queue
-
-
-# from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
-# from ....sdk.contracts.dtos.tiles.island import Island
-# from ....sdk.contracts.dtos.tiles.tile import Tile
-# from ....sdk.contracts.dtos.window import Window
-# from ....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
-# from ....sdk.contracts.types.connection import TileConnectionType
-# from ....sdk.contracts.types.tile import TileType
-# from ...dao.island import IslandDao
+from ...dao.tile import TileDao
 
 logger = logging.getLogger()
 
 
 class AbstractEntityFactory(BaseModel):
     entitydao: EntityDao
+    tiledao: TileDao
 
     @staticmethod
-    async def producer(window: Window, queue: Queue):
-        range_x_min: int = window.min.x - 1
-        range_x_max: int = window.max.x
-        range_y_min: int = window.min.x - 1
-        range_y_max: int = window.max.y
+    async def producer(ids: set[str], queue: Queue):
+        for local_id in ids:
+            await queue.put(local_id)
 
-        for x in range(range_x_min, range_x_max):
-            for y in range(range_y_min, range_y_max):
-                local_x = x + 1
-                local_y = y + 1
-                tile_id: str = f"tile_{local_x}_{local_y}"
-                await queue.put(tile_id)
+    async def generate(self, world_id: str, island_id: str, tile_id: str) -> None:
+        # get entities ids for the tile
+        local_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
+        if len(local_tile.data.ids) > 0:
+            msg: str = f"entity generation can not occur on a tile with pre-existing entities, world_id: {world_id}, island_id: {island_id}, tile_id: {tile_id}"
+            raise FactoryError(msg)
+
+        # Review types now
+        if local_tile.data.tile_type == TileType.GRASS:
+            new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.GRASS)
+            await self.entitydao.post(world_id=world_id, island_id=island_id, tile_id=tile_id, entity=new_entity)
+            local_tile.data.ids.add(new_entity.id)
+            # try:
+            await self.tiledao.put_safe(world_id=world_id, island_id=island_id, wrapped_tile=local_tile)
+            # except Exception as e:
+            # rollback entity addition ...
+
+        elif local_tile.data.tile_type == TileType.FOREST:
+            new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.TREE)
+            await self.entitydao.post(world_id=world_id, island_id=island_id, tile_id=tile_id, entity=new_entity)
+            # try:
+            await self.tiledao.put_safe(world_id=world_id, island_id=island_id, wrapped_tile=local_tile)
+            # except Exception as e:
+            # rollback entity addition ...
 
     async def grow_entities(self, world_id: str, island_id: str, tile_id: str):
-        pass
+        # get entities ids for the tile
+        local_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
+
+        async def entity_producer(queue: Queue):
+            for entity_id in local_tile.data.ids:
+                await queue.put(entity_id)
+
+        async def step_one():
+            async def consumer(queue: Queue):
+                while not queue.empty():
+                    local_entity_id: str = await queue.get()
+
+                    # TODO: Process entity
+
+                    queue.task_done()
+
+            queue = asyncio.Queue()
+            await asyncio.gather(entity_producer(queue), consumer(queue))
+
+        await step_one()
+
+        # async def entity_producer(local_tile.data.ids)
+
+        # entity_ids: set[str] = await self.entitydao.get_entities(world_id=world_id, island_id=island_id, tile_id=tile_id)
 
     # @abstractmethod
     # async def create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> str:
