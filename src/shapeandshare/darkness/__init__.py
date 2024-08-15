@@ -31,10 +31,8 @@ from .sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from .sdk.contracts.dtos.sdk.wrapped_request import WrappedRequest
 from .sdk.contracts.dtos.tiles.abtract import AbstractTile
 from .sdk.contracts.dtos.tiles.island import Island
-from .sdk.contracts.dtos.tiles.island_full import IslandFull
 from .sdk.contracts.dtos.tiles.tile import Tile
 from .sdk.contracts.dtos.tiles.world import World
-from .sdk.contracts.dtos.tiles.world_full import WorldFull
 from .sdk.contracts.dtos.window import Window
 from .sdk.contracts.errors.common.environment_variable_not_found import EnvironmentVariableNotFoundError
 from .sdk.contracts.errors.sdk.exceeded_retry_count import ExceededRetryCountError

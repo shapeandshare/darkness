@@ -51,6 +51,14 @@ class AbstractEntityFactory(BaseModel):
             # except Exception as e:
             # rollback entity addition ...
 
+        elif local_tile.data.tile_type == TileType.OCEAN:
+            new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.FISH)
+            await self.entitydao.post(world_id=world_id, island_id=island_id, tile_id=tile_id, entity=new_entity)
+            # try:
+            await self.tiledao.put_safe(world_id=world_id, island_id=island_id, wrapped_tile=local_tile)
+            # except Exception as e:
+            # rollback entity addition ...
+
     async def grow_entities(self, world_id: str, island_id: str, tile_id: str):
         # get entities ids for the tile
         local_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
