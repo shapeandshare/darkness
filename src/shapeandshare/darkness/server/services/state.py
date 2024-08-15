@@ -65,8 +65,8 @@ class StateService(BaseModel):
         # Entity Factory Terrain Creation
         await self.entity_factory.terrain_generate(world_id=request.world_id, island=new_island)
         new_island: Island = (await self.islanddao.get(world_id=request.world_id, island_id=new_island.id)).data
-        # Entity Factory Quantum
 
+        # Entity Factory Quantum
         await self.entity_factory.quantum(world_id=request.world_id, island=new_island)
 
         # add new island to world

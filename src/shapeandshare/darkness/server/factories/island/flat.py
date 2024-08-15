@@ -67,6 +67,7 @@ class FlatIslandFactory(AbstractIslandFactory):
         # Generate an empty 2D block of ocean
         window: Window = Window(min=Coordinate(x=1, y=1), max=Coordinate(x=max_x, y=max_y))
         await self.generate_ocean_block(world_id=world_id, island_id=island.id, window=window)
+        island = (await self.islanddao.get(world_id=world_id, island_id=island.id)).data
 
         # Apply our terrain generation
         # window = Window(min=Coordinate(x=2, y=2), max=Coordinate(x=max_x - 1, y=max_y - 1))
