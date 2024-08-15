@@ -20,9 +20,7 @@ logger = logging.getLogger()
 @click.option("--timeout", type=click.FLOAT, default=5.0, help="api call timeout (seconds)")
 @click.option("--retries", type=click.INT, default=5, help="api call retries (integer)")
 @click.option("--url", type=click.STRING, is_flag=False, default=None, help="darkness api url, format: '(host):(port)'")
-def main(
-    hostname: str, port: int, log_level: str, sleep_time: float, timeout: float, retries: int, url: str | None
-) -> None:
+def main(hostname: str, port: int, log_level: str, sleep_time: float, timeout: float, retries: int, url: str | None) -> None:
     logger.setLevel(logging.getLevelName(log_level))
 
     # Setup server runtime environment variables

@@ -2,9 +2,8 @@ import logging
 import traceback
 
 from fastapi import APIRouter, HTTPException
+from pyinstrument import Profiler
 
-from ....sdk.contracts.dtos.island import Island
-from ....sdk.contracts.dtos.island_full import IslandFull
 from ....sdk.contracts.dtos.sdk.requests.island.create import IslandCreateRequest
 from ....sdk.contracts.dtos.sdk.requests.island.delete import IslandDeleteRequest
 from ....sdk.contracts.dtos.sdk.requests.island.get import IslandGetRequest
@@ -16,15 +15,12 @@ from ....sdk.contracts.dtos.sdk.responses.island.get import IslandGetResponse
 from ....sdk.contracts.dtos.sdk.responses.response import Response
 from ....sdk.contracts.dtos.sdk.responses.world.create import WorldCreateResponse
 from ....sdk.contracts.dtos.sdk.responses.world.get import WorldGetResponse
-from ....sdk.contracts.dtos.world import World
-from ....sdk.contracts.dtos.world_full import WorldFull
+from ....sdk.contracts.dtos.tiles.island import Island
+from ....sdk.contracts.dtos.tiles.world import World
 from ....sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from ....sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from ....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
 from ..context import ContextManager
-
-# from pyinstrument import Profiler
-
 
 logger = logging.getLogger()
 
@@ -43,7 +39,7 @@ async def world_get(world_id: str, full: bool = False) -> Response[WorldGetRespo
 
     try:
         if full:
-            world: WorldFull = await ContextManager.state_service.world_get(request=request)
+            world: World = await ContextManager.state_service.world_get(request=request)
             response = Response[WorldGetResponse](data=WorldGetResponse(world=world))
         else:
             world_lite: World = await ContextManager.state_service.world_lite_get(request=request)
@@ -130,9 +126,9 @@ async def island_create(world_id: str, island_create_request: IslandCreateReques
     island_create_request.world_id = world_id
 
     try:
-        # with Profiler() as profiler:
-        island_id: str = await ContextManager.state_service.island_create(request=island_create_request)
-        # profiler.print()
+        with Profiler() as profiler:
+            island_id: str = await ContextManager.state_service.island_create(request=island_create_request)
+        profiler.print()
     except DaoConflictError as error:
         traceback.print_exc()
         logger.error(str(error))
@@ -160,7 +156,7 @@ async def island_get(world_id: str, island_id: str, full: bool = True) -> Respon
 
     try:
         if full:
-            island: IslandFull = await ContextManager.state_service.island_get(request=request)
+            island: Island = await ContextManager.state_service.island_get(request=request)
             response = Response[IslandGetResponse](data=IslandGetResponse(island=island))
         else:
             island_lite: Island = await ContextManager.state_service.island_lite_get(request=request)

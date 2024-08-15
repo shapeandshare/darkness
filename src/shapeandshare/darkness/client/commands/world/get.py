@@ -8,7 +8,5 @@ from ..abstract import AbstractCommand
 
 class WorldGetCommand(AbstractCommand):
     async def execute(self, request: WorldGetRequest) -> WorldGetResponse:
-        response: requests.Response = requests.get(
-            url=f"http://{self.options.tld}/world/{request.id}", timeout=self.options.timeout
-        )
+        response: requests.Response = requests.get(url=f"http://{self.options.tld}/world/{request.id}", timeout=self.options.timeout)
         return Response[WorldGetResponse].model_validate(response.json()).data

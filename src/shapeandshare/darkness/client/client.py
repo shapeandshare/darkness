@@ -1,5 +1,3 @@
-from ..sdk.contracts.dtos.island import Island
-from ..sdk.contracts.dtos.island_full import IslandFull
 from ..sdk.contracts.dtos.sdk.command_options import CommandOptions
 from ..sdk.contracts.dtos.sdk.requests.island.create import IslandCreateRequest
 from ..sdk.contracts.dtos.sdk.requests.island.delete import IslandDeleteRequest
@@ -11,8 +9,8 @@ from ..sdk.contracts.dtos.sdk.responses.island.create import IslandCreateRespons
 from ..sdk.contracts.dtos.sdk.responses.island.get import IslandGetResponse
 from ..sdk.contracts.dtos.sdk.responses.world.create import WorldCreateResponse
 from ..sdk.contracts.dtos.sdk.responses.world.get import WorldGetResponse
-from ..sdk.contracts.dtos.world import World
-from ..sdk.contracts.dtos.world_full import WorldFull
+from ..sdk.contracts.dtos.tiles.island import Island
+from ..sdk.contracts.dtos.tiles.world import World
 from ..sdk.contracts.types.tile import TileType
 from .commands.island.create import IslandCreateCommand
 from .commands.island.delete import IslandDeleteCommand
@@ -72,13 +70,11 @@ class Client:
     # island
 
     async def island_create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> str:
-        request: IslandCreateRequest = IslandCreateRequest(
-            world_id=world_id, name=name, dimensions=dimensions, biome=biome
-        )
+        request: IslandCreateRequest = IslandCreateRequest(world_id=world_id, name=name, dimensions=dimensions, biome=biome)
         response: IslandCreateResponse = await self.island_create_command.execute(request=request)
         return response.id
 
-    async def island_get(self, world_id: str, island_id: str, full: bool = False) -> IslandFull | Island:
+    async def island_get(self, world_id: str, island_id: str, full: bool = False) -> Island:
         request: IslandGetRequest = IslandGetRequest(world_id=world_id, island_id=island_id, full=full)
         response: IslandGetResponse = await self.island_get_command.execute(request=request)
         return response.island
@@ -98,7 +94,7 @@ class Client:
         request: WorldDeleteRequest = WorldDeleteRequest(world_id=world_id)
         await self.world_delete_command.execute(request=request)
 
-    async def world_get(self, world_id: str, full: bool) -> WorldFull | World:
+    async def world_get(self, world_id: str, full: bool) -> World:
         request: WorldGetRequest = WorldGetRequest(world_id=world_id, full=full)
         response: WorldGetResponse = await self.world_get_command.execute(request)
         return response.world

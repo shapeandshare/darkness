@@ -1,8 +1,10 @@
 from pydantic import BaseModel
 
-from .....dtos.island_full import IslandFull
-from ....island import Island
+from ....tiles.island import Island
+
+# from ....tiles.island_full import IslandFull
 
 
 class IslandGetResponse(BaseModel):
-    island: IslandFull | Island
+    # island: IslandFull | Island
+    island: Island

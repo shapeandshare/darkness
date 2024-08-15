@@ -2,7 +2,7 @@ import uuid
 
 from pydantic import BaseModel
 
-from ....sdk.contracts.dtos.world import World
+from ....sdk.contracts.dtos.tiles.world import World
 from ...dao.world import WorldDao
 
 

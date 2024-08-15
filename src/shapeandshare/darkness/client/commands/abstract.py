@@ -113,7 +113,6 @@ class AbstractCommand(BaseModel):
             return await self._api_caller(request=request, depth=depth)
 
         if response.status_code in request.statuses.reauth:
-            # await self._authenticate()
             return await self._api_caller(request=request, depth=depth)
 
         raise RequestFailureError(

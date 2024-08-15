@@ -1,8 +1,10 @@
 from pydantic import BaseModel
 
-from .....dtos.world import World
-from .....dtos.world_full import WorldFull
+from ....tiles.world import World
+
+# from ....tiles.world_full import WorldFull
 
 
 class WorldGetResponse(BaseModel):
-    world: WorldFull | World
+    # world: WorldFull | World
+    world: World
