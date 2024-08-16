@@ -37,14 +37,7 @@ class AbstractIslandFactory(BaseModel):
     async def mutate_tile(self, world_id: str, island_id: str, tile_id: str, mutate: float, tile_type: TileType) -> None:
         if secrets.randbelow(100) <= mutate:
             # then we spawn the tile type
-
-            # We don't current have a patch, so get and put..
-            # get
-            target_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
-            # patch
-            target_tile.data.tile_type = tile_type
-            # put
-            await self.tiledao.put_safe(world_id=world_id, island_id=island_id, wrapped_tile=target_tile)
+            await self.tiledao.patch_safe(world_id=world_id, island_id=island_id, tile_id=tile_id, tile={"tile_type": tile_type})
 
     async def convert_tile(self, world_id: str, island_id: str, tile_id: str, source: TileType, target: TileType) -> None:
         # get
@@ -56,7 +49,7 @@ class AbstractIslandFactory(BaseModel):
             target_tile.data.tile_type = target
 
             # put
-            await self.tiledao.put_safe(world_id=world_id, island_id=island_id, wrapped_tile=target_tile)
+            await self.tiledao.patch_safe(world_id=world_id, island_id=island_id, tile_id=tile_id, tile={"tile_type": target})
 
     async def adjecent_liquids(self, world_id: str, island_id: str, tile_id: str) -> list[TileType]:
         return await self.adjecent_to(world_id=world_id, island_id=island_id, tile_id=tile_id, types=[TileType.OCEAN, TileType.WATER])
@@ -101,14 +94,7 @@ class AbstractIslandFactory(BaseModel):
         if target_tile.data.tile_type == TileType.DIRT:
             adjecent_liquids: list[TileType] = await self.adjecent_liquids(world_id=world_id, island_id=island_id, tile_id=tile_id)
             if TileType.WATER in adjecent_liquids and TileType.OCEAN not in adjecent_liquids:
-                # patch
-                target_tile.data.tile_type = TileType.GRASS
-
-                # put
-                await self.tiledao.put_safe(world_id=world_id, island_id=island_id, wrapped_tile=target_tile)
-
-                # get updated local tile
-                target_tile = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
+                await self.tiledao.patch_safe(world_id=world_id, island_id=island_id, tile_id=tile_id, tile={"tile_type": TileType.GRASS})
 
         # grass+water (no dirt/ocean) -> forest
         if target_tile.data.tile_type == TileType.GRASS:
@@ -125,16 +111,7 @@ class AbstractIslandFactory(BaseModel):
 
             if len(neighbors) > 1:
                 # next to more than one kind (grass/water)
-
-                # patch
-                target_tile.data.tile_type = TileType.FOREST
-
-                # put
-                try:
-                    await self.tiledao.put_safe(world_id=world_id, island_id=island_id, wrapped_tile=target_tile)
-                except DaoInconsistencyError as error:
-                    logger.error(target_tile.model_dump_json())
-                    raise error
+                await self.tiledao.patch_safe(world_id=world_id, island_id=island_id, tile_id=tile_id, tile={"tile_type": TileType.FOREST})
 
         # # grass+(dirt)
         # if island.tiles[tile_id].tile_type == TileType.GRASS:
@@ -202,16 +179,7 @@ class AbstractIslandFactory(BaseModel):
             # Apply erosion - rocks and be left by oceans, everything else becomes shore
             if TileType.OCEAN in adjecent_liquids:
                 if target_tile.data.tile_type not in (TileType.ROCK, TileType.SHORE):
-                    previous_type = target_tile.data.tile_type
-
-                    # patch
-                    target_tile.data.tile_type = TileType.SHORE
-
-                    # put
-                    await self.tiledao.put_safe(world_id=world_id, island_id=island_id, wrapped_tile=target_tile)
-
-                    msg: str = f"tile {tile_id}:{previous_type} converted to {TileType.SHORE}"
-                    logger.debug(msg)
+                    await self.tiledao.patch_safe(world_id=world_id, island_id=island_id, tile_id=tile_id, tile={"tile_type": TileType.SHORE})
 
     async def generate_ocean_block(self, world_id: str, island_id: str, window: Window):
         tile_map: dict[str, str] = {}
@@ -288,6 +256,9 @@ class AbstractIslandFactory(BaseModel):
                     _target_tile_id: str = f"tile_{local_x - 1}_{local_y}"
                     if _target_tile_id in tile_map:
                         target_tile_id = tile_map[_target_tile_id]
+
+                        # await self.tiledao.patch_safe(world_id=world_id, island_id=island_id, tile_id=target_tile_id, tile={"next": {TileConnectionType.LEFT: target_tile_id}})
+
                         # if target_tile_id in wrapped_island.data.ids:
                         # load tile
                         local_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=wrapped_island.data.id, tile_id=local_tile_id)

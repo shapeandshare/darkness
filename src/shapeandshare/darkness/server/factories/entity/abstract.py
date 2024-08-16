@@ -37,9 +37,11 @@ class AbstractEntityFactory(BaseModel):
         if local_tile.data.tile_type == TileType.GRASS:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.GRASS)
             await self.entitydao.post(world_id=world_id, island_id=island_id, tile_id=tile_id, entity=new_entity)
+
             local_tile.data.ids.add(new_entity.id)
             # try:
             await self.tiledao.put_safe(world_id=world_id, island_id=island_id, wrapped_tile=local_tile)
+
             # except Exception as e:
             # rollback entity addition ...
 

@@ -38,7 +38,7 @@ class TileDao(BaseModel):
             json_data: str = file.read()
         return WrappedData[Tile].model_validate_json(json_data)
 
-    async def post(self, world_id: str, island_id: str, tile: Tile) -> None:
+    async def post(self, world_id: str, island_id: str, tile: Tile) -> WrappedData[Tile]:
         logger.debug("[TileDAO] posting tile data to storage")
         tile_metadata_path: Path = self._tile_path(world_id=world_id, island_id=island_id, tile_id=tile.id)
         if tile_metadata_path.exists():
@@ -60,8 +60,9 @@ class TileDao(BaseModel):
         if stored_tile.nonce != nonce:
             msg: str = f"storage inconsistency detected while storing tile {tile.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
+        return stored_tile
 
-    async def put_safe(self, world_id: str, island_id: str, wrapped_tile: WrappedData[Tile]) -> None:
+    async def put_safe(self, world_id: str, island_id: str, wrapped_tile: WrappedData[Tile]) -> WrappedData[Tile]:
         logger.debug("[TileDAO] putting tile data to storage")
         tile_metadata_path: Path = self._tile_path(world_id=world_id, island_id=island_id, tile_id=wrapped_tile.data.id)
         if not tile_metadata_path.parents[2].exists():
@@ -94,6 +95,38 @@ class TileDao(BaseModel):
         if stored_tile.nonce != nonce:
             msg: str = f"storage inconsistency detected while verifying put tile {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
+        return stored_tile
+
+    async def patch_safe(self, world_id: str, island_id: str, tile_id: str, tile: dict) -> WrappedData[Tile]:
+        logger.debug("[TileDAO] patching tile data to storage")
+        tile_metadata_path: Path = self._tile_path(world_id=world_id, island_id=island_id, tile_id=tile_id)
+        if not tile_metadata_path.parents[2].exists():
+            raise DaoDoesNotExistError("tile container (island) does not exist")
+        if not tile_metadata_path.parent.exists():
+            logger.debug("[TileDAO] tile metadata folder creating ..")
+            tile_metadata_path.parent.mkdir(parents=True, exist_ok=True)
+
+        previous_state: WrappedData[Tile] = await self.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
+
+        # if we made it this far we are safe to update
+
+        nonce: str = str(uuid.uuid4())
+
+        # merge
+        new_state = previous_state.data.model_dump() | tile
+
+        wrapped_data: WrappedData[Tile] = WrappedData[Tile](data=new_state, nonce=nonce)
+        wrapped_data_raw: str = wrapped_data.model_dump_json(exclude_none=True)
+        with open(file=tile_metadata_path, mode="w", encoding="utf-8") as file:
+            file.write(wrapped_data_raw)
+            os.fsync(file)
+
+        # now validate we stored
+        stored_entity: WrappedData[Tile] = await self.get(world_id=world_id, island_id=island_id, tile_id=wrapped_data.data.id)
+        if stored_entity.nonce != nonce:
+            msg: str = f"storage inconsistency detected while verifying put tile {wrapped_data.data.id} - nonce mismatch!"
+            raise DaoInconsistencyError(msg)
+        return stored_entity
 
     async def delete(self, world_id: str, island_id: str, tile_id: str) -> None:
         logger.debug("[TileDAO] deleting tile data from storage")
