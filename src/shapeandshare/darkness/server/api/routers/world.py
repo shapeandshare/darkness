@@ -2,7 +2,6 @@ import logging
 import traceback
 
 from fastapi import APIRouter, HTTPException
-# from pyinstrument import Profiler
 
 from ....sdk.contracts.dtos.sdk.requests.island.create import IslandCreateRequest
 from ....sdk.contracts.dtos.sdk.requests.island.delete import IslandDeleteRequest
@@ -21,6 +20,9 @@ from ....sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from ....sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from ....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
 from ..context import ContextManager
+
+# from pyinstrument import Profiler
+
 
 logger = logging.getLogger()
 
