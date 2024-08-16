@@ -70,11 +70,9 @@ class FlatIslandFactory(AbstractIslandFactory):
         island = (await self.islanddao.get(world_id=world_id, island_id=island.id)).data
 
         # Apply our terrain generation
-        # window = Window(min=Coordinate(x=2, y=2), max=Coordinate(x=max_x - 1, y=max_y - 1))
         await self.terrain_generate(world_id=world_id, island=island)
 
         # Apply a quantum time
-        # window = Window(min=Coordinate(x=1, y=1), max=Coordinate(x=max_x, y=max_y))
         await self.quantum(world_id=world_id, island=island)
 
         # get final state and return

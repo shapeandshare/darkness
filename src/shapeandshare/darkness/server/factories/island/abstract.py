@@ -94,8 +94,6 @@ class AbstractIslandFactory(BaseModel):
         return adjecent_targets
 
     async def grow_tile(self, world_id: str, island_id: str, tile_id: str) -> None:
-        # if island.tiles[tile_id].tile_type not in [TileType.UNKNOWN, TileType.OCEAN, TileType.WATER]:
-
         # get
         target_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
 
