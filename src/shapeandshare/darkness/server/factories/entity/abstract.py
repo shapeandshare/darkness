@@ -52,9 +52,9 @@ class AbstractEntityFactory(BaseModel):
 
         await self.tiledao.patch(tokens=tokens, document={"ids": local_tile.data.ids})
 
-    async def grow_entities(self, world_id: str, island_id: str, tile_id: str):
+    async def grow_entities(self, tokens: dict):
         # get entities ids for the tile
-        local_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
+        local_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
         local_tile.data = Tile.model_validate(local_tile.data)
 
         async def entity_producer(queue: Queue):
