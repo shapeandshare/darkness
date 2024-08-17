@@ -45,6 +45,10 @@ class AbstractEntityFactory(BaseModel):
             await self.entitydao.post(tokens=tokens, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
+            new_entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.MYCELIUM)
+            await self.entitydao.post(tokens=tokens, document=new_entity)
+            local_tile.data.ids.add(new_entity.id)
+
         elif local_tile.data.tile_type == TileType.OCEAN:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.FISH)
             await self.entitydao.post(tokens=tokens, document=new_entity)
