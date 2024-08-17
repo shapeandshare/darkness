@@ -8,3 +8,6 @@ class EntityType(str, Enum):
     TREE = "tree"
 
     FISH = "fish"
+
+    MYCELIUM = "mycelium"
+    MUSHROOM = "mushroom"

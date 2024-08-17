@@ -13,5 +13,5 @@ class WorldFactory(BaseModel):
         if name is None:
             name = "darkness"
         world: World = World(id=str(uuid.uuid4()), name=name)
-        await self.worlddao.post(world=world)
+        await self.worlddao.post(tokens={"world_id": world.id}, document=world)
         return world.id

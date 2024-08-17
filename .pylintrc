@@ -19,11 +19,12 @@
 #         use-symbolic-message-instead
 disable=
     too-few-public-methods,
-    no-name-in-module,
+#    no-name-in-module,
     fixme,
     missing-function-docstring,
     missing-module-docstring,
     missing-class-docstring,
+    empty-docstring,
     arguments-differ
 
 

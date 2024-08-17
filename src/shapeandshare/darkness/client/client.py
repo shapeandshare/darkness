@@ -1,20 +1,20 @@
 from ..sdk.contracts.dtos.sdk.command_options import CommandOptions
-from ..sdk.contracts.dtos.sdk.requests.island.create import IslandCreateRequest
-from ..sdk.contracts.dtos.sdk.requests.island.delete import IslandDeleteRequest
-from ..sdk.contracts.dtos.sdk.requests.island.get import IslandGetRequest
+from ..sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
+from ..sdk.contracts.dtos.sdk.requests.chunk.delete import ChunkDeleteRequest
+from ..sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
 from ..sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
 from ..sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
 from ..sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
-from ..sdk.contracts.dtos.sdk.responses.island.create import IslandCreateResponse
-from ..sdk.contracts.dtos.sdk.responses.island.get import IslandGetResponse
+from ..sdk.contracts.dtos.sdk.responses.chunk.create import ChunkCreateResponse
+from ..sdk.contracts.dtos.sdk.responses.chunk.get import ChunkGetResponse
 from ..sdk.contracts.dtos.sdk.responses.world.create import WorldCreateResponse
 from ..sdk.contracts.dtos.sdk.responses.world.get import WorldGetResponse
-from ..sdk.contracts.dtos.tiles.island import Island
+from ..sdk.contracts.dtos.tiles.chunk import Chunk
 from ..sdk.contracts.dtos.tiles.world import World
 from ..sdk.contracts.types.tile import TileType
-from .commands.island.create import IslandCreateCommand
-from .commands.island.delete import IslandDeleteCommand
-from .commands.island.get import IslandGetCommand
+from .commands.chunk.create import ChunkCreateCommand
+from .commands.chunk.delete import ChunkDeleteCommand
+from .commands.chunk.get import ChunkGetCommand
 from .commands.metrics.health.get import HealthGetCommand
 from .commands.world.create import WorldCreateCommand
 from .commands.world.delete import WorldDeleteCommand
@@ -25,10 +25,10 @@ class Client:
     # metrics/health
     health_get_command: HealthGetCommand
 
-    # island
-    island_create_command: IslandCreateCommand
-    island_delete_command: IslandDeleteCommand
-    island_get_command: IslandGetCommand
+    # chunk
+    chunk_create_command: ChunkCreateCommand
+    chunk_delete_command: ChunkDeleteCommand
+    chunk_get_command: ChunkGetCommand
 
     # world
     world_create_command: WorldCreateCommand
@@ -43,10 +43,10 @@ class Client:
         ### metrics
         self.health_get_command = HealthGetCommand.model_validate(command_dict)
 
-        ### island
-        self.island_create_command = IslandCreateCommand.model_validate(command_dict)
-        self.island_delete_command = IslandDeleteCommand.model_validate(command_dict)
-        self.island_get_command = IslandGetCommand.model_validate(command_dict)
+        ### chunk
+        self.chunk_create_command = ChunkCreateCommand.model_validate(command_dict)
+        self.chunk_delete_command = ChunkDeleteCommand.model_validate(command_dict)
+        self.chunk_get_command = ChunkGetCommand.model_validate(command_dict)
 
         # world
         self.world_create_command = WorldCreateCommand.model_validate(command_dict)
@@ -67,21 +67,23 @@ class Client:
 
         return await self.health_get_command.execute()
 
-    # island
+    # chunk
 
-    async def island_create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> str:
-        request: IslandCreateRequest = IslandCreateRequest(world_id=world_id, name=name, dimensions=dimensions, biome=biome)
-        response: IslandCreateResponse = await self.island_create_command.execute(request=request)
+    async def chunk_create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> str:
+        request: ChunkCreateRequest = ChunkCreateRequest(
+            world_id=world_id, name=name, dimensions=dimensions, biome=biome
+        )
+        response: ChunkCreateResponse = await self.chunk_create_command.execute(request=request)
         return response.id
 
-    async def island_get(self, world_id: str, island_id: str, full: bool = False) -> Island:
-        request: IslandGetRequest = IslandGetRequest(world_id=world_id, island_id=island_id, full=full)
-        response: IslandGetResponse = await self.island_get_command.execute(request=request)
-        return response.island
+    async def chunk_get(self, world_id: str, chunk_id: str, full: bool = False) -> Chunk:
+        request: ChunkGetRequest = ChunkGetRequest(world_id=world_id, chunk_id=chunk_id, full=full)
+        response: ChunkGetResponse = await self.chunk_get_command.execute(request=request)
+        return response.chunk
 
-    async def island_delete(self, world_id: str, island_id: str) -> None:
-        request: IslandDeleteRequest = IslandDeleteRequest(world_id=world_id, island_id=island_id)
-        await self.island_delete_command.execute(request=request)
+    async def chunk_delete(self, world_id: str, chunk_id: str) -> None:
+        request: ChunkDeleteRequest = ChunkDeleteRequest(world_id=world_id, chunk_id=chunk_id)
+        await self.chunk_delete_command.execute(request=request)
 
     # world
 
