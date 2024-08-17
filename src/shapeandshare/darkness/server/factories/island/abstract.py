@@ -46,10 +46,7 @@ class AbstractIslandFactory(BaseModel):
         target_tile.data = Tile.model_validate(target_tile.data)
         # check
         if target_tile.data.tile_type == source:
-            # patch
-            target_tile.data.tile_type = target
-
-            # put
+            # update
             await self.tiledao.patch(tokens=tokens, document={"tile_type": target})
 
     async def adjecent_liquids(self, tokens: dict) -> list[TileType]:
