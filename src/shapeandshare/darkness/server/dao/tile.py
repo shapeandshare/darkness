@@ -87,7 +87,6 @@ class TileDao(AbstractDao[Tile]):
             raise DaoInconsistencyError(msg)
         return stored_tile
 
-    # async def patch(self, world_id: str, island_id: str, tile_id: str, tile: dict) -> WrappedData[Tile]:
     async def patch(self, tokens: dict, tile: dict) -> WrappedData[Tile]:
         if "id" in tile:
             tokens["tile_id"] = tile["id"]
