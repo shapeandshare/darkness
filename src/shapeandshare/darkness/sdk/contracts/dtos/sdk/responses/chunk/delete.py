@@ -1,5 +1,5 @@
 from pydantic import BaseModel
 
 
-class IslandCreateResponse(BaseModel):
+class ChunkDeleteResponse(BaseModel):
     id: str

@@ -1,9 +1,9 @@
 from ...types.tile import TileType
 from .abtract import AbstractTile
-from .island import Island
+from .chunk import Chunk
 
 
-class World(AbstractTile[str, Island]):
+class World(AbstractTile[str, Chunk]):
     """Basic World"""
 
     tile_type: TileType = TileType.WORLD

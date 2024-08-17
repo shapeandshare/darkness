@@ -3,18 +3,18 @@ import traceback
 
 from fastapi import APIRouter, HTTPException
 
-from ....sdk.contracts.dtos.sdk.requests.island.create import IslandCreateRequest
-from ....sdk.contracts.dtos.sdk.requests.island.delete import IslandDeleteRequest
-from ....sdk.contracts.dtos.sdk.requests.island.get import IslandGetRequest
+from ....sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
+from ....sdk.contracts.dtos.sdk.requests.chunk.delete import ChunkDeleteRequest
+from ....sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
 from ....sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
 from ....sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
 from ....sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
-from ....sdk.contracts.dtos.sdk.responses.island.create import IslandCreateResponse
-from ....sdk.contracts.dtos.sdk.responses.island.get import IslandGetResponse
+from ....sdk.contracts.dtos.sdk.responses.chunk.create import ChunkCreateResponse
+from ....sdk.contracts.dtos.sdk.responses.chunk.get import ChunkGetResponse
 from ....sdk.contracts.dtos.sdk.responses.response import Response
 from ....sdk.contracts.dtos.sdk.responses.world.create import WorldCreateResponse
 from ....sdk.contracts.dtos.sdk.responses.world.get import WorldGetResponse
-from ....sdk.contracts.dtos.tiles.island import Island
+from ....sdk.contracts.dtos.tiles.chunk import Chunk
 from ....sdk.contracts.dtos.tiles.world import World
 from ....sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from ....sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
@@ -118,19 +118,18 @@ async def world_create(request: WorldCreateRequest) -> Response[WorldCreateRespo
     return response
 
 
-### /world/world_id/island/
+### /world/world_id/chunk/
 
 
-@router.post("/{world_id}/island")
-async def island_create(world_id: str, island_create_request: IslandCreateRequest) -> Response[IslandCreateResponse]:
+@router.post("/{world_id}/chunk")
+async def chunk_create(world_id: str, request: ChunkCreateRequest) -> Response[ChunkCreateResponse]:
     # we ignore any passed in world_ids in this condition and over-write based on path.
     # Due to this world_id is optional within the DTO.
-    island_create_request.world_id = world_id
+    request.world_id = world_id
 
     try:
-        island_id: str = await ContextManager.state_service.island_create(request=island_create_request)
         # with Profiler() as profiler:
-        #     island_id: str = await ContextManager.state_service.island_create(request=island_create_request)
+        chunk_id: str = await ContextManager.state_service.chunk_create(request=request)
         # profiler.print()
     except DaoConflictError as error:
         traceback.print_exc()
@@ -150,20 +149,20 @@ async def island_create(world_id: str, island_create_request: IslandCreateReques
         # catch everything else
         raise HTTPException(status_code=500, detail=f"Uncaught exception: {str(error)}") from error
 
-    return Response[IslandCreateResponse](data=IslandCreateResponse(id=island_id))
+    return Response[ChunkCreateResponse](data=ChunkCreateResponse(id=chunk_id))
 
 
-@router.get("/{world_id}/island/{island_id}")
-async def island_get(world_id: str, island_id: str, full: bool = True) -> Response[IslandGetResponse]:
-    request: IslandGetRequest = IslandGetRequest(world_id=world_id, island_id=island_id)
+@router.get("/{world_id}/chunk/{chunk_id}")
+async def chunk_get(world_id: str, chunk_id: str, full: bool = True) -> Response[ChunkGetResponse]:
+    request: ChunkGetRequest = ChunkGetRequest(world_id=world_id, chunk_id=chunk_id)
 
     try:
         if full:
-            island: Island = await ContextManager.state_service.island_get(request=request)
-            response = Response[IslandGetResponse](data=IslandGetResponse(island=island))
+            chunk: Chunk = await ContextManager.state_service.chunk_get(request=request)
+            response = Response[ChunkGetResponse](data=ChunkGetResponse(chunk=chunk))
         else:
-            island_lite: Island = await ContextManager.state_service.island_lite_get(request=request)
-            response = Response[IslandGetResponse](data=IslandGetResponse(island=island_lite))
+            chunk: Chunk = await ContextManager.state_service.chunk_lite_get(request=request)
+            response = Response[ChunkGetResponse](data=ChunkGetResponse(chunk=chunk))
     except DaoConflictError as error:
         traceback.print_exc()
         logger.error(str(error))
@@ -185,11 +184,11 @@ async def island_get(world_id: str, island_id: str, full: bool = True) -> Respon
     return response
 
 
-@router.delete("/{world_id}/island/{island_id}")
-async def island_delete(world_id: str, island_id: str) -> None:
-    request: IslandDeleteRequest = IslandDeleteRequest(world_id=world_id, island_id=island_id)
+@router.delete("/{world_id}/chunk/{chunk_id}")
+async def chunk_delete(world_id: str, chunk_id: str) -> None:
+    request: ChunkDeleteRequest = ChunkDeleteRequest(world_id=world_id, chunk_id=chunk_id)
     try:
-        await ContextManager.state_service.island_delete(request=request)
+        await ContextManager.state_service.chunk_delete(request=request)
     except DaoConflictError as error:
         traceback.print_exc()
         logger.error(str(error))

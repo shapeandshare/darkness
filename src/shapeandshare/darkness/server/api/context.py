@@ -3,12 +3,12 @@ import sys
 from pathlib import Path
 
 from ...sdk.contracts.errors.server.service import ServiceError
+from ..dao.chunk import ChunkDao
 from ..dao.entity import EntityDao
-from ..dao.island import IslandDao
 from ..dao.tile import TileDao
 from ..dao.world import WorldDao
+from ..factories.chunk.flat import FlatChunkFactory
 from ..factories.entity.entity import EntityFactory
-from ..factories.island.flat import FlatIslandFactory
 from ..factories.world.world import WorldFactory
 from ..services.state import StateService
 
@@ -24,21 +24,21 @@ class ContextManager:
     def __init__(self):
         if ContextManager.state_service is None:
             worlddao = WorldDao(storage_base_path=STORAGE_BASE_PATH)
-            islanddao = IslandDao(storage_base_path=STORAGE_BASE_PATH)
+            chunkdao = ChunkDao(storage_base_path=STORAGE_BASE_PATH)
             tiledao = TileDao(storage_base_path=STORAGE_BASE_PATH)
             entitydao = EntityDao(storage_base_path=STORAGE_BASE_PATH)
 
             world_factory = WorldFactory(worlddao=worlddao)
             entity_factory = EntityFactory(entitydao=entitydao, tiledao=tiledao)
-            flatisland_factory = FlatIslandFactory(worlddao=worlddao, islanddao=islanddao, tiledao=tiledao)
+            flatchunk_factory = FlatChunkFactory(worlddao=worlddao, chunkdao=chunkdao, tiledao=tiledao)
 
             ContextManager.state_service = StateService(
                 worlddao=worlddao,
-                islanddao=islanddao,
+                chunkdao=chunkdao,
                 tiledao=tiledao,
                 entity_factory=entity_factory,
                 world_factory=world_factory,
-                flatisland_factory=flatisland_factory,
+                flatchunk_factory=flatchunk_factory,
             )
             logger.debug("[ContextManager] assigned new state service to context manager")
         else:

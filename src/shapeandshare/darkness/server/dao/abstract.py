@@ -21,13 +21,13 @@ T = TypeVar("T")
 
 class DocumentType(str, Enum):
     WORLD = "worlds"
-    ISLAND = "islands"
+    CHUNK = "chunk"
     TILE = "tiles"
     ENTITY = "entities"
 
 
 # class DocumentPath(BaseModel):
-# tables = ["worlds", "islands", "tiles", "entities"]
+# tables = ["worlds", "chunks", "tiles", "entities"]
 
 
 class AbstractDao[T](BaseModel):
@@ -53,8 +53,8 @@ class AbstractDao[T](BaseModel):
         if "world_id" in tokens:
             path = path / "worlds" / tokens["world_id"]
 
-        if "island_id" in tokens:
-            path = path / "islands" / tokens["island_id"]
+        if "chunk_id" in tokens:
+            path = path / "chunks" / tokens["chunk_id"]
 
         if "tile_id" in tokens:
             path = path / "tiles" / tokens["tile_id"]

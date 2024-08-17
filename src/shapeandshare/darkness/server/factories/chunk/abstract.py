@@ -9,21 +9,21 @@ from asyncio import Queue
 from pydantic import BaseModel
 
 from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
-from ....sdk.contracts.dtos.tiles.island import Island
+from ....sdk.contracts.dtos.tiles.chunk import Chunk
 from ....sdk.contracts.dtos.tiles.tile import Tile
 from ....sdk.contracts.dtos.window import Window
 from ....sdk.contracts.types.connection import TileConnectionType
 from ....sdk.contracts.types.tile import TileType
-from ...dao.island import IslandDao
+from ...dao.chunk import ChunkDao
 from ...dao.tile import TileDao
 from ...dao.world import WorldDao
 
 logger = logging.getLogger()
 
 
-class AbstractIslandFactory(BaseModel):
+class AbstractChunkFactory(BaseModel):
     tiledao: TileDao
-    islanddao: IslandDao
+    chunkdao: ChunkDao
     worlddao: WorldDao
 
     @staticmethod
@@ -108,12 +108,7 @@ class AbstractIslandFactory(BaseModel):
                 # next to more than one kind (grass/water)
                 await self.tiledao.patch(tokens=tokens, document={"tile_type": TileType.FOREST})
 
-        # # grass+(dirt)
-        # if island.tiles[tile_id].tile_type == TileType.GRASS:
-        #     neighbors: list[TileType] = FlatIslandFactory.adjecent_to(
-        #         # TODO: review this josh ...
-        #         island=island, tile_id=tile_id, types=[TileType.WATER, TileType.GRASS, TileType.DIRT, TileType.FOREST]
-        #     )
+        # TODO: grass+(dirt)
 
     async def brackish_tile(self, tokens: dict) -> None:
         # Convert inner Ocean to Water Tiles
@@ -123,48 +118,15 @@ class AbstractIslandFactory(BaseModel):
         if len(neighbors) < 1:
             await self.convert_tile(tokens=tokens, source=TileType.OCEAN, target=TileType.WATER)
 
-        # # are we an isolated ocean body? if so then we are water
+        # TODO: are we an isolated ocean body? if so then we are water
         #
         # # 1. For each next that is liquid (recusively), can we get to the edge?
-        # root_tile_id: str = tile_id
-        #
-        # # async def check_if_ocean(root_tile_id: str) -> bool:
         # #     # 1. Are we ocean? - if no then return False
-        # #     target_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=root_tile_id)
-        # #     if target_tile.data.tile_type != TileType.OCEAN:
-        # #         return False
-        # #
         # #     # 2. Are we edge? - if yes then return True
-        # #     #
-        # #     # 1d space
-        # #     # nexts? len=0, then - True
-        # #     #
-        # #     # 2d space
-        # #     # nexts? len=1->4,
-        # #     # if nexts < max of 4, then - True
-        # #     if len(target_tile.data.next) < 4:
-        # #         return True
-        # #
-        # #     # local = [ [conn, con_id] for conn in target_tile.data.next]
-        # #
         # #     # 3. then check my nexts
-        # #     #       if check all nexts is True, then True
-        # #
         # #     # 4. Return False (not ocean)
-        # #     return False
-        #
-        # if not await check_if_ocean(root_tile_id=root_tile_id):
-        #     # if True then we are water,
-        #     await self.convert_tile(
-        #         world_id=world_id, island_id=island_id, tile_id=tile_id, source=TileType.OCEAN, target=TileType.WATER
-        #     )
-        #
-        #     # root_tile: Tile = (await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=root_tile_id)).data
 
     async def erode_tile(self, tokens: dict) -> None:
-        # msg: str = f"eroding tile: {tile_id}"
-        # logger.debug(msg)
-
         # get
         target_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
         target_tile.data = Tile.model_validate(target_tile.data)
@@ -210,16 +172,16 @@ class AbstractIslandFactory(BaseModel):
                     # msg: str = f"({local_tile_id}) brought into existence as {TileType.OCEAN}"
                     # logger.debug(msg)
 
-                    # Update the island --
+                    # Update the chunk --
 
                     # get
-                    wrapped_island: WrappedData[Island] = await self.islanddao.get(tokens=tokens)
-                    wrapped_island.data = Island.model_validate(wrapped_island.data)
+                    wrapped_chunk: WrappedData[Chunk] = await self.chunkdao.get(tokens=tokens)
+                    wrapped_chunk.data = Chunk.model_validate(wrapped_chunk.data)
 
-                    wrapped_island.data.ids.add(tile_map[local_tile_id])
+                    wrapped_chunk.data.ids.add(tile_map[local_tile_id])
 
-                    # put -- store island update (tile addition)
-                    await self.islanddao.patch(tokens=tokens, document={"ids": wrapped_island.data.ids})
+                    # put -- store chunk update (tile addition)
+                    await self.chunkdao.patch(tokens=tokens, document={"ids": wrapped_chunk.data.ids})
 
                     queue.task_done()
 
@@ -228,12 +190,11 @@ class AbstractIslandFactory(BaseModel):
 
         await step_one()
 
-        # set origin tile on island
-        await self.islanddao.patch(tokens=tokens, document={"origin": tile_map["tile_1_1"]})
+        # set origin tile on chunk
+        await self.chunkdao.patch(tokens=tokens, document={"origin": tile_map["tile_1_1"]})
 
         # 2. Connect everything together
         async def step_two():
-            # wrapped_island: WrappedData[Island] = await self.islanddao.get(tokens={"world_id": world_id, "island_id": island_id})
             pattern: re.Pattern = re.compile("^tile_([a-zA-Z0-9-]+)_([a-zA-Z0-9-]+)$")
 
             async def consumer(queue):

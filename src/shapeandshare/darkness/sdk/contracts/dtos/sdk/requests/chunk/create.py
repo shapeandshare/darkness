@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from .....types.tile import TileType
 
 
-class IslandCreateRequest(BaseModel):
+class ChunkCreateRequest(BaseModel):
     world_id: str | None = None
 
     name: str | None = None

@@ -3,7 +3,7 @@ from enum import Enum
 
 class TileType(str, Enum):
     WORLD = "world"
-    ISLAND = "island"
+    CHUNK = "chunk"
 
     UNKNOWN = "unknown"
 
