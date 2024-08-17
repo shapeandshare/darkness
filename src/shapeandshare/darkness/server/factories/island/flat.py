@@ -15,6 +15,8 @@ logger = logging.getLogger()
 
 class FlatIslandFactory(AbstractIslandFactory):
     async def terrain_generate(self, world_id: str, island: Island) -> None:
+        tokens: dict = {"world_id": world_id, "island_id": island.id}
+
         # Lets shovel in some biome default or dirt tiles!
         async def step_one():
             async def consumer(queue: Queue):
@@ -22,9 +24,7 @@ class FlatIslandFactory(AbstractIslandFactory):
                     local_tile_id: str = await queue.get()
                     # Mutate tiles to biome default (or dirt)
                     await self.mutate_tile(
-                        world_id=world_id,
-                        island_id=island.id,
-                        tile_id=local_tile_id,
+                        tokens={**tokens, "tile_id": local_tile_id},
                         mutate=90,  # percentage of 100%
                         tile_type=(island.biome if island.biome else TileType.DIRT),
                     )
@@ -41,9 +41,7 @@ class FlatIslandFactory(AbstractIslandFactory):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
                     await self.mutate_tile(
-                        world_id=world_id,
-                        island_id=island.id,
-                        tile_id=local_tile_id,
+                        tokens={**tokens, "tile_id": local_tile_id},
                         mutate=0.5,  # 0.5% change (very low)
                         tile_type=TileType.ROCK,
                     )

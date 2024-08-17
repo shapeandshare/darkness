@@ -35,10 +35,11 @@ class AbstractIslandFactory(BaseModel):
     async def create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> str:
         """ """
 
-    async def mutate_tile(self, world_id: str, island_id: str, tile_id: str, mutate: float, tile_type: TileType) -> None:
+    async def mutate_tile(self, tokens: dict, mutate: float, tile_type: TileType) -> None:
+        # async def mutate_tile(self, world_id: str, island_id: str, tile_id: str, mutate: float, tile_type: TileType) -> None:
         if secrets.randbelow(100) <= mutate:
             # then we spawn the tile type
-            await self.tiledao.patch(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, document={"tile_type": tile_type})
+            await self.tiledao.patch(tokens=tokens, document={"tile_type": tile_type})
 
     async def convert_tile(self, world_id: str, island_id: str, tile_id: str, source: TileType, target: TileType) -> None:
         # get
