@@ -150,6 +150,41 @@ class AbstractDao[T](BaseModel):
     async def patch(self, tokens: dict, document: dict) -> WrappedData[T]:
         """ """
 
+    async def patch_partial(self, tokens: dict, document: dict, exclude: dict | None = None) -> WrappedData[T]:
+        logger.debug("[AbstractDAO] patching document data in storage")
+        document_metadata_path: Path = self._document_path(tokens=tokens)
+        if not document_metadata_path.parents[2].exists():
+            raise DaoDoesNotExistError("document container does not exist")
+        if not document_metadata_path.parent.exists():
+            logger.debug("[WorldDAO] document metadata folder creating ..")
+            document_metadata_path.parent.mkdir(parents=True, exist_ok=True)
+
+        previous_state: WrappedData[T] = await self.get(tokens=tokens)
+
+        # if we made it this far we are safe to update
+
+        # merge
+        nonce: str = str(uuid.uuid4())
+        previous_state_dict = previous_state.data
+        new_state = AbstractDao.recursive_dict_merge(previous_state_dict, document)
+        wrapped_data: WrappedData[T] = WrappedData[T](data=new_state, nonce=nonce)
+
+        # serialize to storage
+        dump_params: dict = {"exclude_none": True}
+        if exclude is not None:
+            dump_params["exclude"] = exclude
+        wrapped_data_raw: str = wrapped_data.model_dump_json(**dump_params)
+        with open(file=document_metadata_path, mode="w", encoding="utf-8") as file:
+            file.write(wrapped_data_raw)
+            os.fsync(file)
+
+        # now validate we stored
+        stored_entity: WrappedData[T] = await self.get(tokens=tokens)
+        if stored_entity.nonce != nonce:
+            msg: str = f"storage inconsistency detected while verifying patched document {wrapped_data.data.id} - nonce mismatch!"
+            raise DaoInconsistencyError(msg)
+        return stored_entity
+
     async def delete(self, tokens: dict) -> bool:
         logger.debug("[AbstractDAO] deleting document data from storage")
         document_metadata_path: Path = self._document_path(tokens=tokens)
