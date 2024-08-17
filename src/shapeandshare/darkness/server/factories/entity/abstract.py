@@ -26,31 +26,31 @@ class AbstractEntityFactory(BaseModel):
         for local_id in ids:
             await queue.put(local_id)
 
-    async def generate(self, world_id: str, island_id: str, tile_id: str) -> None:
+    async def generate(self, tokens: dict) -> None:
         # get entities ids for the tile
-        local_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
+        local_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
         local_tile.data = Tile.model_validate(local_tile.data)
         if len(local_tile.data.ids) > 0:
-            msg: str = f"entity generation can not occur on a tile with pre-existing entities, world_id: {world_id}, island_id: {island_id}, tile_id: {tile_id}"
+            msg: str = f"entity generation can not occur on a tile with pre-existing entities, {tokens}"
             raise FactoryError(msg)
 
         # Review types now
         if local_tile.data.tile_type == TileType.GRASS:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.GRASS)
-            await self.entitydao.post(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, document=new_entity)
+            await self.entitydao.post(tokens=tokens, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
         elif local_tile.data.tile_type == TileType.FOREST:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.TREE)
-            await self.entitydao.post(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, document=new_entity)
+            await self.entitydao.post(tokens=tokens, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
         elif local_tile.data.tile_type == TileType.OCEAN:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.FISH)
-            await self.entitydao.post(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, document=new_entity)
+            await self.entitydao.post(tokens=tokens, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
-        await self.tiledao.put(tokens={"world_id": world_id, "island_id": island_id}, wrapped_document=local_tile)
+        await self.tiledao.patch(tokens=tokens, document={"ids": local_tile.data.ids})
 
     async def grow_entities(self, world_id: str, island_id: str, tile_id: str):
         # get entities ids for the tile

@@ -16,7 +16,7 @@ class EntityFactory(AbstractEntityFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    await self.generate(world_id=world_id, island_id=island.id, tile_id=local_tile_id)
+                    await self.generate(tokens={"world_id": world_id, "island_id": island.id, "tile_id": local_tile_id})
                     queue.task_done()
 
             queue = asyncio.Queue()
