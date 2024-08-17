@@ -77,7 +77,7 @@ class StateService(BaseModel):
         wrapped_world_lite.data.ids.add(new_island.id)
 
         # put
-        await self.worlddao.put_safe(wrapped_world=wrapped_world_lite)
+        await self.worlddao.put(wrapped_world=wrapped_world_lite)
 
         return new_island.id
 
