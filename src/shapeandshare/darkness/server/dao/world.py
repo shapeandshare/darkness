@@ -6,7 +6,6 @@ from pathlib import Path
 
 from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from ...sdk.contracts.dtos.tiles.world import World
-from ...sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from ...sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from ...sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
 from .abstract import AbstractDao
@@ -17,27 +16,8 @@ logger = logging.getLogger()
 class WorldDao(AbstractDao[World]):
     async def post(self, tokens: dict, document: World) -> WrappedData[World]:
         logger.debug("[WorldDAO] posting world metadata to storage")
-        world_metadata_path: Path = self._document_path(tokens=tokens)
-        if world_metadata_path.exists():
-            raise DaoConflictError("world metadata already exists")
-        if not world_metadata_path.parent.exists():
-            logger.debug("[WorldDAO] world metadata folder creating ..")
-            world_metadata_path.parent.mkdir(parents=True, exist_ok=True)
-
-        nonce: str = str(uuid.uuid4())
-        wrapped_data: WrappedData[World] = WrappedData[World](data=document, nonce=nonce)
-        wrapped_data_raw: str = wrapped_data.model_dump_json(exclude={"data": {"next", "contents"}})
-        with open(file=world_metadata_path, mode="w", encoding="utf-8") as file:
-            file.write(wrapped_data_raw)
-            os.fsync(file)
-
-        # now validate we stored
-        stored_world: WrappedData[World] = await self.get(tokens=tokens)
-        stored_world.data = World.model_validate(stored_world.data)
-        if stored_world.nonce != nonce:
-            msg: str = f"storage inconsistency detected while storing world {document.id} - nonce mismatch!"
-            raise DaoInconsistencyError(msg)
-        return stored_world
+        tokens["world_id"] = document.id
+        return await self.post_partial(tokens=tokens, document=document, exclude={"data": {"next", "contents"}})
 
     async def put(self, tokens: dict, wrapped_document: WrappedData[World]) -> WrappedData[World]:
         world_id: str = wrapped_document.data.id

@@ -6,7 +6,6 @@ from pathlib import Path
 
 from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from ...sdk.contracts.dtos.tiles.island import Island
-from ...sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from ...sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from ...sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
 from .abstract import AbstractDao
@@ -18,30 +17,7 @@ class IslandDao(AbstractDao[Island]):
     async def post(self, tokens: dict, document: Island) -> WrappedData[Island]:
         logger.debug("[IslandDAO] posting island metadata to storage")
         tokens["island_id"] = document.id
-
-        island_metadata_path: Path = self._document_path(tokens=tokens)
-        if island_metadata_path.exists():
-            raise DaoConflictError("island metadata already exists")
-        if not island_metadata_path.parents[2].exists():
-            raise DaoDoesNotExistError("island container (world) does not exist")
-        if not island_metadata_path.parent.exists():
-            logger.debug("[IslandDAO] island metadata folder creating ..")
-            island_metadata_path.parent.mkdir(parents=True, exist_ok=True)
-
-        nonce: str = str(uuid.uuid4())
-        wrapped_data: WrappedData[Island] = WrappedData[Island](data=document, nonce=nonce)
-        wrapped_data_raw: str = wrapped_data.model_dump_json(exclude={"data": {"next", "contents"}})
-        with open(file=island_metadata_path, mode="w", encoding="utf-8") as file:
-            file.write(wrapped_data_raw)
-            os.fsync(file)
-
-        # now validate we stored
-        stored_island: WrappedData[Island] = await self.get(tokens=tokens)
-        stored_island.data = Island.model_validate(stored_island.data)
-        if stored_island.nonce != nonce:
-            msg: str = f"storage inconsistency detected while storing island {document.id} - nonce mismatch!"
-            raise DaoInconsistencyError(msg)
-        return stored_island
+        return await self.post_partial(tokens=tokens, document=document, exclude={"data": {"next", "contents"}})
 
     async def put(self, tokens: dict, wrapped_document: WrappedData[Island]) -> WrappedData[Island]:
         logger.debug("[IslandDAO] putting island data to storage")

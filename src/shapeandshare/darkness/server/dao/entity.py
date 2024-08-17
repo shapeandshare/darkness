@@ -6,7 +6,6 @@ from pathlib import Path
 
 from ...sdk.contracts.dtos.entities.entity import Entity
 from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
-from ...sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from ...sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from ...sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
 from .abstract import AbstractDao
@@ -18,28 +17,7 @@ class EntityDao(AbstractDao[Entity]):
     async def post(self, tokens: dict, document: Entity) -> WrappedData[Entity]:
         logger.debug("[EntityDAO] posting entity data to storage")
         tokens["entity_id"] = document.id
-        entity_metadata_path: Path = self._document_path(tokens=tokens)
-        if entity_metadata_path.exists():
-            raise DaoConflictError("entity metadata already exists")
-        if not entity_metadata_path.parents[2].exists():
-            raise DaoDoesNotExistError("entity container (tile) does not exist")
-        if not entity_metadata_path.parent.exists():
-            logger.debug("[EntityDAO] entity metadata folder creating ..")
-            entity_metadata_path.parent.mkdir(parents=True, exist_ok=True)
-        nonce: str = str(uuid.uuid4())
-        wrapped_data: WrappedData[Entity] = WrappedData[Entity](data=document, nonce=nonce)
-        wrapped_data_raw: str = wrapped_data.model_dump_json(exclude_none=True)
-        with open(file=entity_metadata_path, mode="w", encoding="utf-8") as file:
-            file.write(wrapped_data_raw)
-            os.fsync(file)
-
-            # now validate we stored
-        stored_entity: WrappedData[Entity] = await self.get(tokens=tokens)
-        stored_entity.data = Entity.model_validate(stored_entity.data)
-        if stored_entity.nonce != nonce:
-            msg: str = f"storage inconsistency detected while storing entity {document.id} - nonce mismatch!"
-            raise DaoInconsistencyError(msg)
-        return stored_entity
+        return await self.post_partial(tokens=tokens, document=document)
 
     async def put(self, tokens: dict, wrapped_document: WrappedData[Entity]) -> WrappedData[Entity]:
         logger.debug("[EntityDAO] putting entity data to storage")

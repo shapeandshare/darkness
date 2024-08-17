@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 from abc import abstractmethod
 from enum import Enum
 from pathlib import Path
@@ -7,7 +8,10 @@ from typing import TypeVar
 
 from pydantic import BaseModel
 
-from src.shapeandshare.darkness import DaoDoesNotExistError, WrappedData
+from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
+from ...sdk.contracts.errors.server.dao.conflict import DaoConflictError
+from ...sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
+from ...sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
 
 logger = logging.getLogger()
 
@@ -72,6 +76,35 @@ class AbstractDao[T](BaseModel):
     @abstractmethod
     async def post(self, tokens: dict, document: T) -> WrappedData[T]:
         """ """
+
+    async def post_partial(self, tokens: dict, document: T, exclude: dict | None = None) -> WrappedData[T]:
+
+        entity_metadata_path: Path = self._document_path(tokens=tokens)
+        if entity_metadata_path.exists():
+            raise DaoConflictError("entity metadata already exists")
+        if not entity_metadata_path.parents[2].exists():
+            raise DaoDoesNotExistError("entity container (tile) does not exist")
+        if not entity_metadata_path.parent.exists():
+            logger.debug("[EntityDAO] entity metadata folder creating ..")
+            entity_metadata_path.parent.mkdir(parents=True, exist_ok=True)
+
+        nonce: str = str(uuid.uuid4())
+        wrapped_data: WrappedData[T] = WrappedData[T](data=document, nonce=nonce)
+        dump_params: dict = {"exclude_none": True}
+        if exclude is not None:
+            dump_params["exclude"] = exclude
+        wrapped_data_raw: str = wrapped_data.model_dump_json(**dump_params)
+        with open(file=entity_metadata_path, mode="w", encoding="utf-8") as file:
+            file.write(wrapped_data_raw)
+            os.fsync(file)
+
+        # now validate we stored
+        stored_entity: WrappedData[T] = await self.get(tokens=tokens)
+        # stored_entity.data = T[T].model_validate(stored_entity.data)
+        if stored_entity.nonce != nonce:
+            msg: str = f"storage inconsistency detected while storing document {document.id} - nonce mismatch!"
+            raise DaoInconsistencyError(msg)
+        return stored_entity
 
     @abstractmethod
     async def put(self, tokens: dict, wrapped_document: WrappedData[T]) -> WrappedData[T]:

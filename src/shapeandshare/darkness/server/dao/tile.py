@@ -6,7 +6,6 @@ from pathlib import Path
 
 from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from ...sdk.contracts.dtos.tiles.tile import Tile
-from ...sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from ...sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from ...sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
 from .abstract import AbstractDao
@@ -19,28 +18,7 @@ class TileDao(AbstractDao[Tile]):
         logger.debug("[TileDAO] posting tile data to storage")
         # add tile_id to tokens
         tokens["tile_id"] = document.id
-        tile_metadata_path: Path = self._document_path(tokens=tokens)
-        if tile_metadata_path.exists():
-            raise DaoConflictError("tile metadata already exists")
-        if not tile_metadata_path.parents[2].exists():
-            raise DaoDoesNotExistError("tile container (island) does not exist")
-        if not tile_metadata_path.parent.exists():
-            logger.debug("[TileDAO] tile metadata folder creating ..")
-            tile_metadata_path.parent.mkdir(parents=True, exist_ok=True)
-        nonce: str = str(uuid.uuid4())
-        wrapped_data: WrappedData[Tile] = WrappedData[Tile](data=document, nonce=nonce)
-        wrapped_data_raw: str = wrapped_data.model_dump_json(exclude={"data": {"contents"}}, exclude_none=True)
-        with open(file=tile_metadata_path, mode="w", encoding="utf-8") as file:
-            file.write(wrapped_data_raw)
-            os.fsync(file)
-
-        # now validate we stored
-        stored_tile: WrappedData[Tile] = await self.get(tokens=tokens)
-        stored_tile.data = Tile.model_validate(stored_tile.data)
-        if stored_tile.nonce != nonce:
-            msg: str = f"storage inconsistency detected while storing tile {document.id} - nonce mismatch!"
-            raise DaoInconsistencyError(msg)
-        return stored_tile
+        return await self.post_partial(tokens=tokens, document=document, exclude={"data": {"contents"}})
 
     async def put(self, tokens: dict, wrapped_document: WrappedData[Tile]) -> WrappedData[Tile]:
         tokens["tile_id"] = wrapped_document.data.id
