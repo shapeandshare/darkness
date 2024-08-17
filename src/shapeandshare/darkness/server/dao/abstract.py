@@ -79,7 +79,6 @@ class AbstractDao[T](BaseModel):
         """ """
 
     async def post_partial(self, tokens: dict, document: T, exclude: dict | None = None) -> WrappedData[T]:
-
         entity_metadata_path: Path = self._document_path(tokens=tokens)
         if entity_metadata_path.exists():
             raise DaoConflictError("document metadata already exists")
@@ -109,6 +108,43 @@ class AbstractDao[T](BaseModel):
     @abstractmethod
     async def put(self, tokens: dict, wrapped_document: WrappedData[T]) -> WrappedData[T]:
         """ """
+
+    async def put_partial(self, tokens: dict, wrapped_document: WrappedData[T], exclude: dict | None = None) -> WrappedData[T]:
+        document_metadata_path: Path = self._document_path(tokens=tokens)
+        if not document_metadata_path.parents[2].exists():
+            raise DaoDoesNotExistError("document container does not exist")
+        if not document_metadata_path.parent.exists():
+            logger.debug("[AbstractDAO] document metadata folder creating ..")
+            document_metadata_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # see if we have a pre-existing nonce to verify against
+        try:
+            previous_state: WrappedData[T] = await self.get(tokens=tokens)
+            if previous_state.nonce != wrapped_document.nonce:
+                msg: str = f"storage inconsistency detected while putting document {wrapped_document.data.id} - nonce mismatch!"
+                raise DaoInconsistencyError(msg)
+        except DaoDoesNotExistError:
+            # then no nonce to verify against.
+            pass
+
+        # if we made it this far we are safe to update
+
+        nonce: str = str(uuid.uuid4())
+        wrapped_data: WrappedData[T] = WrappedData[T](data=wrapped_document.data, nonce=nonce)
+        dump_params: dict = {"exclude_none": True}
+        if exclude is not None:
+            dump_params["exclude"] = exclude
+        wrapped_data_raw: str = wrapped_data.model_dump_json(exclude_none=True)
+        with open(file=document_metadata_path, mode="w", encoding="utf-8") as file:
+            file.write(wrapped_data_raw)
+            os.fsync(file)
+
+        # now validate we stored
+        stored_entity: WrappedData[T] = await self.get(tokens=tokens)
+        if stored_entity.nonce != nonce:
+            msg: str = f"storage inconsistency detected while verifying put entity {wrapped_data.data.id} - nonce mismatch!"
+            raise DaoInconsistencyError(msg)
+        return stored_entity
 
     @abstractmethod
     async def patch(self, tokens: dict, document: dict) -> WrappedData[T]:

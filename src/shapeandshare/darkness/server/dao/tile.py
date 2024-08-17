@@ -22,40 +22,7 @@ class TileDao(AbstractDao[Tile]):
     async def put(self, tokens: dict, wrapped_document: WrappedData[Tile]) -> WrappedData[Tile]:
         tokens["tile_id"] = wrapped_document.data.id
         logger.debug("[TileDAO] putting tile data to storage")
-        tile_metadata_path: Path = self._document_path(tokens=tokens)
-        if not tile_metadata_path.parents[2].exists():
-            raise DaoDoesNotExistError("tile container (island) does not exist")
-        if not tile_metadata_path.parent.exists():
-            logger.debug("[TileDAO] tile metadata folder creating ..")
-            tile_metadata_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # see if we have a pre-existing nonce to verify against
-        try:
-            previous_state: WrappedData[Tile] = await self.get(tokens=tokens)
-            previous_state.data = Tile.model_validate(previous_state.data)
-            if previous_state.nonce != wrapped_document.nonce:
-                msg: str = f"storage inconsistency detected while putting tile {wrapped_document.data.id} - nonce mismatch!"
-                raise DaoInconsistencyError(msg)
-        except DaoDoesNotExistError:
-            # then no nonce to verify against.
-            pass
-
-        # if we made it this far we are safe to update
-
-        nonce: str = str(uuid.uuid4())
-        wrapped_data: WrappedData[Tile] = WrappedData[Tile](data=wrapped_document.data, nonce=nonce)
-        wrapped_data_raw: str = wrapped_data.model_dump_json(exclude={"data": {"contents"}}, exclude_none=True)
-        with open(file=tile_metadata_path, mode="w", encoding="utf-8") as file:
-            file.write(wrapped_data_raw)
-            os.fsync(file)
-
-        # now validate we stored
-        stored_tile: WrappedData[Tile] = await self.get(tokens=tokens)
-        stored_tile.data = Tile.model_validate(stored_tile.data)
-        if stored_tile.nonce != nonce:
-            msg: str = f"storage inconsistency detected while verifying put tile {wrapped_data.data.id} - nonce mismatch!"
-            raise DaoInconsistencyError(msg)
-        return stored_tile
+        return await self.put_partial(tokens=tokens, wrapped_document=wrapped_document, exclude={"data": {"contents"}})
 
     async def patch(self, tokens: dict, document: dict) -> WrappedData[Tile]:
         if "id" in document:
