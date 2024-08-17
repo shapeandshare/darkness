@@ -41,7 +41,7 @@ class AbstractIslandFactory(BaseModel):
     async def convert_tile(self, world_id: str, island_id: str, tile_id: str, source: TileType, target: TileType) -> None:
         # get
         target_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
-
+        target_tile.data = Tile.model_validate(target_tile.data)
         # check
         if target_tile.data.tile_type == source:
             # patch
@@ -57,6 +57,7 @@ class AbstractIslandFactory(BaseModel):
         adjecent_targets: list[TileType] = []
 
         target_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
+        target_tile.data = Tile.model_validate(target_tile.data)
 
         async def adjecent_producer(queue: Queue):
             for _, adjecent_id in target_tile.data.next.items():
@@ -70,6 +71,7 @@ class AbstractIslandFactory(BaseModel):
                     island_id = work_item["island_id"]
                     tile_id = work_item["tile_id"]
                     adjecent_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
+                    adjecent_tile.data = Tile.model_validate(adjecent_tile.data)
                     if adjecent_tile.data.tile_type in types and adjecent_tile.data.tile_type not in adjecent_targets:
                         adjecent_targets.append(adjecent_tile.data.tile_type)
 
@@ -88,7 +90,7 @@ class AbstractIslandFactory(BaseModel):
     async def grow_tile(self, world_id: str, island_id: str, tile_id: str) -> None:
         # get
         target_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
-
+        target_tile.data = Tile.model_validate(target_tile.data)
         # dirt -> grass
         if target_tile.data.tile_type == TileType.DIRT:
             adjecent_liquids: list[TileType] = await self.adjecent_liquids(world_id=world_id, island_id=island_id, tile_id=tile_id)
@@ -171,6 +173,7 @@ class AbstractIslandFactory(BaseModel):
 
         # get
         target_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
+        target_tile.data = Tile.model_validate(target_tile.data)
 
         # shore erosion
         if target_tile.data.tile_type not in [TileType.UNKNOWN, TileType.OCEAN, TileType.WATER, TileType.SHORE]:
@@ -217,8 +220,8 @@ class AbstractIslandFactory(BaseModel):
 
                     # get
                     wrapped_island: WrappedData[Island] = await self.islanddao.get(tokens={"world_id": world_id, "island_id": island_id})
+                    wrapped_island.data = Island.model_validate(wrapped_island.data)
 
-                    # Patch - Add tile_id to in-memory representation before storing
                     wrapped_island.data.ids.add(tile_map[local_tile_id])
 
                     # put -- store island update (tile addition)
@@ -233,7 +236,7 @@ class AbstractIslandFactory(BaseModel):
 
         # set origin tile on island
         wrapped_island: WrappedData[Island] = await self.islanddao.get(tokens={"world_id": world_id, "island_id": island_id})
-        # print(tile_map)
+        wrapped_island.data = Island.model_validate(wrapped_island.data)
         wrapped_island.data.origin = tile_map["tile_1_1"]
         await self.islanddao.put(tokens={"world_id": world_id}, wrapped_island=wrapped_island)
 

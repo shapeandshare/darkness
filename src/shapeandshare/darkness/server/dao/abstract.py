@@ -1,4 +1,5 @@
 import logging
+import os
 from abc import abstractmethod
 from enum import Enum
 from pathlib import Path
@@ -6,7 +7,7 @@ from typing import TypeVar
 
 from pydantic import BaseModel
 
-from src.shapeandshare.darkness import WrappedData
+from src.shapeandshare.darkness import DaoDoesNotExistError, WrappedData
 
 logger = logging.getLogger()
 
@@ -58,9 +59,19 @@ class AbstractDao[T](BaseModel):
 
         return path / "metadata.json"
 
-    @abstractmethod
-    async def get(self, *args, **kwargs) -> WrappedData[T]:
-        """ """
+    # @abstractmethod
+    # async def get(self, *args, **kwargs) -> WrappedData[T]:
+    #     """ """
+
+    async def get(self, tokens: dict) -> WrappedData[T]:
+        logger.debug("[AbstractDao] getting document metadata from storage")
+        document_metadata_path: Path = self._document_path(tokens=tokens)
+        if not document_metadata_path.exists():
+            raise DaoDoesNotExistError("document metadata does not exist")
+        with open(file=document_metadata_path, mode="r", encoding="utf-8") as file:
+            os.fsync(file)
+            json_data: str = file.read()
+        return WrappedData[T].model_validate_json(json_data)
 
     @abstractmethod
     async def post(self, *args, **kwargs) -> WrappedData[T]:

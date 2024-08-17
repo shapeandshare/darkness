@@ -15,16 +15,6 @@ logger = logging.getLogger()
 
 
 class EntityDao(AbstractDao[Entity]):
-    async def get(self, tokens: dict) -> WrappedData[Entity]:
-        logger.debug("[EntityDAO] getting entity data from storage")
-        entity_metadata_path: Path = self._document_path(tokens=tokens)
-        if not entity_metadata_path.exists():
-            raise DaoDoesNotExistError("entity metadata does not exist")
-        with open(file=entity_metadata_path, mode="r", encoding="utf-8") as file:
-            os.fsync(file)
-            json_data: str = file.read()
-        return WrappedData[Entity].model_validate_json(json_data)
-
     async def post(self, tokens: dict, entity: Entity) -> WrappedData[Entity]:
         logger.debug("[EntityDAO] posting entity data to storage")
         tokens["entity_id"] = entity.id
@@ -45,6 +35,7 @@ class EntityDao(AbstractDao[Entity]):
 
             # now validate we stored
         stored_entity: WrappedData[Entity] = await self.get(tokens=tokens)
+        stored_entity.data = Entity.model_validate(stored_entity.data)
         if stored_entity.nonce != nonce:
             msg: str = f"storage inconsistency detected while storing entity {entity.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
@@ -63,6 +54,7 @@ class EntityDao(AbstractDao[Entity]):
         # see if we have a pre-existing nonce to verify against
         try:
             previous_state: WrappedData[Entity] = await self.get(tokens=tokens)
+            previous_state.data = Entity.model_validate(previous_state.data)
             if previous_state.nonce != wrapped_entity.nonce:
                 msg: str = f"storage inconsistency detected while putting entity {wrapped_entity.data.id} - nonce mismatch!"
                 raise DaoInconsistencyError(msg)
@@ -81,6 +73,7 @@ class EntityDao(AbstractDao[Entity]):
 
         # now validate we stored
         stored_entity: WrappedData[Entity] = await self.get(tokens=tokens)
+        stored_entity.data = Entity.model_validate(stored_entity.data)
         if stored_entity.nonce != nonce:
             msg: str = f"storage inconsistency detected while verifying put entity {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
@@ -99,6 +92,7 @@ class EntityDao(AbstractDao[Entity]):
             entity_metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
         previous_state: WrappedData[Entity] = await self.get(tokens=tokens)
+        previous_state.data = Entity.model_validate(previous_state.data)
 
         # if we made it this far we are safe to update
 
@@ -116,6 +110,7 @@ class EntityDao(AbstractDao[Entity]):
 
         # now validate we stored
         stored_entity: WrappedData[Entity] = await self.get(tokens=tokens)
+        stored_entity.data = Entity.model_validate(stored_entity.data)
         if stored_entity.nonce != nonce:
             msg: str = f"storage inconsistency detected while verifying patched entity {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)

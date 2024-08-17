@@ -15,16 +15,6 @@ logger = logging.getLogger()
 
 
 class WorldDao(AbstractDao[World]):
-    async def get(self, world_id: str) -> WrappedData[World]:
-        logger.debug("[WorldDAO] getting world metadata from storage")
-        world_metadata_path: Path = self._document_path(tokens={"world_id": world_id})
-        if not world_metadata_path.exists():
-            raise DaoDoesNotExistError("world metadata does not exist")
-        with open(file=world_metadata_path, mode="r", encoding="utf-8") as file:
-            os.fsync(file)
-            json_data: str = file.read()
-        return WrappedData[World].model_validate_json(json_data)
-
     async def post(self, world: World) -> WrappedData[World]:
         logger.debug("[WorldDAO] posting world metadata to storage")
         world_metadata_path: Path = self._document_path(tokens={"world_id": world.id})
@@ -42,7 +32,8 @@ class WorldDao(AbstractDao[World]):
             os.fsync(file)
 
         # now validate we stored
-        stored_world: WrappedData[World] = await self.get(world_id=world.id)
+        stored_world: WrappedData[World] = await self.get(tokens={"world_id": world.id})
+        stored_world.data = World.model_validate(stored_world.data)
         if stored_world.nonce != nonce:
             msg: str = f"storage inconsistency detected while storing world {world.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
@@ -59,7 +50,8 @@ class WorldDao(AbstractDao[World]):
 
         # see if we have a pre-existing nonce to verify against
         try:
-            previous_state: WrappedData[World] = await self.get(world_id=world_id)
+            previous_state: WrappedData[World] = await self.get(tokens={"world_id": world_id})
+            previous_state.data = World.model_validate(previous_state.data)
             if previous_state.nonce != wrapped_world.nonce:
                 msg: str = f"storage inconsistency detected while putting world {world_id} - nonce mismatch!"
                 raise DaoInconsistencyError(msg)
@@ -77,7 +69,8 @@ class WorldDao(AbstractDao[World]):
             os.fsync(file)
 
         # now validate we stored
-        stored_world: WrappedData[World] = await self.get(world_id=world_id)
+        stored_world: WrappedData[World] = await self.get(tokens={"world_id": world_id})
+        stored_world.data = World.model_validate(stored_world.data)
         if stored_world.nonce != nonce:
             msg: str = f"storage inconsistency detected while verifying put world {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
@@ -92,7 +85,8 @@ class WorldDao(AbstractDao[World]):
             logger.debug("[WorldDAO] world metadata folder creating ..")
             world_metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
-        previous_state: WrappedData[World] = await self.get(world_id=world_id)
+        previous_state: WrappedData[World] = await self.get(tokens={"world_id": world_id})
+        previous_state.data = World.model_validate(previous_state.data)
 
         # if we made it this far we are safe to update
 
@@ -109,7 +103,8 @@ class WorldDao(AbstractDao[World]):
             os.fsync(file)
 
         # now validate we stored
-        stored_entity: WrappedData[World] = await self.get(world_id=world_id)
+        stored_entity: WrappedData[World] = await self.get(tokens={"world_id": world_id})
+        stored_entity.data = World.model_validate(stored_entity.data)
         if stored_entity.nonce != nonce:
             msg: str = f"storage inconsistency detected while verifying patched world {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)

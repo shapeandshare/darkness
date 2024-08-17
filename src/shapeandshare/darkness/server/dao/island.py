@@ -15,16 +15,6 @@ logger = logging.getLogger()
 
 
 class IslandDao(AbstractDao[Island]):
-    async def get(self, tokens: dict) -> WrappedData[Island]:
-        logger.debug("[IslandDAO] getting island metadata from storage")
-        island_metadata_path: Path = self._document_path(tokens=tokens)
-        if not island_metadata_path.exists():
-            raise DaoDoesNotExistError("island metadata does not exist")
-        with open(file=island_metadata_path, mode="r", encoding="utf-8") as file:
-            os.fsync(file)
-            json_data: str = file.read()
-        return WrappedData[Island].model_validate_json(json_data)
-
     async def post(self, tokens: dict, island: Island) -> WrappedData[Island]:
         logger.debug("[IslandDAO] posting island metadata to storage")
         tokens["island_id"] = island.id
@@ -47,6 +37,7 @@ class IslandDao(AbstractDao[Island]):
 
         # now validate we stored
         stored_island: WrappedData[Island] = await self.get(tokens=tokens)
+        stored_island.data = Island.model_validate(stored_island.data)
         if stored_island.nonce != nonce:
             msg: str = f"storage inconsistency detected while storing island {island.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
@@ -65,6 +56,7 @@ class IslandDao(AbstractDao[Island]):
         # see if we have a pre-existing nonce to verify against
         try:
             previous_state = await self.get(tokens=tokens)
+            previous_state.data = Island.model_validate(previous_state.data)
             if previous_state.nonce != wrapped_island.nonce:
                 msg: str = f"storage inconsistency detected while putting island {wrapped_island.data.id} - nonce mismatch!"
                 raise DaoInconsistencyError(msg)
@@ -83,6 +75,7 @@ class IslandDao(AbstractDao[Island]):
 
         # now validate we stored
         stored_island: WrappedData[Island] = await self.get(tokens=tokens)
+        stored_island.data = Island.model_validate(stored_island.data)
         if stored_island.nonce != nonce:
             msg: str = f"storage inconsistency detected while verifying put island {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
@@ -100,6 +93,7 @@ class IslandDao(AbstractDao[Island]):
             island_metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
         previous_state: WrappedData[Island] = await self.get(tokens=tokens)
+        previous_state.data = Island.model_validate(previous_state.data)
 
         # if we made it this far we are safe to update
 
@@ -117,6 +111,7 @@ class IslandDao(AbstractDao[Island]):
 
         # now validate we stored
         stored_entity: WrappedData[Island] = await self.get(tokens=tokens)
+        stored_entity.data = Island.model_validate(stored_entity.data)
         if stored_entity.nonce != nonce:
             msg: str = f"storage inconsistency detected while verifying patched island {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)

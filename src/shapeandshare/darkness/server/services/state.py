@@ -62,7 +62,7 @@ class StateService(BaseModel):
 
         # Entity Factory Terrain Creation
         await self.entity_factory.terrain_generate(world_id=request.world_id, island=new_island)
-        new_island: Island = (await self.islanddao.get(tokens={"world_id": request.world_id, "island_id": new_island.id})).data
+        new_island: Island = Island.model_validate((await self.islanddao.get(tokens={"world_id": request.world_id, "island_id": new_island.id})).data)
 
         # Entity Factory Quantum
         await self.entity_factory.quantum(world_id=request.world_id, island=new_island)
@@ -71,7 +71,8 @@ class StateService(BaseModel):
         # add island to world and store
 
         # get
-        wrapped_world_lite: WrappedData[World] = await self.worlddao.get(world_id=request.world_id)
+        wrapped_world_lite: WrappedData[World] = await self.worlddao.get(tokens={"world_id": request.world_id})
+        wrapped_world_lite.data = World.model_validate(wrapped_world_lite.data)
 
         # update our state
         wrapped_world_lite.data.ids.add(new_island.id)
@@ -91,7 +92,7 @@ class StateService(BaseModel):
 
     async def island_get(self, request: IslandGetRequest) -> Island:
         # Builds a complete Island from Lite objects
-        island_lite: Island = (await self.islanddao.get(tokens={"world_id": request.world_id, "island_id": request.island_id})).data
+        island_lite: Island = Island.model_validate((await self.islanddao.get(tokens={"world_id": request.world_id, "island_id": request.island_id})).data)
         tile_ids: set[str] = island_lite.ids
         island_partial = island_lite.model_dump(exclude={"tile_ids"})
         # island: IslandFull = IslandFull.model_validate(island_partial)
@@ -99,7 +100,7 @@ class StateService(BaseModel):
 
         # re-hydrate the tiles
         for tile_id in tile_ids:
-            tile: Tile = (await self.tiledao.get(tokens={"world_id": request.world_id, "island_id": island.id, "tile_id": tile_id})).data
+            tile: Tile = Tile.model_validate((await self.tiledao.get(tokens={"world_id": request.world_id, "island_id": island.id, "tile_id": tile_id})).data)
             island.contents[tile_id] = tile
 
         return island
