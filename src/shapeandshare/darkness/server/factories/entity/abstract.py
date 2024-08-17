@@ -28,7 +28,7 @@ class AbstractEntityFactory(BaseModel):
 
     async def generate(self, world_id: str, island_id: str, tile_id: str) -> None:
         # get entities ids for the tile
-        local_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
+        local_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
         if len(local_tile.data.ids) > 0:
             msg: str = f"entity generation can not occur on a tile with pre-existing entities, world_id: {world_id}, island_id: {island_id}, tile_id: {tile_id}"
             raise FactoryError(msg)
@@ -63,7 +63,7 @@ class AbstractEntityFactory(BaseModel):
 
     async def grow_entities(self, world_id: str, island_id: str, tile_id: str):
         # get entities ids for the tile
-        local_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
+        local_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
 
         async def entity_producer(queue: Queue):
             for entity_id in local_tile.data.ids:

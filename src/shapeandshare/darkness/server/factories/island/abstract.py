@@ -40,7 +40,7 @@ class AbstractIslandFactory(BaseModel):
 
     async def convert_tile(self, world_id: str, island_id: str, tile_id: str, source: TileType, target: TileType) -> None:
         # get
-        target_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
+        target_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
 
         # check
         if target_tile.data.tile_type == source:
@@ -56,7 +56,7 @@ class AbstractIslandFactory(BaseModel):
     async def adjecent_to(self, world_id: str, island_id: str, tile_id: str, types: list[TileType] | None) -> list[TileType]:
         adjecent_targets: list[TileType] = []
 
-        target_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
+        target_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
 
         async def adjecent_producer(queue: Queue):
             for _, adjecent_id in target_tile.data.next.items():
@@ -69,7 +69,7 @@ class AbstractIslandFactory(BaseModel):
                     world_id = work_item["world_id"]
                     island_id = work_item["island_id"]
                     tile_id = work_item["tile_id"]
-                    adjecent_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
+                    adjecent_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
                     if adjecent_tile.data.tile_type in types and adjecent_tile.data.tile_type not in adjecent_targets:
                         adjecent_targets.append(adjecent_tile.data.tile_type)
 
@@ -87,7 +87,7 @@ class AbstractIslandFactory(BaseModel):
 
     async def grow_tile(self, world_id: str, island_id: str, tile_id: str) -> None:
         # get
-        target_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
+        target_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
 
         # dirt -> grass
         if target_tile.data.tile_type == TileType.DIRT:
@@ -170,7 +170,7 @@ class AbstractIslandFactory(BaseModel):
         # logger.debug(msg)
 
         # get
-        target_tile: WrappedData[Tile] = await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=tile_id)
+        target_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
 
         # shore erosion
         if target_tile.data.tile_type not in [TileType.UNKNOWN, TileType.OCEAN, TileType.WATER, TileType.SHORE]:

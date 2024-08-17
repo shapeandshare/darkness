@@ -99,7 +99,7 @@ class StateService(BaseModel):
 
         # re-hydrate the tiles
         for tile_id in tile_ids:
-            tile: Tile = (await self.tiledao.get(world_id=request.world_id, island_id=island.id, tile_id=tile_id)).data
+            tile: Tile = (await self.tiledao.get(tokens={"world_id": request.world_id, "island_id": island.id, "tile_id": tile_id})).data
             island.contents[tile_id] = tile
 
         return island
