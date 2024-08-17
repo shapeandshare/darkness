@@ -1,6 +1,5 @@
 import logging
 import os
-import shutil
 import uuid
 from pathlib import Path
 
@@ -93,12 +92,3 @@ class TileDao(AbstractDao[Tile]):
             msg: str = f"storage inconsistency detected while verifying patched tile {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
         return stored_entity
-
-    async def delete(self, tokens: dict) -> bool:
-        logger.debug("[TileDAO] deleting tile data from storage")
-        tile_metadata_path: Path = self._document_path(tokens=tokens)
-        if not tile_metadata_path.exists():
-            raise DaoDoesNotExistError("tile metadata does not exist")
-        # remove "tile_id"/ and lower
-        shutil.rmtree(tile_metadata_path.parent)
-        return True

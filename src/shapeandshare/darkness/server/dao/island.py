@@ -1,6 +1,5 @@
 import logging
 import os
-import shutil
 import uuid
 from pathlib import Path
 
@@ -92,12 +91,3 @@ class IslandDao(AbstractDao[Island]):
             msg: str = f"storage inconsistency detected while verifying patched island {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
         return stored_entity
-
-    async def delete(self, tokens: dict) -> bool:
-        logger.debug("[IslandDAO] deleting island data from storage")
-        island_metadata_path: Path = self._document_path(tokens=tokens)
-        if not island_metadata_path.exists():
-            raise DaoDoesNotExistError("island metadata does not exist")
-        # remove "island_id"/ and lower
-        shutil.rmtree(island_metadata_path.parent)
-        return True

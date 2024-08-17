@@ -1,6 +1,5 @@
 import logging
 import os
-import shutil
 import uuid
 from pathlib import Path
 
@@ -90,12 +89,3 @@ class WorldDao(AbstractDao[World]):
             msg: str = f"storage inconsistency detected while verifying patched world {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
         return stored_entity
-
-    async def delete(self, tokens: dict) -> bool:
-        logger.debug("[WorldDAO] deleting world data from storage")
-        world_metadata_path: Path = self._document_path(tokens=tokens)
-        if not world_metadata_path.exists():
-            raise DaoDoesNotExistError("world metadata does not exist")
-        # remove "world_id"/ and lower
-        shutil.rmtree(world_metadata_path.parent)
-        return True

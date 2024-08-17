@@ -1,6 +1,5 @@
 import logging
 import os
-import shutil
 import uuid
 from pathlib import Path
 
@@ -93,12 +92,3 @@ class EntityDao(AbstractDao[Entity]):
             msg: str = f"storage inconsistency detected while verifying patched entity {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
         return stored_entity
-
-    async def delete(self, tokens: dict) -> bool:
-        logger.debug("[EntityDAO] deleting entity data from storage")
-        entity_metadata_path: Path = self._document_path(tokens=tokens)
-        if not entity_metadata_path.exists():
-            raise DaoDoesNotExistError("entity metadata does not exist")
-        # remove "entity_id"/ and lower
-        shutil.rmtree(entity_metadata_path.parent)
-        return True

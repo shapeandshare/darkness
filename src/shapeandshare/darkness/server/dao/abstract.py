@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import uuid
 from abc import abstractmethod
 from enum import Enum
@@ -100,7 +101,6 @@ class AbstractDao[T](BaseModel):
 
         # now validate we stored
         stored_entity: WrappedData[T] = await self.get(tokens=tokens)
-        # stored_entity.data = T[T].model_validate(stored_entity.data)
         if stored_entity.nonce != nonce:
             msg: str = f"storage inconsistency detected while storing document {document.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
@@ -114,6 +114,10 @@ class AbstractDao[T](BaseModel):
     async def patch(self, tokens: dict, document: dict) -> WrappedData[T]:
         """ """
 
-    @abstractmethod
     async def delete(self, tokens: dict) -> bool:
-        """ """
+        logger.debug("[AbstractDAO] deleting document data from storage")
+        document_metadata_path: Path = self._document_path(tokens=tokens)
+        if not document_metadata_path.exists():
+            raise DaoDoesNotExistError("document metadata does not exist")
+        shutil.rmtree(document_metadata_path.parent)
+        return True
