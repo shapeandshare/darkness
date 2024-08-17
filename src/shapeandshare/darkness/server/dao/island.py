@@ -15,9 +15,9 @@ logger = logging.getLogger()
 
 
 class IslandDao(AbstractDao[Island]):
-    async def get(self, world_id: str, island_id: str) -> WrappedData[Island]:
+    async def get(self, tokens: dict) -> WrappedData[Island]:
         logger.debug("[IslandDAO] getting island metadata from storage")
-        island_metadata_path: Path = self._document_path(tokens={"world_id": world_id, "island_id": island_id})
+        island_metadata_path: Path = self._document_path(tokens=tokens)
         if not island_metadata_path.exists():
             raise DaoDoesNotExistError("island metadata does not exist")
         with open(file=island_metadata_path, mode="r", encoding="utf-8") as file:
@@ -25,9 +25,11 @@ class IslandDao(AbstractDao[Island]):
             json_data: str = file.read()
         return WrappedData[Island].model_validate_json(json_data)
 
-    async def post(self, world_id: str, island: Island) -> WrappedData[Island]:
+    async def post(self, tokens: dict, island: Island) -> WrappedData[Island]:
         logger.debug("[IslandDAO] posting island metadata to storage")
-        island_metadata_path: Path = self._document_path(tokens={"world_id": world_id, "island_id": island.id})
+        tokens["island_id"] = island.id
+
+        island_metadata_path: Path = self._document_path(tokens=tokens)
         if island_metadata_path.exists():
             raise DaoConflictError("island metadata already exists")
         if not island_metadata_path.parents[2].exists():
@@ -44,15 +46,16 @@ class IslandDao(AbstractDao[Island]):
             os.fsync(file)
 
         # now validate we stored
-        stored_island: WrappedData[Island] = await self.get(world_id=world_id, island_id=island.id)
+        stored_island: WrappedData[Island] = await self.get(tokens=tokens)
         if stored_island.nonce != nonce:
             msg: str = f"storage inconsistency detected while storing island {island.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
         return stored_island
 
-    async def put(self, world_id: str, wrapped_island: WrappedData[Island]) -> WrappedData[Island]:
+    async def put(self, tokens: dict, wrapped_island: WrappedData[Island]) -> WrappedData[Island]:
         logger.debug("[IslandDAO] putting island data to storage")
-        island_metadata_path: Path = self._document_path(tokens={"world_id": world_id, "island_id": wrapped_island.data.id})
+        tokens["island_id"] = wrapped_island.data.id
+        island_metadata_path: Path = self._document_path(tokens=tokens)
         if not island_metadata_path.parents[2].exists():
             raise DaoDoesNotExistError("island container (world) does not exist")
         if not island_metadata_path.parent.exists():
@@ -61,7 +64,7 @@ class IslandDao(AbstractDao[Island]):
 
         # see if we have a pre-existing nonce to verify against
         try:
-            previous_state = await self.get(world_id=world_id, island_id=wrapped_island.data.id)
+            previous_state = await self.get(tokens=tokens)
             if previous_state.nonce != wrapped_island.nonce:
                 msg: str = f"storage inconsistency detected while putting island {wrapped_island.data.id} - nonce mismatch!"
                 raise DaoInconsistencyError(msg)
@@ -79,22 +82,24 @@ class IslandDao(AbstractDao[Island]):
             os.fsync(file)
 
         # now validate we stored
-        stored_island: WrappedData[Island] = await self.get(world_id=world_id, island_id=wrapped_data.data.id)
+        stored_island: WrappedData[Island] = await self.get(tokens=tokens)
         if stored_island.nonce != nonce:
             msg: str = f"storage inconsistency detected while verifying put island {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
         return stored_island
 
-    async def patch(self, world_id: str, island_id: str, island: dict) -> WrappedData[Island]:
+    async def patch(self, tokens: dict, island: dict) -> WrappedData[Island]:
         logger.debug("[IslandDAO] patching tile data to storage")
-        island_metadata_path: Path = self._document_path(tokens={"world_id": world_id, "island_id": island["id"]})
+        if "id" in island:
+            tokens["island_id"] = island["id"]
+        island_metadata_path: Path = self._document_path(tokens=tokens)
         if not island_metadata_path.parents[2].exists():
             raise DaoDoesNotExistError("island container (world) does not exist")
         if not island_metadata_path.parent.exists():
             logger.debug("[IslandDAO] island metadata folder creating ..")
             island_metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
-        previous_state: WrappedData[Island] = await self.get(world_id=world_id, island_id=island_id)
+        previous_state: WrappedData[Island] = await self.get(tokens=tokens)
 
         # if we made it this far we are safe to update
 
@@ -111,15 +116,15 @@ class IslandDao(AbstractDao[Island]):
             os.fsync(file)
 
         # now validate we stored
-        stored_entity: WrappedData[Island] = await self.get(world_id=world_id, island_id=island_id)
+        stored_entity: WrappedData[Island] = await self.get(tokens=tokens)
         if stored_entity.nonce != nonce:
             msg: str = f"storage inconsistency detected while verifying patched island {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
         return stored_entity
 
-    async def delete(self, world_id: str, island_id: str) -> bool:
+    async def delete(self, tokens: dict) -> bool:
         logger.debug("[IslandDAO] deleting island data from storage")
-        island_metadata_path: Path = self._document_path(tokens={"world_id": world_id, "island_id": island_id})
+        island_metadata_path: Path = self._document_path(tokens=tokens)
         if not island_metadata_path.exists():
             raise DaoDoesNotExistError("island metadata does not exist")
         # remove "island_id"/ and lower

@@ -216,13 +216,13 @@ class AbstractIslandFactory(BaseModel):
                     # Update the island --
 
                     # get
-                    wrapped_island: WrappedData[Island] = await self.islanddao.get(world_id=world_id, island_id=island_id)
+                    wrapped_island: WrappedData[Island] = await self.islanddao.get(tokens={"world_id": world_id, "island_id": island_id})
 
                     # Patch - Add tile_id to in-memory representation before storing
                     wrapped_island.data.ids.add(tile_map[local_tile_id])
 
                     # put -- store island update (tile addition)
-                    await self.islanddao.put(world_id=world_id, wrapped_island=wrapped_island)
+                    await self.islanddao.put(tokens={"world_id": world_id}, wrapped_island=wrapped_island)
 
                     queue.task_done()
 
@@ -232,14 +232,14 @@ class AbstractIslandFactory(BaseModel):
         await step_one()
 
         # set origin tile on island
-        wrapped_island: WrappedData[Island] = await self.islanddao.get(world_id=world_id, island_id=island_id)
+        wrapped_island: WrappedData[Island] = await self.islanddao.get(tokens={"world_id": world_id, "island_id": island_id})
         # print(tile_map)
         wrapped_island.data.origin = tile_map["tile_1_1"]
-        await self.islanddao.put(world_id=world_id, wrapped_island=wrapped_island)
+        await self.islanddao.put(tokens={"world_id": world_id}, wrapped_island=wrapped_island)
 
         # 2. Connect everything together
         async def step_two():
-            wrapped_island: WrappedData[Island] = await self.islanddao.get(world_id=world_id, island_id=island_id)
+            # wrapped_island: WrappedData[Island] = await self.islanddao.get(tokens={"world_id": world_id, "island_id": island_id})
             pattern: re.Pattern = re.compile("^tile_([a-zA-Z0-9-]+)_([a-zA-Z0-9-]+)$")
 
             async def consumer(queue):

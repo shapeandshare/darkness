@@ -59,7 +59,7 @@ class FlatIslandFactory(AbstractIslandFactory):
 
         # 1. blank, named island
         island: Island = Island(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
-        await self.islanddao.post(world_id=world_id, island=island)
+        await self.islanddao.post(tokens={"world_id": world_id}, island=island)
 
         # Define the maximum size
         max_x, max_y = dimensions
@@ -67,7 +67,7 @@ class FlatIslandFactory(AbstractIslandFactory):
         # Generate an empty 2D block of ocean
         window: Window = Window(min=Coordinate(x=1, y=1), max=Coordinate(x=max_x, y=max_y))
         await self.generate_ocean_block(world_id=world_id, island_id=island.id, window=window)
-        island = (await self.islanddao.get(world_id=world_id, island_id=island.id)).data
+        island = (await self.islanddao.get(tokens={"world_id": world_id, "island_id": island.id})).data
 
         # Apply our terrain generation
         await self.terrain_generate(world_id=world_id, island=island)
@@ -76,7 +76,7 @@ class FlatIslandFactory(AbstractIslandFactory):
         await self.quantum(world_id=world_id, island=island)
 
         # get final state and return
-        return (await self.islanddao.get(world_id=world_id, island_id=island.id)).data
+        return (await self.islanddao.get(tokens={"world_id": world_id, "island_id": island.id})).data
 
     async def quantum(self, world_id: str, island: Island) -> None:
         # TODO: isolated ocean is NOT ocean, we MUST have path to the edge

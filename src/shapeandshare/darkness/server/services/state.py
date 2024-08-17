@@ -62,7 +62,7 @@ class StateService(BaseModel):
 
         # Entity Factory Terrain Creation
         await self.entity_factory.terrain_generate(world_id=request.world_id, island=new_island)
-        new_island: Island = (await self.islanddao.get(world_id=request.world_id, island_id=new_island.id)).data
+        new_island: Island = (await self.islanddao.get(tokens={"world_id": request.world_id, "island_id": new_island.id})).data
 
         # Entity Factory Quantum
         await self.entity_factory.quantum(world_id=request.world_id, island=new_island)
@@ -84,14 +84,14 @@ class StateService(BaseModel):
     async def island_delete(self, request: IslandDeleteRequest) -> None:
         msg: str = f"[WorldService] deleting island {id}"
         logger.debug(msg)
-        await self.islanddao.delete(world_id=request.world_id, island_id=request.island_id)
+        await self.islanddao.delete(tokens={"world_id": request.world_id, "island_id": request.island_id})
 
     async def island_lite_get(self, request: IslandGetRequest) -> Island:
-        return (await self.islanddao.get(world_id=request.world_id, island_id=request.island_id)).data
+        return (await self.islanddao.get(tokens={"world_id": request.world_id, "island_id": request.island_id})).data
 
     async def island_get(self, request: IslandGetRequest) -> Island:
         # Builds a complete Island from Lite objects
-        island_lite: Island = (await self.islanddao.get(world_id=request.world_id, island_id=request.island_id)).data
+        island_lite: Island = (await self.islanddao.get(tokens={"world_id": request.world_id, "island_id": request.island_id})).data
         tile_ids: set[str] = island_lite.ids
         island_partial = island_lite.model_dump(exclude={"tile_ids"})
         # island: IslandFull = IslandFull.model_validate(island_partial)

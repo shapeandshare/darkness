@@ -86,7 +86,6 @@ class EntityDao(AbstractDao[Entity]):
             raise DaoInconsistencyError(msg)
         return stored_entity
 
-    # async def patch(self, world_id: str, island_id: str, tile_id: str, entity_id: str, entity: dict) -> WrappedData[Entity]:
     async def patch(self, tokens: dict, entity: dict) -> WrappedData[Entity]:
         logger.debug("[EntityDAO] patching entity data to storage")
         if "id" in entity:
