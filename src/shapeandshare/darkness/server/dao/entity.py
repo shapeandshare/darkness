@@ -15,9 +15,9 @@ logger = logging.getLogger()
 
 
 class EntityDao(AbstractDao[Entity]):
-    async def get(self, world_id: str, island_id: str, tile_id: str, entity_id: str) -> WrappedData[Entity]:
+    async def get(self, tokens: dict) -> WrappedData[Entity]:
         logger.debug("[EntityDAO] getting entity data from storage")
-        entity_metadata_path: Path = self._document_path(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id, "entity_id": entity_id})
+        entity_metadata_path: Path = self._document_path(tokens=tokens)
         if not entity_metadata_path.exists():
             raise DaoDoesNotExistError("entity metadata does not exist")
         with open(file=entity_metadata_path, mode="r", encoding="utf-8") as file:
@@ -25,9 +25,11 @@ class EntityDao(AbstractDao[Entity]):
             json_data: str = file.read()
         return WrappedData[Entity].model_validate_json(json_data)
 
-    async def post(self, world_id: str, island_id: str, tile_id: str, entity: Entity) -> WrappedData[Entity]:
+    # async def post(self, world_id: str, island_id: str, tile_id: str, entity: Entity) -> WrappedData[Entity]:
+    async def post(self, tokens: dict, entity: Entity) -> WrappedData[Entity]:
         logger.debug("[EntityDAO] posting entity data to storage")
-        entity_metadata_path: Path = self._document_path(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id, "entity_id": entity.id})
+        tokens["entity_id"] = entity.id
+        entity_metadata_path: Path = self._document_path(tokens=tokens)
         if entity_metadata_path.exists():
             raise DaoConflictError("entity metadata already exists")
         if not entity_metadata_path.parents[2].exists():
@@ -43,13 +45,13 @@ class EntityDao(AbstractDao[Entity]):
             os.fsync(file)
 
             # now validate we stored
-        stored_entity: WrappedData[Entity] = await self.get(world_id=world_id, island_id=island_id, tile_id=tile_id, entity_id=entity.id)
+        stored_entity: WrappedData[Entity] = await self.get(tokens=tokens)
         if stored_entity.nonce != nonce:
             msg: str = f"storage inconsistency detected while storing entity {entity.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
         return stored_entity
 
-    async def put(self, world_id: str, island_id: str, tile_id: str, wrapped_entity: WrappedData[Entity]) -> WrappedData[Entity]:
+    async def put(self, world_id: str, island_id: str, tile_id: str, wra1pped_entity: WrappedData[Entity]) -> WrappedData[Entity]:
         logger.debug("[EntityDAO] putting entity data to storage")
         entity_metadata_path: Path = self._document_path(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id, "entity_id": wrapped_entity.data.id})
         if not entity_metadata_path.parents[2].exists():
@@ -60,7 +62,7 @@ class EntityDao(AbstractDao[Entity]):
 
         # see if we have a pre-existing nonce to verify against
         try:
-            previous_state: WrappedData[Entity] = await self.get(world_id=world_id, island_id=island_id, tile_id=tile_id, entity_id=wrapped_entity.data.id)
+            previous_state: WrappedData[Entity] = await self.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id, "entity_id": wrapped_entity.data.id})
             if previous_state.nonce != wrapped_entity.nonce:
                 msg: str = f"storage inconsistency detected while putting entity {wrapped_entity.data.id} - nonce mismatch!"
                 raise DaoInconsistencyError(msg)
@@ -78,7 +80,7 @@ class EntityDao(AbstractDao[Entity]):
             os.fsync(file)
 
         # now validate we stored
-        stored_entity: WrappedData[Entity] = await self.get(world_id=world_id, island_id=island_id, tile_id=tile_id, entity_id=wrapped_data.data.id)
+        stored_entity: WrappedData[Entity] = await self.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id, "entity_id": wrapped_entity.data.id})
         if stored_entity.nonce != nonce:
             msg: str = f"storage inconsistency detected while verifying put entity {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
@@ -93,7 +95,7 @@ class EntityDao(AbstractDao[Entity]):
             logger.debug("[EntityDAO] entity metadata folder creating ..")
             entity_metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
-        previous_state: WrappedData[Entity] = await self.get(world_id=world_id, island_id=island_id, tile_id=tile_id, entity_id=entity_id)
+        previous_state: WrappedData[Entity] = await self.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id, "entity_id": entity_id})
 
         # if we made it this far we are safe to update
 
@@ -110,7 +112,7 @@ class EntityDao(AbstractDao[Entity]):
             os.fsync(file)
 
         # now validate we stored
-        stored_entity: WrappedData[Entity] = await self.get(world_id=world_id, island_id=island_id, tile_id=tile_id, entity_id=wrapped_data.data.id)
+        stored_entity: WrappedData[Entity] = await self.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id, "entity_id": wrapped_data.data.id})
         if stored_entity.nonce != nonce:
             msg: str = f"storage inconsistency detected while verifying patched entity {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)

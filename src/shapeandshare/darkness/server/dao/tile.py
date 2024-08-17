@@ -26,10 +26,9 @@ class TileDao(AbstractDao[Tile]):
         return WrappedData[Tile].model_validate_json(json_data)
 
     async def post(self, tokens: dict, tile: Tile) -> WrappedData[Tile]:
+        logger.debug("[TileDAO] posting tile data to storage")
         # add tile_id to tokens
         tokens["tile_id"] = tile.id
-
-        logger.debug("[TileDAO] posting tile data to storage")
         tile_metadata_path: Path = self._document_path(tokens=tokens)
         if tile_metadata_path.exists():
             raise DaoConflictError("tile metadata already exists")
@@ -124,9 +123,10 @@ class TileDao(AbstractDao[Tile]):
             raise DaoInconsistencyError(msg)
         return stored_entity
 
-    async def delete(self, world_id: str, island_id: str, tile_id: str) -> bool:
+    # async def delete(self, world_id: str, island_id: str, tile_id: str) -> bool:
+    async def delete(self, tokens: dict) -> bool:
         logger.debug("[TileDAO] deleting tile data from storage")
-        tile_metadata_path: Path = self._document_path(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
+        tile_metadata_path: Path = self._document_path(tokens=tokens)
         if not tile_metadata_path.exists():
             raise DaoDoesNotExistError("tile metadata does not exist")
         # remove "tile_id"/ and lower
