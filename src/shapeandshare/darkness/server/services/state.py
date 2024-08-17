@@ -60,11 +60,11 @@ class StateService(BaseModel):
         new_island: Island = await self.flatisland_factory.create(world_id=request.world_id, name=request.name, dimensions=request.dimensions, biome=request.biome)
 
         # Entity Factory Terrain Creation
-        await self.entity_factory.terrain_generate(world_id=request.world_id, island=new_island)
+        await self.entity_factory.terrain_generate(tokens={"world_id": request.world_id, "island_id": new_island.id}, island=new_island)
         new_island: Island = Island.model_validate((await self.islanddao.get(tokens={"world_id": request.world_id, "island_id": new_island.id})).data)
 
         # Entity Factory Quantum
-        await self.entity_factory.quantum(world_id=request.world_id, island=new_island)
+        await self.entity_factory.quantum(tokens={"world_id": request.world_id, "island_id": new_island.id}, island=new_island)
 
         return new_island.id
 

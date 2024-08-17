@@ -11,9 +11,7 @@ logger = logging.getLogger()
 class EntityFactory(AbstractEntityFactory):
     """ """
 
-    async def terrain_generate(self, world_id: str, island: Island) -> None:
-        tokens: dict = {"world_id": world_id, "island_id": island.id}
-
+    async def terrain_generate(self, tokens: dict, island: Island) -> None:
         async def step_one():
             async def consumer(queue: Queue):
                 while not queue.empty():
@@ -26,9 +24,7 @@ class EntityFactory(AbstractEntityFactory):
 
         await step_one()
 
-    async def quantum(self, world_id: str, island: Island):
-        tokens: dict = {"world_id": world_id, "island_id": island.id}
-
+    async def quantum(self, tokens: dict, island: Island):
         # Entity Factory Quantum
         async def step_six():
             async def consumer(queue: Queue):
