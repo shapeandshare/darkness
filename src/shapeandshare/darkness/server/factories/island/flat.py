@@ -56,23 +56,26 @@ class FlatIslandFactory(AbstractIslandFactory):
         if name is None:
             name = "roshar"
 
+        tokens: dict = {"world_id": world_id}
+
         # 1. blank, named island
         island: Island = Island(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
-        await self.islanddao.post(tokens={"world_id": world_id}, document=island)
+        await self.islanddao.post(tokens=tokens, document=island)
 
         # update world metadata
-        wrapped_world: WrappedData[World] = await self.worlddao.get(tokens={"world_id": world_id})
+        wrapped_world: WrappedData[World] = await self.worlddao.get(tokens=tokens)
         wrapped_world.data = World.model_validate(wrapped_world.data)
         wrapped_world.data.ids.add(island.id)
-        await self.worlddao.put(tokens={"world_id": world_id}, wrapped_document=wrapped_world)
+        await self.worlddao.patch(tokens=tokens, document={"ids": wrapped_world.data.ids})
 
         # Define the maximum size
         max_x, max_y = dimensions
 
+        tokens["island_id"] = island.id
         # Generate an empty 2D block of ocean
         window: Window = Window(min=Coordinate(x=1, y=1), max=Coordinate(x=max_x, y=max_y))
-        await self.generate_ocean_block(world_id=world_id, island_id=island.id, window=window)
-        island = Island.model_validate((await self.islanddao.get(tokens={"world_id": world_id, "island_id": island.id})).data)
+        await self.generate_ocean_block(tokens=tokens, window=window)
+        island = Island.model_validate((await self.islanddao.get(tokens=tokens)).data)
 
         # Apply our terrain generation
         await self.terrain_generate(world_id=world_id, island=island)
@@ -81,9 +84,11 @@ class FlatIslandFactory(AbstractIslandFactory):
         await self.quantum(world_id=world_id, island=island)
 
         # get final state and return
-        return Island.model_validate((await self.islanddao.get(tokens={"world_id": world_id, "island_id": island.id})).data)
+        return Island.model_validate((await self.islanddao.get(tokens=tokens)).data)
 
     async def quantum(self, world_id: str, island: Island) -> None:
+        tokens: dict = {"world_id": world_id, "island_id": island.id}
+
         # TODO: isolated ocean is NOT ocean, we MUST have path to the edge
         # Convert inner Ocean to Water Tiles
         async def step_three():
@@ -91,7 +96,7 @@ class FlatIslandFactory(AbstractIslandFactory):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
                     # Convert inner Ocean to Water Tiles
-                    await self.brackish_tile(world_id=world_id, island_id=island.id, tile_id=local_tile_id)
+                    await self.brackish_tile(tokens={**tokens, "tile_id": local_tile_id})
                     queue.task_done()
 
             queue = asyncio.Queue()
@@ -104,7 +109,7 @@ class FlatIslandFactory(AbstractIslandFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    await self.erode_tile(world_id=world_id, island_id=island.id, tile_id=local_tile_id)
+                    await self.erode_tile(tokens={**tokens, "tile_id": local_tile_id})
                     queue.task_done()
 
             queue = asyncio.Queue()
@@ -117,7 +122,7 @@ class FlatIslandFactory(AbstractIslandFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    await self.grow_tile(world_id=world_id, island_id=island.id, tile_id=local_tile_id)
+                    await self.grow_tile(tokens={**tokens, "tile_id": local_tile_id})
                     queue.task_done()
 
             queue = asyncio.Queue()

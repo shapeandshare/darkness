@@ -36,14 +36,13 @@ class AbstractIslandFactory(BaseModel):
         """ """
 
     async def mutate_tile(self, tokens: dict, mutate: float, tile_type: TileType) -> None:
-        # async def mutate_tile(self, world_id: str, island_id: str, tile_id: str, mutate: float, tile_type: TileType) -> None:
         if secrets.randbelow(100) <= mutate:
             # then we spawn the tile type
             await self.tiledao.patch(tokens=tokens, document={"tile_type": tile_type})
 
-    async def convert_tile(self, world_id: str, island_id: str, tile_id: str, source: TileType, target: TileType) -> None:
+    async def convert_tile(self, tokens: dict, source: TileType, target: TileType) -> None:
         # get
-        target_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
+        target_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
         target_tile.data = Tile.model_validate(target_tile.data)
         # check
         if target_tile.data.tile_type == source:
@@ -51,29 +50,26 @@ class AbstractIslandFactory(BaseModel):
             target_tile.data.tile_type = target
 
             # put
-            await self.tiledao.patch(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, document={"tile_type": target})
+            await self.tiledao.patch(tokens=tokens, document={"tile_type": target})
 
-    async def adjecent_liquids(self, world_id: str, island_id: str, tile_id: str) -> list[TileType]:
-        return await self.adjecent_to(world_id=world_id, island_id=island_id, tile_id=tile_id, types=[TileType.OCEAN, TileType.WATER])
+    async def adjecent_liquids(self, tokens: dict) -> list[TileType]:
+        return await self.adjecent_to(tokens=tokens, types=[TileType.OCEAN, TileType.WATER])
 
-    async def adjecent_to(self, world_id: str, island_id: str, tile_id: str, types: list[TileType] | None) -> list[TileType]:
+    async def adjecent_to(self, tokens: dict, types: list[TileType] | None) -> list[TileType]:
         adjecent_targets: list[TileType] = []
 
-        target_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
+        target_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
         target_tile.data = Tile.model_validate(target_tile.data)
 
         async def adjecent_producer(queue: Queue):
             for _, adjecent_id in target_tile.data.next.items():
-                await queue.put(item={"world_id": world_id, "island_id": island_id, "tile_id": adjecent_id})
+                await queue.put(item={**tokens, "tile_id": adjecent_id})
 
         async def step_one():
             async def consumer(queue: Queue):
                 while not queue.empty():
                     work_item = await queue.get()
-                    world_id = work_item["world_id"]
-                    island_id = work_item["island_id"]
-                    tile_id = work_item["tile_id"]
-                    adjecent_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
+                    adjecent_tile: WrappedData[Tile] = await self.tiledao.get(tokens=work_item)
                     adjecent_tile.data = Tile.model_validate(adjecent_tile.data)
                     if adjecent_tile.data.tile_type in types and adjecent_tile.data.tile_type not in adjecent_targets:
                         adjecent_targets.append(adjecent_tile.data.tile_type)
@@ -90,22 +86,20 @@ class AbstractIslandFactory(BaseModel):
 
         return adjecent_targets
 
-    async def grow_tile(self, world_id: str, island_id: str, tile_id: str) -> None:
+    async def grow_tile(self, tokens: dict) -> None:
         # get
-        target_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
+        target_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
         target_tile.data = Tile.model_validate(target_tile.data)
         # dirt -> grass
         if target_tile.data.tile_type == TileType.DIRT:
-            adjecent_liquids: list[TileType] = await self.adjecent_liquids(world_id=world_id, island_id=island_id, tile_id=tile_id)
+            adjecent_liquids: list[TileType] = await self.adjecent_liquids(tokens=tokens)
             if TileType.WATER in adjecent_liquids and TileType.OCEAN not in adjecent_liquids:
-                await self.tiledao.patch(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, document={"tile_type": TileType.GRASS})
+                await self.tiledao.patch(tokens=tokens, document={"tile_type": TileType.GRASS})
 
         # grass+water (no dirt/ocean) -> forest
         if target_tile.data.tile_type == TileType.GRASS:
             neighbors: list[TileType] = await self.adjecent_to(
-                world_id=world_id,
-                island_id=island_id,
-                tile_id=tile_id,
+                tokens=tokens,
                 types=[TileType.WATER, TileType.GRASS, TileType.OCEAN],
             )
 
@@ -115,7 +109,7 @@ class AbstractIslandFactory(BaseModel):
 
             if len(neighbors) > 1:
                 # next to more than one kind (grass/water)
-                await self.tiledao.patch(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, document={"tile_type": TileType.FOREST})
+                await self.tiledao.patch(tokens=tokens, document={"tile_type": TileType.FOREST})
 
         # # grass+(dirt)
         # if island.tiles[tile_id].tile_type == TileType.GRASS:
@@ -124,13 +118,13 @@ class AbstractIslandFactory(BaseModel):
         #         island=island, tile_id=tile_id, types=[TileType.WATER, TileType.GRASS, TileType.DIRT, TileType.FOREST]
         #     )
 
-    async def brackish_tile(self, world_id: str, island_id: str, tile_id: str):
+    async def brackish_tile(self, tokens: dict) -> None:
         # Convert inner Ocean to Water Tiles
 
         # See if we are next to another ocean tile
-        neighbors: list[TileType] = await self.adjecent_to(world_id=world_id, island_id=island_id, tile_id=tile_id, types=[TileType.OCEAN])
+        neighbors: list[TileType] = await self.adjecent_to(tokens=tokens, types=[TileType.OCEAN])
         if len(neighbors) < 1:
-            await self.convert_tile(world_id=world_id, island_id=island_id, tile_id=tile_id, source=TileType.OCEAN, target=TileType.WATER)
+            await self.convert_tile(tokens=tokens, source=TileType.OCEAN, target=TileType.WATER)
 
         # # are we an isolated ocean body? if so then we are water
         #
@@ -170,27 +164,27 @@ class AbstractIslandFactory(BaseModel):
         #
         #     # root_tile: Tile = (await self.tiledao.get(world_id=world_id, island_id=island_id, tile_id=root_tile_id)).data
 
-    async def erode_tile(self, world_id: str, island_id: str, tile_id: str) -> None:
+    async def erode_tile(self, tokens: dict) -> None:
         # msg: str = f"eroding tile: {tile_id}"
         # logger.debug(msg)
 
         # get
-        target_tile: WrappedData[Tile] = await self.tiledao.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
+        target_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
         target_tile.data = Tile.model_validate(target_tile.data)
 
         # shore erosion
         if target_tile.data.tile_type not in [TileType.UNKNOWN, TileType.OCEAN, TileType.WATER, TileType.SHORE]:
-            adjecent_liquids: list[TileType] = await self.adjecent_liquids(world_id=world_id, island_id=island_id, tile_id=tile_id)
+            adjecent_liquids: list[TileType] = await self.adjecent_liquids(tokens=tokens)
             # Apply erosion - rocks and be left by oceans, everything else becomes shore
             if TileType.OCEAN in adjecent_liquids:
                 if target_tile.data.tile_type not in (TileType.ROCK, TileType.SHORE):
-                    await self.tiledao.patch(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, document={"tile_type": TileType.SHORE})
+                    await self.tiledao.patch(tokens=tokens, document={"tile_type": TileType.SHORE})
 
-    async def gen_geo_bind(self, world_id: str, island_id: str, tile_id: str, conn_dir: TileConnectionType, target_tile_id: str) -> None:
+    async def gen_geo_bind(self, tokens: dict, conn_dir: TileConnectionType, target_tile_id: str) -> None:
         tile_partial: dict = {"next": {conn_dir: target_tile_id}}
-        await self.tiledao.patch(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, document=tile_partial)
+        await self.tiledao.patch(tokens=tokens, document=tile_partial)
 
-    async def generate_ocean_block(self, world_id: str, island_id: str, window: Window):
+    async def generate_ocean_block(self, tokens: dict, window: Window):
         tile_map: dict[str, str] = {}
 
         async def flat_producer(window: Window, queue: Queue):
@@ -215,20 +209,20 @@ class AbstractIslandFactory(BaseModel):
                     local_tile: Tile = Tile(id=tile_map[local_tile_id], tile_type=TileType.OCEAN)
 
                     # create tile
-                    await self.tiledao.post(tokens={"world_id": world_id, "island_id": island_id}, document=local_tile)
+                    await self.tiledao.post(tokens=tokens, document=local_tile)
                     # msg: str = f"({local_tile_id}) brought into existence as {TileType.OCEAN}"
                     # logger.debug(msg)
 
                     # Update the island --
 
                     # get
-                    wrapped_island: WrappedData[Island] = await self.islanddao.get(tokens={"world_id": world_id, "island_id": island_id})
+                    wrapped_island: WrappedData[Island] = await self.islanddao.get(tokens=tokens)
                     wrapped_island.data = Island.model_validate(wrapped_island.data)
 
                     wrapped_island.data.ids.add(tile_map[local_tile_id])
 
                     # put -- store island update (tile addition)
-                    await self.islanddao.put(tokens={"world_id": world_id}, wrapped_document=wrapped_island)
+                    await self.islanddao.patch(tokens=tokens, document={"ids": wrapped_island.data.ids})
 
                     queue.task_done()
 
@@ -238,10 +232,7 @@ class AbstractIslandFactory(BaseModel):
         await step_one()
 
         # set origin tile on island
-        wrapped_island: WrappedData[Island] = await self.islanddao.get(tokens={"world_id": world_id, "island_id": island_id})
-        wrapped_island.data = Island.model_validate(wrapped_island.data)
-        wrapped_island.data.origin = tile_map["tile_1_1"]
-        await self.islanddao.put(tokens={"world_id": world_id}, wrapped_document=wrapped_island)
+        await self.islanddao.patch(tokens=tokens, document={"origin": tile_map["tile_1_1"]})
 
         # 2. Connect everything together
         async def step_two():
@@ -265,25 +256,25 @@ class AbstractIslandFactory(BaseModel):
                     _target_tile_id: str = f"tile_{local_x - 1}_{local_y}"
                     if _target_tile_id in tile_map:
                         target_tile_id = tile_map[_target_tile_id]
-                        await self.gen_geo_bind(world_id=world_id, island_id=island_id, tile_id=local_tile_id, target_tile_id=target_tile_id, conn_dir=TileConnectionType.LEFT)
+                        await self.gen_geo_bind(tokens={**tokens, "tile_id": local_tile_id}, target_tile_id=target_tile_id, conn_dir=TileConnectionType.LEFT)
 
                     # Bind RIGHT
                     _target_tile_id: str = f"tile_{local_x + 1}_{local_y}"
                     if _target_tile_id in tile_map:
                         target_tile_id = tile_map[_target_tile_id]
-                        await self.gen_geo_bind(world_id=world_id, island_id=island_id, tile_id=local_tile_id, target_tile_id=target_tile_id, conn_dir=TileConnectionType.RIGHT)
+                        await self.gen_geo_bind(tokens={**tokens, "tile_id": local_tile_id}, target_tile_id=target_tile_id, conn_dir=TileConnectionType.RIGHT)
 
                     # Bind UP
                     _target_tile_id: str = f"tile_{local_x}_{local_y - 1}"
                     if _target_tile_id in tile_map:
                         target_tile_id = tile_map[_target_tile_id]
-                        await self.gen_geo_bind(world_id=world_id, island_id=island_id, tile_id=local_tile_id, target_tile_id=target_tile_id, conn_dir=TileConnectionType.UP)
+                        await self.gen_geo_bind(tokens={**tokens, "tile_id": local_tile_id}, target_tile_id=target_tile_id, conn_dir=TileConnectionType.UP)
 
                     # Bind DOWN
                     _target_tile_id: str = f"tile_{local_x}_{local_y + 1}"
                     if _target_tile_id in tile_map:
                         target_tile_id = tile_map[_target_tile_id]
-                        await self.gen_geo_bind(world_id=world_id, island_id=island_id, tile_id=local_tile_id, target_tile_id=target_tile_id, conn_dir=TileConnectionType.DOWN)
+                        await self.gen_geo_bind(tokens={**tokens, "tile_id": local_tile_id}, target_tile_id=target_tile_id, conn_dir=TileConnectionType.DOWN)
 
                     queue.task_done()
 
