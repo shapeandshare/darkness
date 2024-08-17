@@ -82,11 +82,11 @@ class AbstractDao[T](BaseModel):
 
         entity_metadata_path: Path = self._document_path(tokens=tokens)
         if entity_metadata_path.exists():
-            raise DaoConflictError("entity metadata already exists")
+            raise DaoConflictError("document metadata already exists")
         if not entity_metadata_path.parents[2].exists():
-            raise DaoDoesNotExistError("entity container (tile) does not exist")
+            raise DaoDoesNotExistError("document container does not exist")
         if not entity_metadata_path.parent.exists():
-            logger.debug("[EntityDAO] entity metadata folder creating ..")
+            logger.debug("[AbstractDao] document metadata folder creating ..")
             entity_metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
         nonce: str = str(uuid.uuid4())
