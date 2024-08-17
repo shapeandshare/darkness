@@ -40,7 +40,7 @@ class AbstractEntityFactory(BaseModel):
 
             local_tile.data.ids.add(new_entity.id)
             # try:
-            await self.tiledao.put(world_id=world_id, island_id=island_id, wrapped_tile=local_tile)
+            await self.tiledao.put(tokens={"world_id": world_id, "island_id": island_id}, wrapped_tile=local_tile)
 
             # except Exception as e:
             # rollback entity addition ...
@@ -49,7 +49,7 @@ class AbstractEntityFactory(BaseModel):
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.TREE)
             await self.entitydao.post(world_id=world_id, island_id=island_id, tile_id=tile_id, entity=new_entity)
             # try:
-            await self.tiledao.put(world_id=world_id, island_id=island_id, wrapped_tile=local_tile)
+            await self.tiledao.put(tokens={"world_id": world_id, "island_id": island_id}, wrapped_tile=local_tile)
             # except Exception as e:
             # rollback entity addition ...
 
@@ -57,7 +57,7 @@ class AbstractEntityFactory(BaseModel):
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.FISH)
             await self.entitydao.post(world_id=world_id, island_id=island_id, tile_id=tile_id, entity=new_entity)
             # try:
-            await self.tiledao.put(world_id=world_id, island_id=island_id, wrapped_tile=local_tile)
+            await self.tiledao.put(tokens={"world_id": world_id, "island_id": island_id}, wrapped_tile=local_tile)
             # except Exception as e:
             # rollback entity addition ...
 
