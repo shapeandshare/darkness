@@ -52,7 +52,7 @@ class StateService(BaseModel):
 
     async def world_delete(self, request: WorldDeleteRequest) -> None:
         logger.debug("[StateService] deleting world")
-        await self.worlddao.delete(world_id=request.id)
+        await self.worlddao.delete(tokens={"world_id": request.id})
 
     ### Island ##################################
 
@@ -78,7 +78,7 @@ class StateService(BaseModel):
         wrapped_world_lite.data.ids.add(new_island.id)
 
         # put
-        await self.worlddao.put(wrapped_world=wrapped_world_lite)
+        await self.worlddao.put(tokens={"world_id": request.world_id}, wrapped_document=wrapped_world_lite)
 
         return new_island.id
 

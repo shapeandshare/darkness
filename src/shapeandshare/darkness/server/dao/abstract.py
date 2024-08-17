@@ -59,10 +59,6 @@ class AbstractDao[T](BaseModel):
 
         return path / "metadata.json"
 
-    # @abstractmethod
-    # async def get(self, *args, **kwargs) -> WrappedData[T]:
-    #     """ """
-
     async def get(self, tokens: dict) -> WrappedData[T]:
         logger.debug("[AbstractDao] getting document metadata from storage")
         document_metadata_path: Path = self._document_path(tokens=tokens)
@@ -74,17 +70,17 @@ class AbstractDao[T](BaseModel):
         return WrappedData[T].model_validate_json(json_data)
 
     @abstractmethod
-    async def post(self, *args, **kwargs) -> WrappedData[T]:
+    async def post(self, tokens: dict, document: T) -> WrappedData[T]:
         """ """
 
     @abstractmethod
-    async def put(self, *args, **kwargs) -> WrappedData[T]:
+    async def put(self, tokens: dict, wrapped_document: WrappedData[T]) -> WrappedData[T]:
         """ """
 
     @abstractmethod
-    async def patch(self, *args, **kwargs) -> WrappedData[T]:
+    async def patch(self, tokens: dict, document: dict) -> WrappedData[T]:
         """ """
 
     @abstractmethod
-    async def delete(self, *args, **kwargs) -> bool:
+    async def delete(self, tokens: dict) -> bool:
         """ """

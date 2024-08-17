@@ -59,7 +59,7 @@ class FlatIslandFactory(AbstractIslandFactory):
 
         # 1. blank, named island
         island: Island = Island(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
-        await self.islanddao.post(tokens={"world_id": world_id}, island=island)
+        await self.islanddao.post(tokens={"world_id": world_id}, document=island)
 
         # Define the maximum size
         max_x, max_y = dimensions

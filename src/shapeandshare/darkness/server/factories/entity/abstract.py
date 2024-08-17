@@ -37,28 +37,28 @@ class AbstractEntityFactory(BaseModel):
         # Review types now
         if local_tile.data.tile_type == TileType.GRASS:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.GRASS)
-            await self.entitydao.post(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, entity=new_entity)
+            await self.entitydao.post(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, document=new_entity)
 
             local_tile.data.ids.add(new_entity.id)
             # try:
-            await self.tiledao.put(tokens={"world_id": world_id, "island_id": island_id}, wrapped_tile=local_tile)
+            await self.tiledao.put(tokens={"world_id": world_id, "island_id": island_id}, wrapped_document=local_tile)
 
             # except Exception as e:
             # rollback entity addition ...
 
         elif local_tile.data.tile_type == TileType.FOREST:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.TREE)
-            await self.entitydao.post(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, entity=new_entity)
+            await self.entitydao.post(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, document=new_entity)
             # try:
-            await self.tiledao.put(tokens={"world_id": world_id, "island_id": island_id}, wrapped_tile=local_tile)
+            await self.tiledao.put(tokens={"world_id": world_id, "island_id": island_id}, wrapped_document=local_tile)
             # except Exception as e:
             # rollback entity addition ...
 
         elif local_tile.data.tile_type == TileType.OCEAN:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.FISH)
-            await self.entitydao.post(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, entity=new_entity)
+            await self.entitydao.post(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, document=new_entity)
             # try:
-            await self.tiledao.put(tokens={"world_id": world_id, "island_id": island_id}, wrapped_tile=local_tile)
+            await self.tiledao.put(tokens={"world_id": world_id, "island_id": island_id}, wrapped_document=local_tile)
             # except Exception as e:
             # rollback entity addition ...
 
