@@ -253,25 +253,41 @@ class AbstractIslandFactory(BaseModel):
                     _target_tile_id: str = f"tile_{local_x - 1}_{local_y}"
                     if _target_tile_id in tile_map:
                         target_tile_id = tile_map[_target_tile_id]
-                        await self.gen_geo_bind(tokens={**tokens, "tile_id": local_tile_id}, target_tile_id=target_tile_id, conn_dir=TileConnectionType.LEFT)
+                        await self.gen_geo_bind(
+                            tokens={**tokens, "tile_id": local_tile_id},
+                            target_tile_id=target_tile_id,
+                            conn_dir=TileConnectionType.LEFT,
+                        )
 
                     # Bind RIGHT
                     _target_tile_id: str = f"tile_{local_x + 1}_{local_y}"
                     if _target_tile_id in tile_map:
                         target_tile_id = tile_map[_target_tile_id]
-                        await self.gen_geo_bind(tokens={**tokens, "tile_id": local_tile_id}, target_tile_id=target_tile_id, conn_dir=TileConnectionType.RIGHT)
+                        await self.gen_geo_bind(
+                            tokens={**tokens, "tile_id": local_tile_id},
+                            target_tile_id=target_tile_id,
+                            conn_dir=TileConnectionType.RIGHT,
+                        )
 
                     # Bind UP
                     _target_tile_id: str = f"tile_{local_x}_{local_y - 1}"
                     if _target_tile_id in tile_map:
                         target_tile_id = tile_map[_target_tile_id]
-                        await self.gen_geo_bind(tokens={**tokens, "tile_id": local_tile_id}, target_tile_id=target_tile_id, conn_dir=TileConnectionType.UP)
+                        await self.gen_geo_bind(
+                            tokens={**tokens, "tile_id": local_tile_id},
+                            target_tile_id=target_tile_id,
+                            conn_dir=TileConnectionType.UP,
+                        )
 
                     # Bind DOWN
                     _target_tile_id: str = f"tile_{local_x}_{local_y + 1}"
                     if _target_tile_id in tile_map:
                         target_tile_id = tile_map[_target_tile_id]
-                        await self.gen_geo_bind(tokens={**tokens, "tile_id": local_tile_id}, target_tile_id=target_tile_id, conn_dir=TileConnectionType.DOWN)
+                        await self.gen_geo_bind(
+                            tokens={**tokens, "tile_id": local_tile_id},
+                            target_tile_id=target_tile_id,
+                            conn_dir=TileConnectionType.DOWN,
+                        )
 
                     queue.task_done()
 

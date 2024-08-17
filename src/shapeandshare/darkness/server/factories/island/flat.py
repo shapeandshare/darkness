@@ -89,7 +89,6 @@ class FlatIslandFactory(AbstractIslandFactory):
     async def quantum(self, world_id: str, island: Island) -> None:
         tokens: dict = {"world_id": world_id, "island_id": island.id}
 
-        # TODO: isolated ocean is NOT ocean, we MUST have path to the edge
         # Convert inner Ocean to Water Tiles
         async def step_three():
             async def consumer(queue: Queue):

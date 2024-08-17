@@ -124,14 +124,18 @@ class AbstractDao[T](BaseModel):
     async def put(self, tokens: dict, wrapped_document: WrappedData[T]) -> WrappedData[T]:
         """ """
 
-    async def put_partial(self, tokens: dict, wrapped_document: WrappedData[T], exclude: dict | None = None) -> WrappedData[T]:
+    async def put_partial(
+        self, tokens: dict, wrapped_document: WrappedData[T], exclude: dict | None = None
+    ) -> WrappedData[T]:
         document_metadata_path: Path = self._assert_metadata_exists(tokens=tokens)
 
         # see if we have a pre-existing nonce to verify against
         try:
             previous_state: WrappedData[T] = await self.get(tokens=tokens)
             if previous_state.nonce != wrapped_document.nonce:
-                msg: str = f"storage inconsistency detected while putting document {wrapped_document.data.id} - nonce mismatch!"
+                msg: str = (
+                    f"storage inconsistency detected while putting document {wrapped_document.data.id} - nonce mismatch!"
+                )
                 raise DaoInconsistencyError(msg)
         except DaoDoesNotExistError:
             # then no nonce to verify against.
@@ -152,7 +156,9 @@ class AbstractDao[T](BaseModel):
         # now validate we stored
         stored_entity: WrappedData[T] = await self.get(tokens=tokens)
         if stored_entity.nonce != nonce:
-            msg: str = f"storage inconsistency detected while verifying put entity {wrapped_data.data.id} - nonce mismatch!"
+            msg: str = (
+                f"storage inconsistency detected while verifying put entity {wrapped_data.data.id} - nonce mismatch!"
+            )
             raise DaoInconsistencyError(msg)
         return stored_entity
 
@@ -184,7 +190,9 @@ class AbstractDao[T](BaseModel):
         # now validate we stored
         stored_entity: WrappedData[T] = await self.get(tokens=tokens)
         if stored_entity.nonce != nonce:
-            msg: str = f"storage inconsistency detected while verifying patched document {wrapped_data.data.id} - nonce mismatch!"
+            msg: str = (
+                f"storage inconsistency detected while verifying patched document {wrapped_data.data.id} - nonce mismatch!"
+            )
             raise DaoInconsistencyError(msg)
         return stored_entity
 

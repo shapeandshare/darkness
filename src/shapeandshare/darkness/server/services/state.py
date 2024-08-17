@@ -40,12 +40,14 @@ class StateService(BaseModel):
 
     async def world_get(self, request: WorldGetRequest) -> World:
         # Build a complete World from Lite objects
-        world_lite: World = World.model_validate((await self.worlddao.get(tokens={"world_id": request.id})).data)
-        island_ids: set[str] = world_lite.ids
-        partial_world = world_lite.model_dump(exclude={"island_ids"})
+        world: World = World.model_validate((await self.worlddao.get(tokens={"world_id": request.id})).data)
+        island_ids: set[str] = world.ids
+        partial_world = world.model_dump(exclude={"ids"})
         world: World = World.model_validate(partial_world)
         for island_id in island_ids:
-            local_island: Island = await self.island_get(request=IslandGetRequest(world_id=request.id, island_id=island_id))
+            local_island: Island = await self.island_get(
+                request=IslandGetRequest(world_id=request.id, island_id=island_id)
+            )
             world.contents[island_id] = local_island
         return world
 
@@ -57,14 +59,22 @@ class StateService(BaseModel):
 
     async def island_create(self, request: IslandCreateRequest) -> str:
         logger.debug("[StateService] creating island")
-        new_island: Island = await self.flatisland_factory.create(world_id=request.world_id, name=request.name, dimensions=request.dimensions, biome=request.biome)
+        new_island: Island = await self.flatisland_factory.create(
+            world_id=request.world_id, name=request.name, dimensions=request.dimensions, biome=request.biome
+        )
 
         # Entity Factory Terrain Creation
-        await self.entity_factory.terrain_generate(tokens={"world_id": request.world_id, "island_id": new_island.id}, island=new_island)
-        new_island: Island = Island.model_validate((await self.islanddao.get(tokens={"world_id": request.world_id, "island_id": new_island.id})).data)
+        await self.entity_factory.terrain_generate(
+            tokens={"world_id": request.world_id, "island_id": new_island.id}, island=new_island
+        )
+        new_island: Island = Island.model_validate(
+            (await self.islanddao.get(tokens={"world_id": request.world_id, "island_id": new_island.id})).data
+        )
 
         # Entity Factory Quantum
-        await self.entity_factory.quantum(tokens={"world_id": request.world_id, "island_id": new_island.id}, island=new_island)
+        await self.entity_factory.quantum(
+            tokens={"world_id": request.world_id, "island_id": new_island.id}, island=new_island
+        )
 
         return new_island.id
 
@@ -78,14 +88,22 @@ class StateService(BaseModel):
 
     async def island_get(self, request: IslandGetRequest) -> Island:
         # Builds a complete Island from Lite objects
-        island_lite: Island = Island.model_validate((await self.islanddao.get(tokens={"world_id": request.world_id, "island_id": request.island_id})).data)
-        tile_ids: set[str] = island_lite.ids
-        island_partial = island_lite.model_dump(exclude={"tile_ids"})
+        island: Island = Island.model_validate(
+            (await self.islanddao.get(tokens={"world_id": request.world_id, "island_id": request.island_id})).data
+        )
+        tile_ids: set[str] = island.ids
+        island_partial = island.model_dump(exclude={"tile_ids"})
         island: Island = Island.model_validate(island_partial)
 
         # re-hydrate the tiles
         for tile_id in tile_ids:
-            tile: Tile = Tile.model_validate((await self.tiledao.get(tokens={"world_id": request.world_id, "island_id": island.id, "tile_id": tile_id})).data)
+            tile: Tile = Tile.model_validate(
+                (
+                    await self.tiledao.get(
+                        tokens={"world_id": request.world_id, "island_id": island.id, "tile_id": tile_id}
+                    )
+                ).data
+            )
             island.contents[tile_id] = tile
 
         return island

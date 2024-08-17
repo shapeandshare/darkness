@@ -17,7 +17,9 @@ class WorldDao(AbstractDao[World]):
     async def put(self, tokens: dict, wrapped_document: WrappedData[World]) -> WrappedData[World]:
         tokens_copy = deepcopy(tokens)
         tokens_copy["world_id"] = wrapped_document.data.id
-        return await self.put_partial(tokens=tokens_copy, wrapped_document=wrapped_document, exclude={"data": {"next", "contents"}})
+        return await self.put_partial(
+            tokens=tokens_copy, wrapped_document=wrapped_document, exclude={"data": {"next", "contents"}}
+        )
 
     async def patch(self, tokens: dict, document: dict) -> WrappedData[World]:
         document_copy = deepcopy(document)
