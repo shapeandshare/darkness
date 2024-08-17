@@ -74,11 +74,3 @@ class AbstractEntityFactory(BaseModel):
             await asyncio.gather(entity_producer(queue), consumer(queue))
 
         await step_one()
-
-        # async def entity_producer(local_tile.data.ids)
-
-        # entity_ids: set[str] = await self.entitydao.get_entities(world_id=world_id, island_id=island_id, tile_id=tile_id)
-
-    # @abstractmethod
-    # async def create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> str:
-    #     """ """

@@ -12,11 +12,13 @@ class EntityFactory(AbstractEntityFactory):
     """ """
 
     async def terrain_generate(self, world_id: str, island: Island) -> None:
+        tokens: dict = {"world_id": world_id, "island_id": island.id}
+
         async def step_one():
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    await self.generate(tokens={"world_id": world_id, "island_id": island.id, "tile_id": local_tile_id})
+                    await self.generate(tokens={**tokens, "tile_id": local_tile_id})
                     queue.task_done()
 
             queue = asyncio.Queue()
@@ -25,12 +27,14 @@ class EntityFactory(AbstractEntityFactory):
         await step_one()
 
     async def quantum(self, world_id: str, island: Island):
+        tokens: dict = {"world_id": world_id, "island_id": island.id}
+
         # Entity Factory Quantum
         async def step_six():
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    await self.grow_entities(tokens={"world_id": world_id, "island_id": island.id, "tile_id": local_tile_id})
+                    await self.grow_entities(tokens={**tokens, "tile_id": local_tile_id})
                     queue.task_done()
 
             queue = asyncio.Queue()
