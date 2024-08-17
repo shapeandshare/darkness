@@ -17,7 +17,7 @@ logger = logging.getLogger()
 class TileDao(AbstractDao[Tile]):
     async def get(self, tokens: dict) -> WrappedData[Tile]:
         logger.debug("[TileDAO] getting tile data from storage")
-        tile_metadata_path: Path = self._document_path(tokens={"world_id": tokens["world_id"], "island_id": tokens["island_id"], "tile_id": tokens["tile_id"]})
+        tile_metadata_path: Path = self._document_path(tokens=tokens)
         if not tile_metadata_path.exists():
             raise DaoDoesNotExistError("tile metadata does not exist")
         with open(file=tile_metadata_path, mode="r", encoding="utf-8") as file:
@@ -25,9 +25,13 @@ class TileDao(AbstractDao[Tile]):
             json_data: str = file.read()
         return WrappedData[Tile].model_validate_json(json_data)
 
-    async def post(self, world_id: str, island_id: str, tile: Tile) -> WrappedData[Tile]:
+    # async def post(self, world_id: str, island_id: str, tile: Tile) -> WrappedData[Tile]:
+    async def post(self, tokens: dict, tile: Tile) -> WrappedData[Tile]:
+        # add tile_id to tokens
+        tokens["tile_id"] = tile.id
+
         logger.debug("[TileDAO] posting tile data to storage")
-        tile_metadata_path: Path = self._document_path(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile.id})
+        tile_metadata_path: Path = self._document_path(tokens=tokens)
         if tile_metadata_path.exists():
             raise DaoConflictError("tile metadata already exists")
         if not tile_metadata_path.parents[2].exists():
@@ -43,7 +47,7 @@ class TileDao(AbstractDao[Tile]):
             os.fsync(file)
 
         # now validate we stored
-        stored_tile: WrappedData[Tile] = await self.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile.id})
+        stored_tile: WrappedData[Tile] = await self.get(tokens=tokens)
         if stored_tile.nonce != nonce:
             msg: str = f"storage inconsistency detected while storing tile {tile.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)

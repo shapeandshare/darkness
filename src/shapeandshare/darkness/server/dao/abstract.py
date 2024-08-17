@@ -58,10 +58,6 @@ class AbstractDao[T](BaseModel):
 
         return path / "metadata.json"
 
-    # @abstractmethod
-    # def _document_path(self, *args, **kwargs) -> Path:
-    #     """ """
-
     @abstractmethod
     async def get(self, *args, **kwargs) -> WrappedData[T]:
         """ """

@@ -209,7 +209,7 @@ class AbstractIslandFactory(BaseModel):
                     local_tile: Tile = Tile(id=tile_map[local_tile_id], tile_type=TileType.OCEAN)
 
                     # create tile
-                    await self.tiledao.post(world_id=world_id, island_id=island_id, tile=local_tile)
+                    await self.tiledao.post(tokens={"world_id": world_id, "island_id": island_id}, tile=local_tile)
                     # msg: str = f"({local_tile_id}) brought into existence as {TileType.OCEAN}"
                     # logger.debug(msg)
 
