@@ -36,11 +36,11 @@ class StateService(BaseModel):
         return await self.world_factory.create(name=request.name)
 
     async def world_lite_get(self, request: WorldGetRequest) -> World:
-        return (await self.worlddao.get(world_id=request.id)).data
+        return World.model_validate((await self.worlddao.get(tokens={"world_id": request.id})).data)
 
     async def world_get(self, request: WorldGetRequest) -> World:
         # Build a complete World from Lite objects
-        world_lite: World = (await self.worlddao.get(world_id=request.id)).data
+        world_lite: World = World.model_validate((await self.worlddao.get(tokens={"world_id": request.id})).data)
         island_ids: set[str] = world_lite.ids
         partial_world = world_lite.model_dump(exclude={"island_ids"})
         world: World = World.model_validate(partial_world)
@@ -81,7 +81,6 @@ class StateService(BaseModel):
         island_lite: Island = Island.model_validate((await self.islanddao.get(tokens={"world_id": request.world_id, "island_id": request.island_id})).data)
         tile_ids: set[str] = island_lite.ids
         island_partial = island_lite.model_dump(exclude={"tile_ids"})
-        # island: IslandFull = IslandFull.model_validate(island_partial)
         island: Island = Island.model_validate(island_partial)
 
         # re-hydrate the tiles
