@@ -134,7 +134,7 @@ class AbstractDao[T](BaseModel):
         dump_params: dict = {"exclude_none": True}
         if exclude is not None:
             dump_params["exclude"] = exclude
-        wrapped_data_raw: str = wrapped_data.model_dump_json(exclude_none=True)
+        wrapped_data_raw: str = wrapped_data.model_dump_json(**dump_params)
         with open(file=document_metadata_path, mode="w", encoding="utf-8") as file:
             file.write(wrapped_data_raw)
             os.fsync(file)
