@@ -8,7 +8,6 @@ from ...sdk.contracts.dtos.sdk.requests.island.get import IslandGetRequest
 from ...sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
 from ...sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
 from ...sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
-from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from ...sdk.contracts.dtos.tiles.island import Island
 from ...sdk.contracts.dtos.tiles.tile import Tile
 from ...sdk.contracts.dtos.tiles.world import World
@@ -66,19 +65,6 @@ class StateService(BaseModel):
 
         # Entity Factory Quantum
         await self.entity_factory.quantum(world_id=request.world_id, island=new_island)
-
-        # add new island to world
-        # add island to world and store
-
-        # get
-        wrapped_world_lite: WrappedData[World] = await self.worlddao.get(tokens={"world_id": request.world_id})
-        wrapped_world_lite.data = World.model_validate(wrapped_world_lite.data)
-
-        # update our state
-        wrapped_world_lite.data.ids.add(new_island.id)
-
-        # put
-        await self.worlddao.put(tokens={"world_id": request.world_id}, wrapped_document=wrapped_world_lite)
 
         return new_island.id
 

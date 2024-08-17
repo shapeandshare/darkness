@@ -3,6 +3,7 @@ import logging
 import uuid
 from asyncio import Queue
 
+from .... import World, WrappedData
 from ....sdk.contracts.dtos.coordinate import Coordinate
 from ....sdk.contracts.dtos.tiles.island import Island
 from ....sdk.contracts.dtos.window import Window
@@ -60,6 +61,12 @@ class FlatIslandFactory(AbstractIslandFactory):
         # 1. blank, named island
         island: Island = Island(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
         await self.islanddao.post(tokens={"world_id": world_id}, document=island)
+
+        # update world metadata
+        wrapped_world: WrappedData[World] = await self.worlddao.get(tokens={"world_id": world_id})
+        wrapped_world.data = World.model_validate(wrapped_world.data)
+        wrapped_world.data.ids.add(island.id)
+        await self.worlddao.put(tokens={"world_id": world_id}, wrapped_document=wrapped_world)
 
         # Define the maximum size
         max_x, max_y = dimensions

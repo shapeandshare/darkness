@@ -16,6 +16,7 @@ from ....sdk.contracts.types.connection import TileConnectionType
 from ....sdk.contracts.types.tile import TileType
 from ...dao.island import IslandDao
 from ...dao.tile import TileDao
+from ...dao.world import WorldDao
 
 logger = logging.getLogger()
 
@@ -23,6 +24,7 @@ logger = logging.getLogger()
 class AbstractIslandFactory(BaseModel):
     tiledao: TileDao
     islanddao: IslandDao
+    worlddao: WorldDao
 
     @staticmethod
     async def producer(ids: set[str], queue: Queue):
