@@ -36,7 +36,7 @@ class AbstractIslandFactory(BaseModel):
     async def mutate_tile(self, world_id: str, island_id: str, tile_id: str, mutate: float, tile_type: TileType) -> None:
         if secrets.randbelow(100) <= mutate:
             # then we spawn the tile type
-            await self.tiledao.patch(world_id=world_id, island_id=island_id, tile_id=tile_id, tile={"tile_type": tile_type})
+            await self.tiledao.patch(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, tile={"tile_type": tile_type})
 
     async def convert_tile(self, world_id: str, island_id: str, tile_id: str, source: TileType, target: TileType) -> None:
         # get
@@ -48,7 +48,7 @@ class AbstractIslandFactory(BaseModel):
             target_tile.data.tile_type = target
 
             # put
-            await self.tiledao.patch(world_id=world_id, island_id=island_id, tile_id=tile_id, tile={"tile_type": target})
+            await self.tiledao.patch(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, tile={"tile_type": target})
 
     async def adjecent_liquids(self, world_id: str, island_id: str, tile_id: str) -> list[TileType]:
         return await self.adjecent_to(world_id=world_id, island_id=island_id, tile_id=tile_id, types=[TileType.OCEAN, TileType.WATER])
@@ -93,7 +93,7 @@ class AbstractIslandFactory(BaseModel):
         if target_tile.data.tile_type == TileType.DIRT:
             adjecent_liquids: list[TileType] = await self.adjecent_liquids(world_id=world_id, island_id=island_id, tile_id=tile_id)
             if TileType.WATER in adjecent_liquids and TileType.OCEAN not in adjecent_liquids:
-                await self.tiledao.patch(world_id=world_id, island_id=island_id, tile_id=tile_id, tile={"tile_type": TileType.GRASS})
+                await self.tiledao.patch(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, tile={"tile_type": TileType.GRASS})
 
         # grass+water (no dirt/ocean) -> forest
         if target_tile.data.tile_type == TileType.GRASS:
@@ -110,7 +110,7 @@ class AbstractIslandFactory(BaseModel):
 
             if len(neighbors) > 1:
                 # next to more than one kind (grass/water)
-                await self.tiledao.patch(world_id=world_id, island_id=island_id, tile_id=tile_id, tile={"tile_type": TileType.FOREST})
+                await self.tiledao.patch(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, tile={"tile_type": TileType.FOREST})
 
         # # grass+(dirt)
         # if island.tiles[tile_id].tile_type == TileType.GRASS:
@@ -178,11 +178,11 @@ class AbstractIslandFactory(BaseModel):
             # Apply erosion - rocks and be left by oceans, everything else becomes shore
             if TileType.OCEAN in adjecent_liquids:
                 if target_tile.data.tile_type not in (TileType.ROCK, TileType.SHORE):
-                    await self.tiledao.patch(world_id=world_id, island_id=island_id, tile_id=tile_id, tile={"tile_type": TileType.SHORE})
+                    await self.tiledao.patch(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, tile={"tile_type": TileType.SHORE})
 
     async def gen_geo_bind(self, world_id: str, island_id: str, tile_id: str, conn_dir: TileConnectionType, target_tile_id: str) -> None:
         tile_partial: dict = {"next": {conn_dir: target_tile_id}}
-        await self.tiledao.patch(world_id=world_id, island_id=island_id, tile_id=tile_id, tile=tile_partial)
+        await self.tiledao.patch(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id}, tile=tile_partial)
 
     async def generate_ocean_block(self, world_id: str, island_id: str, window: Window):
         tile_map: dict[str, str] = {}

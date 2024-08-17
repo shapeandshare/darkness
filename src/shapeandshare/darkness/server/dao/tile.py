@@ -88,16 +88,20 @@ class TileDao(AbstractDao[Tile]):
             raise DaoInconsistencyError(msg)
         return stored_tile
 
-    async def patch(self, world_id: str, island_id: str, tile_id: str, tile: dict) -> WrappedData[Tile]:
+    # async def patch(self, world_id: str, island_id: str, tile_id: str, tile: dict) -> WrappedData[Tile]:
+    async def patch(self, tokens: dict, tile: dict) -> WrappedData[Tile]:
+        if "id" in tile:
+            tokens["tile_id"] = tile["id"]
+
         logger.debug("[TileDAO] patching tile data to storage")
-        tile_metadata_path: Path = self._document_path(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
+        tile_metadata_path: Path = self._document_path(tokens=tokens)
         if not tile_metadata_path.parents[2].exists():
             raise DaoDoesNotExistError("tile container (island) does not exist")
         if not tile_metadata_path.parent.exists():
             logger.debug("[TileDAO] tile metadata folder creating ..")
             tile_metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
-        previous_state: WrappedData[Tile] = await self.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": tile_id})
+        previous_state: WrappedData[Tile] = await self.get(tokens=tokens)
 
         # if we made it this far we are safe to update
 
@@ -114,7 +118,7 @@ class TileDao(AbstractDao[Tile]):
             os.fsync(file)
 
         # now validate we stored
-        stored_entity: WrappedData[Tile] = await self.get(tokens={"world_id": world_id, "island_id": island_id, "tile_id": wrapped_data.data.id})
+        stored_entity: WrappedData[Tile] = await self.get(tokens=tokens)
         if stored_entity.nonce != nonce:
             msg: str = f"storage inconsistency detected while verifying patched tile {wrapped_data.data.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
