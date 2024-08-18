@@ -102,7 +102,7 @@ class StateService(BaseModel):
         # re-hydrate the tiles
         tile_ids: set[str] = chunk.ids
         for tile_id in tile_ids:
-            tile: Tile = await self.tiledao.get(
+            tile: Tile = await self.tile_get(
                 tokens={"world_id": request.world_id, "chunk_id": chunk.id, "tile_id": tile_id}
             )
 
@@ -136,6 +136,6 @@ class StateService(BaseModel):
     ### Entity ##################################
 
     async def entity_get(self, tokens: dict) -> Entity:
-        wrapped_entity: WrappedData[Entity] = await self.entity_dao.get(tokens=tokens)
+        wrapped_entity: WrappedData[Entity] = await self.entitydao.get(tokens=tokens)
         entity: Entity = Entity.model_validate(wrapped_entity.data)
         return entity
