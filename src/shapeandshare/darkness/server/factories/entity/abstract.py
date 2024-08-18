@@ -56,6 +56,21 @@ class AbstractEntityFactory(BaseModel):
 
         await self.tiledao.patch(tokens=tokens, document={"ids": local_tile.data.ids})
 
+    ### entity agent logic
+    async def entity_mycelium(self, wrapped_entity: WrappedData[Entity]):
+        pass
+
+    async def entity_grass(self, wrapped_entity: WrappedData[Entity]):
+        pass
+
+    async def entity_fish(self, wrapped_entity: WrappedData[Entity]):
+        pass
+
+    async def entity_tree(self, wrapped_entity: WrappedData[Entity]):
+        pass
+
+    ###
+
     async def grow_entities(self, tokens: dict):
         # get entities ids for the tile
         local_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
@@ -71,6 +86,24 @@ class AbstractEntityFactory(BaseModel):
                     local_entity_id: str = await queue.get()
 
                     # TODO: Process entity
+                    wrapped_entity: WrappedData[Entity] = await self.entitydao.get(
+                        tokens={**tokens, "entity_id": local_entity_id}
+                    )
+                    wrapped_entity.data = Entity.model_validate(wrapped_entity.data)
+                    # print(wrapped_entity.model_dump())
+
+                    if wrapped_entity.data.entity_type == EntityType.MYCELIUM:
+                        await self.entity_mycelium(wrapped_entity=wrapped_entity)
+                    # elif wrapped_entity.data.entity_type == EntityType.MUSHROOM:
+                    #     pass
+                    elif wrapped_entity.data.entity_type == EntityType.GRASS:
+                        await self.entity_grass(wrapped_entity=wrapped_entity)
+                    elif wrapped_entity.data.entity_type == EntityType.FISH:
+                        await self.entity_fish(wrapped_entity=wrapped_entity)
+                    elif wrapped_entity.data.entity_type == EntityType.TREE:
+                        await self.entity_tree(wrapped_entity=wrapped_entity)
+                    # elif wrapped_entity.data.entity_type == EntityType.FRUIT:
+                    #     pass
 
                     queue.task_done()
 
