@@ -36,6 +36,7 @@ class ContextManager:
                 worlddao=worlddao,
                 chunkdao=chunkdao,
                 tiledao=tiledao,
+                entitydao=entitydao,
                 entity_factory=entity_factory,
                 world_factory=world_factory,
                 flatchunk_factory=flatchunk_factory,
