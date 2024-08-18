@@ -53,6 +53,33 @@ class FlatChunkFactory(AbstractChunkFactory):
 
         await step_two()
 
+        # Convert inner Ocean to Water Tiles
+        async def step_three():
+            async def consumer(queue: Queue):
+                while not queue.empty():
+                    local_tile_id: str = await queue.get()
+                    # Convert inner Ocean to Water Tiles
+                    await self.brackish_tile(tokens={**tokens, "tile_id": local_tile_id})
+                    queue.task_done()
+
+            queue = asyncio.Queue()
+            await asyncio.gather(self.producer(ids=chunk.ids, queue=queue), consumer(queue))
+
+        await step_three()
+
+        # Erode Tiles (to make shore)
+        async def step_four():
+            async def consumer(queue: Queue):
+                while not queue.empty():
+                    local_tile_id: str = await queue.get()
+                    await self.erode_tile(tokens={**tokens, "tile_id": local_tile_id})
+                    queue.task_done()
+
+            queue = asyncio.Queue()
+            await asyncio.gather(self.producer(ids=chunk.ids, queue=queue), consumer(queue))
+
+        await step_four()
+
     async def create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> Chunk:
         if name is None:
             name = "roshar"
@@ -89,33 +116,6 @@ class FlatChunkFactory(AbstractChunkFactory):
 
     async def quantum(self, world_id: str, chunk: Chunk) -> None:
         tokens: dict = {"world_id": world_id, "chunk_id": chunk.id}
-
-        # Convert inner Ocean to Water Tiles
-        async def step_three():
-            async def consumer(queue: Queue):
-                while not queue.empty():
-                    local_tile_id: str = await queue.get()
-                    # Convert inner Ocean to Water Tiles
-                    await self.brackish_tile(tokens={**tokens, "tile_id": local_tile_id})
-                    queue.task_done()
-
-            queue = asyncio.Queue()
-            await asyncio.gather(self.producer(ids=chunk.ids, queue=queue), consumer(queue))
-
-        await step_three()
-
-        # Erode Tiles (to make shore)
-        async def step_four():
-            async def consumer(queue: Queue):
-                while not queue.empty():
-                    local_tile_id: str = await queue.get()
-                    await self.erode_tile(tokens={**tokens, "tile_id": local_tile_id})
-                    queue.task_done()
-
-            queue = asyncio.Queue()
-            await asyncio.gather(self.producer(ids=chunk.ids, queue=queue), consumer(queue))
-
-        await step_four()
 
         # Grow Tiles
         async def step_five():

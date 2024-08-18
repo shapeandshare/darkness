@@ -70,14 +70,10 @@ class AbstractChunkFactory(BaseModel):
                     adjecent_tile.data = Tile.model_validate(adjecent_tile.data)
                     if adjecent_tile.data.tile_type in types and adjecent_tile.data.tile_type not in adjecent_targets:
                         adjecent_targets.append(adjecent_tile.data.tile_type)
-
                     queue.task_done()
 
-            async def process():
-                queue = asyncio.Queue()
-                await asyncio.gather(adjecent_producer(queue), consumer(queue))
-
-            await process()
+            queue = asyncio.Queue()
+            await asyncio.gather(adjecent_producer(queue), consumer(queue))
 
         await step_one()
 
