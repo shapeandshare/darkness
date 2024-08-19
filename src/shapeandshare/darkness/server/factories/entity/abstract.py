@@ -11,15 +11,14 @@ from ....sdk.contracts.dtos.tiles.tile import Tile
 from ....sdk.contracts.errors.server.factory import FactoryError
 from ....sdk.contracts.types.entity import EntityType
 from ....sdk.contracts.types.tile import TileType
-from ...dao.entity import EntityDao
-from ...dao.tile import TileDao
+from ...dao.dao import AbstractDao
 
 logger = logging.getLogger()
 
 
 class AbstractEntityFactory(BaseModel):
-    entitydao: EntityDao
-    tiledao: TileDao
+    entitydao: AbstractDao[Entity]
+    tiledao: AbstractDao[Tile]
 
     @staticmethod
     async def producer(ids: set[str], queue: Queue):
@@ -37,21 +36,25 @@ class AbstractEntityFactory(BaseModel):
         # Review types now
         if local_tile.data.tile_type == TileType.GRASS:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.GRASS)
-            await self.entitydao.post(tokens=tokens, document=new_entity)
+            tokens_entity: dict = {**tokens, "entity_id": new_entity.id}
+            await self.entitydao.post(tokens=tokens_entity, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
         elif local_tile.data.tile_type == TileType.FOREST:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.TREE)
-            await self.entitydao.post(tokens=tokens, document=new_entity)
+            tokens_entity: dict = {**tokens, "entity_id": new_entity.id}
+            await self.entitydao.post(tokens=tokens_entity, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
             new_entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.MYCELIUM)
-            await self.entitydao.post(tokens=tokens, document=new_entity)
+            tokens_entity: dict = {**tokens, "entity_id": new_entity.id}
+            await self.entitydao.post(tokens=tokens_entity, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
         elif local_tile.data.tile_type == TileType.OCEAN:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.FISH)
-            await self.entitydao.post(tokens=tokens, document=new_entity)
+            tokens_entity: dict = {**tokens, "entity_id": new_entity.id}
+            await self.entitydao.post(tokens=tokens_entity, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
         await self.tiledao.patch(tokens=tokens, document={"ids": local_tile.data.ids})
@@ -86,9 +89,8 @@ class AbstractEntityFactory(BaseModel):
                     local_entity_id: str = await queue.get()
 
                     # TODO: Process entity
-                    wrapped_entity: WrappedData[Entity] = await self.entitydao.get(
-                        tokens={**tokens, "entity_id": local_entity_id}
-                    )
+                    tokens_entity: dict = {**tokens, "entity_id": local_entity_id}
+                    wrapped_entity: WrappedData[Entity] = await self.entitydao.get(tokens=tokens_entity)
                     wrapped_entity.data = Entity.model_validate(wrapped_entity.data)
                     # print(wrapped_entity.model_dump())
 

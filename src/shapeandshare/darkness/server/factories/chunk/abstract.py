@@ -11,20 +11,19 @@ from pydantic import BaseModel
 from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from ....sdk.contracts.dtos.tiles.chunk import Chunk
 from ....sdk.contracts.dtos.tiles.tile import Tile
+from ....sdk.contracts.dtos.tiles.world import World
 from ....sdk.contracts.dtos.window import Window
 from ....sdk.contracts.types.connection import TileConnectionType
 from ....sdk.contracts.types.tile import TileType
-from ...dao.chunk import ChunkDao
-from ...dao.tile import TileDao
-from ...dao.world import WorldDao
+from ...dao.dao import AbstractDao
 
 logger = logging.getLogger()
 
 
 class AbstractChunkFactory(BaseModel):
-    tiledao: TileDao
-    chunkdao: ChunkDao
-    worlddao: WorldDao
+    tiledao: AbstractDao[Tile]
+    chunkdao: AbstractDao[Chunk]
+    worlddao: AbstractDao[World]
 
     @staticmethod
     async def producer(ids: set[str], queue: Queue):
@@ -162,9 +161,10 @@ class AbstractChunkFactory(BaseModel):
                     local_tile_id: str = await queue.get()
                     tile_map[local_tile_id] = str(uuid.uuid4())
                     local_tile: Tile = Tile(id=tile_map[local_tile_id], tile_type=TileType.OCEAN)
+                    tokens_tile: dict = {**tokens, "tile_id": local_tile.id}
 
                     # create tile
-                    await self.tiledao.post(tokens=tokens, document=local_tile)
+                    await self.tiledao.post(tokens=tokens_tile, document=local_tile)
                     # msg: str = f"({local_tile_id}) brought into existence as {TileType.OCEAN}"
                     # logger.debug(msg)
 

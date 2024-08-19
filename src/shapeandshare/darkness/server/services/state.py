@@ -13,10 +13,7 @@ from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from ...sdk.contracts.dtos.tiles.chunk import Chunk
 from ...sdk.contracts.dtos.tiles.tile import Tile
 from ...sdk.contracts.dtos.tiles.world import World
-from ..dao.chunk import ChunkDao
-from ..dao.entity import EntityDao
-from ..dao.tile import TileDao
-from ..dao.world import WorldDao
+from ..dao.dao import AbstractDao
 from ..factories.chunk.flat import FlatChunkFactory
 from ..factories.entity.entity import EntityFactory
 from ..factories.world.world import WorldFactory
@@ -25,10 +22,11 @@ logger = logging.getLogger()
 
 
 class StateService(BaseModel):
-    worlddao: WorldDao
-    chunkdao: ChunkDao
-    tiledao: TileDao
-    entitydao: EntityDao
+    worlddao: AbstractDao[World]
+    chunkdao: AbstractDao[Chunk]
+    tiledao: AbstractDao[Tile]
+    entitydao: AbstractDao[Entity]
+
     world_factory: WorldFactory
     entity_factory: EntityFactory
     flatchunk_factory: FlatChunkFactory
@@ -40,11 +38,13 @@ class StateService(BaseModel):
         return await self.world_factory.create(name=request.name)
 
     async def world_lite_get(self, request: WorldGetRequest) -> World:
-        return World.model_validate((await self.worlddao.get(tokens={"world_id": request.id})).data)
+        tokens_world: dict = {"world_id": request.id}
+        return World.model_validate((await self.worlddao.get(tokens=tokens_world)).data)
 
     async def world_get(self, request: WorldGetRequest) -> World:
         # Build a complete World from Lite objects
-        world: World = World.model_validate((await self.worlddao.get(tokens={"world_id": request.id})).data)
+        tokens_world: dict = {"world_id": request.id}
+        world: World = World.model_validate((await self.worlddao.get(tokens=tokens_world)).data)
 
         partial_world = world.model_dump(exclude={"ids"})
         world: World = World.model_validate(partial_world)
@@ -57,7 +57,8 @@ class StateService(BaseModel):
 
     async def world_delete(self, request: WorldDeleteRequest) -> None:
         logger.debug("[StateService] deleting world")
-        await self.worlddao.delete(tokens={"world_id": request.id})
+        tokens_world: dict = {"world_id": request.id}
+        await self.worlddao.delete(tokens=tokens_world)
 
     ### Chunk ##################################
 
@@ -68,33 +69,29 @@ class StateService(BaseModel):
         )
 
         # Entity Factory Terrain Creation
-        await self.entity_factory.terrain_generate(
-            tokens={"world_id": request.world_id, "chunk_id": new_chunk.id}, chunk=new_chunk
-        )
-        new_chunk: Chunk = Chunk.model_validate(
-            (await self.chunkdao.get(tokens={"world_id": request.world_id, "chunk_id": new_chunk.id})).data
-        )
+        tokens_chunk: dict = {"world_id": request.world_id, "chunk_id": new_chunk.id}
+        await self.entity_factory.terrain_generate(tokens=tokens_chunk, chunk=new_chunk)
+        new_chunk: Chunk = Chunk.model_validate((await self.chunkdao.get(tokens=tokens_chunk)).data)
 
         # Entity Factory Quantum
-        await self.entity_factory.quantum(
-            tokens={"world_id": request.world_id, "chunk_id": new_chunk.id}, chunk=new_chunk
-        )
+        await self.entity_factory.quantum(tokens=tokens_chunk, chunk=new_chunk)
 
         return new_chunk.id
 
     async def chunk_delete(self, request: ChunkDeleteRequest) -> None:
         msg: str = f"[WorldService] deleting chunk {id}"
         logger.debug(msg)
-        await self.chunkdao.delete(tokens={"world_id": request.world_id, "chunk_id": request.chunk_id})
+        tokens_chunk: dict = {"world_id": request.world_id, "chunk_id": request.chunk_id}
+        await self.chunkdao.delete(tokens=tokens_chunk)
 
     async def chunk_lite_get(self, request: ChunkGetRequest) -> Chunk:
-        return (await self.chunkdao.get(tokens={"world_id": request.world_id, "chunk_id": request.chunk_id})).data
+        tokens_chunk: dict = {"world_id": request.world_id, "chunk_id": request.chunk_id}
+        return (await self.chunkdao.get(tokens=tokens_chunk)).data
 
     async def chunk_get(self, request: ChunkGetRequest) -> Chunk:
         # Builds a complete Chunk from Lite objects
-        chunk: Chunk = Chunk.model_validate(
-            (await self.chunkdao.get(tokens={"world_id": request.world_id, "chunk_id": request.chunk_id})).data
-        )
+        tokens_chunk: dict = {"world_id": request.world_id, "chunk_id": request.chunk_id}
+        chunk: Chunk = Chunk.model_validate((await self.chunkdao.get(tokens=tokens_chunk)).data)
 
         chunk_partial = chunk.model_dump(exclude={"tile_ids"})
         chunk: Chunk = Chunk.model_validate(chunk_partial)
@@ -102,21 +99,19 @@ class StateService(BaseModel):
         # re-hydrate the tiles
         tile_ids: set[str] = chunk.ids
         for tile_id in tile_ids:
-            tile: Tile = await self.tile_get(
-                tokens={"world_id": request.world_id, "chunk_id": chunk.id, "tile_id": tile_id}
-            )
+            tokens_tile: dict = {"world_id": request.world_id, "chunk_id": chunk.id, "tile_id": tile_id}
+            tile: Tile = await self.tile_get(tokens=tokens_tile)
 
             # re-hydrate the entities
             entity_ids: set[str] = tile.ids
             for entity_id in entity_ids:
-                entity: Entity = await self.entity_get(
-                    tokens={
-                        "world_id": request.world_id,
-                        "chunk_id": chunk.id,
-                        "tile_id": tile_id,
-                        "entity_id": entity_id,
-                    }
-                )
+                tokens_entity: dict = {
+                    "world_id": request.world_id,
+                    "chunk_id": chunk.id,
+                    "tile_id": tile_id,
+                    "entity_id": entity_id,
+                }
+                entity: Entity = await self.entity_get(tokens=tokens_entity)
 
                 # add finalized entity to tile
                 tile.contents[entity_id] = entity

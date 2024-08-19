@@ -16,7 +16,8 @@ class EntityFactory(AbstractEntityFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    await self.generate(tokens={**tokens, "tile_id": local_tile_id})
+                    tokens_tile: dict = {**tokens, "tile_id": local_tile_id}
+                    await self.generate(tokens=tokens_tile)
                     queue.task_done()
 
             queue = asyncio.Queue()
@@ -30,7 +31,8 @@ class EntityFactory(AbstractEntityFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    await self.grow_entities(tokens={**tokens, "tile_id": local_tile_id})
+                    tokens_tile: dict = {**tokens, "tile_id": local_tile_id}
+                    await self.grow_entities(tokens=tokens_tile)
                     queue.task_done()
 
             queue = asyncio.Queue()

@@ -2,11 +2,12 @@ import logging
 import sys
 from pathlib import Path
 
+from ...sdk.contracts.dtos.entities.entity import Entity
+from ...sdk.contracts.dtos.tiles.chunk import Chunk
+from ...sdk.contracts.dtos.tiles.tile import Tile
+from ...sdk.contracts.dtos.tiles.world import World
 from ...sdk.contracts.errors.server.service import ServiceError
-from ..dao.chunk import ChunkDao
-from ..dao.entity import EntityDao
-from ..dao.tile import TileDao
-from ..dao.world import WorldDao
+from ..dao.dao import AbstractDao
 from ..factories.chunk.flat import FlatChunkFactory
 from ..factories.entity.entity import EntityFactory
 from ..factories.world.world import WorldFactory
@@ -23,10 +24,10 @@ class ContextManager:
 
     def __init__(self):
         if ContextManager.state_service is None:
-            worlddao = WorldDao(storage_base_path=STORAGE_BASE_PATH)
-            chunkdao = ChunkDao(storage_base_path=STORAGE_BASE_PATH)
-            tiledao = TileDao(storage_base_path=STORAGE_BASE_PATH)
-            entitydao = EntityDao(storage_base_path=STORAGE_BASE_PATH)
+            worlddao = AbstractDao[World](storage_base_path=STORAGE_BASE_PATH)
+            chunkdao = AbstractDao[Chunk](storage_base_path=STORAGE_BASE_PATH)
+            tiledao = AbstractDao[Tile](storage_base_path=STORAGE_BASE_PATH)
+            entitydao = AbstractDao[Entity](storage_base_path=STORAGE_BASE_PATH)
 
             world_factory = WorldFactory(worlddao=worlddao)
             entity_factory = EntityFactory(entitydao=entitydao, tiledao=tiledao)

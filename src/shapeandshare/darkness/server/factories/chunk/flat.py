@@ -16,16 +16,17 @@ logger = logging.getLogger()
 
 class FlatChunkFactory(AbstractChunkFactory):
     async def terrain_generate(self, world_id: str, chunk: Chunk) -> None:
-        tokens: dict = {"world_id": world_id, "chunk_id": chunk.id}
+        tokens_chunk: dict = {"world_id": world_id, "chunk_id": chunk.id}
 
         # Lets shovel in some biome default or dirt tiles!
         async def step_one():
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
+                    tokens_tile: dict = {**tokens_chunk, "tile_id": local_tile_id}
                     # Mutate tiles to biome default (or dirt)
                     await self.mutate_tile(
-                        tokens={**tokens, "tile_id": local_tile_id},
+                        tokens=tokens_tile,
                         mutate=90,  # percentage of 100%
                         tile_type=(chunk.biome if chunk.biome else TileType.DIRT),
                     )
@@ -41,8 +42,9 @@ class FlatChunkFactory(AbstractChunkFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
+                    tokens_tile: dict = {**tokens_chunk, "tile_id": local_tile_id}
                     await self.mutate_tile(
-                        tokens={**tokens, "tile_id": local_tile_id},
+                        tokens=tokens_tile,
                         mutate=0.5,  # 0.5% change (very low)
                         tile_type=TileType.ROCK,
                     )
@@ -58,8 +60,9 @@ class FlatChunkFactory(AbstractChunkFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
+                    tokens_tile: dict = {**tokens_chunk, "tile_id": local_tile_id}
                     # Convert inner Ocean to Water Tiles
-                    await self.brackish_tile(tokens={**tokens, "tile_id": local_tile_id})
+                    await self.brackish_tile(tokens=tokens_tile)
                     queue.task_done()
 
             queue = asyncio.Queue()
@@ -72,7 +75,8 @@ class FlatChunkFactory(AbstractChunkFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    await self.erode_tile(tokens={**tokens, "tile_id": local_tile_id})
+                    tokens_tile: dict = {**tokens_chunk, "tile_id": local_tile_id}
+                    await self.erode_tile(tokens=tokens_tile)
                     queue.task_done()
 
             queue = asyncio.Queue()
@@ -84,26 +88,28 @@ class FlatChunkFactory(AbstractChunkFactory):
         if name is None:
             name = "roshar"
 
-        tokens: dict = {"world_id": world_id}
+        # tokens: dict = {"world_id": world_id}
+        tokens_world: dict = {"world_id": world_id}
 
         # 1. blank, named chunk
         chunk: Chunk = Chunk(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
-        await self.chunkdao.post(tokens=tokens, document=chunk)
+        tokens_chunk: dict = {**tokens_world, "chunk_id": chunk.id}
+        await self.chunkdao.post(tokens=tokens_chunk, document=chunk)
 
         # update world metadata
-        wrapped_world: WrappedData[World] = await self.worlddao.get(tokens=tokens)
+        wrapped_world: WrappedData[World] = await self.worlddao.get(tokens=tokens_world)
         wrapped_world.data = World.model_validate(wrapped_world.data)
         wrapped_world.data.ids.add(chunk.id)
-        await self.worlddao.patch(tokens=tokens, document={"ids": wrapped_world.data.ids})
+        await self.worlddao.patch(tokens=tokens_world, document={"ids": wrapped_world.data.ids})
 
         # Define the maximum size
         max_x, max_y = dimensions
 
-        tokens["chunk_id"] = chunk.id
+        # tokens["chunk_id"] = chunk.id
         # Generate an empty 2D block of ocean
         window: Window = Window(min=Coordinate(x=1, y=1), max=Coordinate(x=max_x, y=max_y))
-        await self.generate_ocean_block(tokens=tokens, window=window)
-        chunk = Chunk.model_validate((await self.chunkdao.get(tokens=tokens)).data)
+        await self.generate_ocean_block(tokens=tokens_chunk, window=window)
+        chunk = Chunk.model_validate((await self.chunkdao.get(tokens=tokens_chunk)).data)
 
         # Apply our terrain generation
         await self.terrain_generate(world_id=world_id, chunk=chunk)
@@ -112,17 +118,18 @@ class FlatChunkFactory(AbstractChunkFactory):
         await self.quantum(world_id=world_id, chunk=chunk)
 
         # get final state and return
-        return Chunk.model_validate((await self.chunkdao.get(tokens=tokens)).data)
+        return Chunk.model_validate((await self.chunkdao.get(tokens=tokens_chunk)).data)
 
     async def quantum(self, world_id: str, chunk: Chunk) -> None:
-        tokens: dict = {"world_id": world_id, "chunk_id": chunk.id}
+        tokens_chunk: dict = {"world_id": world_id, "chunk_id": chunk.id}
 
         # Grow Tiles
         async def step_five():
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    await self.grow_tile(tokens={**tokens, "tile_id": local_tile_id})
+                    tokens_tile: dict = {**tokens_chunk, "tile_id": local_tile_id}
+                    await self.grow_tile(tokens=tokens_tile)
                     queue.task_done()
 
             queue = asyncio.Queue()

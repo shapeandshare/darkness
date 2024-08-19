@@ -2,7 +2,7 @@ import logging
 import os
 import shutil
 import uuid
-from abc import abstractmethod
+from copy import deepcopy
 from enum import Enum
 from pathlib import Path
 from typing import TypeVar
@@ -88,24 +88,24 @@ class AbstractDao[T](BaseModel):
             document_metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
     async def get(self, tokens: dict) -> WrappedData[T]:
-        document_metadata_path: Path = self._assert_metadata_exists(tokens=tokens)
+        tokens_copy = deepcopy(tokens)
+        document_metadata_path: Path = self._assert_metadata_exists(tokens=tokens_copy)
         with open(file=document_metadata_path, mode="r", encoding="utf-8") as file:
             os.fsync(file)
             json_data: str = file.read()
         return WrappedData[T].model_validate_json(json_data)
 
-    @abstractmethod
-    async def post(self, tokens: dict, document: T) -> WrappedData[T]:
-        """ """
+    async def post(self, tokens: dict, document: T, exclude: dict | None = None) -> WrappedData[T]:
+        tokens_copy = deepcopy(tokens)
 
-    async def post_partial(self, tokens: dict, document: T, exclude: dict | None = None) -> WrappedData[T]:
-        self._assert_metadata_does_not_exists(tokens=tokens)
-        document_metadata_path: Path = self._assert_metadata_parent_exists(tokens=tokens)
+        self._assert_metadata_does_not_exists(tokens=tokens_copy)
+        document_metadata_path: Path = self._assert_metadata_parent_exists(tokens=tokens_copy)
         AbstractDao._safe_create(document_metadata_path=document_metadata_path)
 
         nonce: str = str(uuid.uuid4())
         wrapped_data: WrappedData[T] = WrappedData[T](data=document, nonce=nonce)
-        dump_params: dict = {"exclude_none": True}
+        dump_params: dict = {"exclude_none": True}  # exclude `None`
+        dump_params["exclude"] = {"data": {"contents"}}  # default exclude contents
         if exclude is not None:
             dump_params["exclude"] = exclude
         wrapped_data_raw: str = wrapped_data.model_dump_json(**dump_params)
@@ -114,24 +114,20 @@ class AbstractDao[T](BaseModel):
             os.fsync(file)
 
         # now validate we stored
-        stored_entity: WrappedData[T] = await self.get(tokens=tokens)
+        stored_entity: WrappedData[T] = await self.get(tokens=tokens_copy)
         if stored_entity.nonce != nonce:
             msg: str = f"storage inconsistency detected while storing document {document.id} - nonce mismatch!"
             raise DaoInconsistencyError(msg)
         return stored_entity
 
-    @abstractmethod
-    async def put(self, tokens: dict, wrapped_document: WrappedData[T]) -> WrappedData[T]:
-        """ """
+    async def put(self, tokens: dict, wrapped_document: WrappedData[T], exclude: dict | None = None) -> WrappedData[T]:
+        tokens_copy = deepcopy(tokens)
 
-    async def put_partial(
-        self, tokens: dict, wrapped_document: WrappedData[T], exclude: dict | None = None
-    ) -> WrappedData[T]:
-        document_metadata_path: Path = self._assert_metadata_exists(tokens=tokens)
+        document_metadata_path: Path = self._assert_metadata_exists(tokens=tokens_copy)
 
         # see if we have a pre-existing nonce to verify against
         try:
-            previous_state: WrappedData[T] = await self.get(tokens=tokens)
+            previous_state: WrappedData[T] = await self.get(tokens=tokens_copy)
             if previous_state.nonce != wrapped_document.nonce:
                 msg: str = (
                     f"storage inconsistency detected while putting document {wrapped_document.data.id} - nonce mismatch!"
@@ -145,7 +141,8 @@ class AbstractDao[T](BaseModel):
 
         nonce: str = str(uuid.uuid4())
         wrapped_data: WrappedData[T] = WrappedData[T](data=wrapped_document.data, nonce=nonce)
-        dump_params: dict = {"exclude_none": True}
+        dump_params: dict = {"exclude_none": True}  # exclude `None`
+        dump_params["exclude"] = {"data": {"contents"}}  # default exclude contents
         if exclude is not None:
             dump_params["exclude"] = exclude
         wrapped_data_raw: str = wrapped_data.model_dump_json(**dump_params)
@@ -154,7 +151,7 @@ class AbstractDao[T](BaseModel):
             os.fsync(file)
 
         # now validate we stored
-        stored_entity: WrappedData[T] = await self.get(tokens=tokens)
+        stored_entity: WrappedData[T] = await self.get(tokens=tokens_copy)
         if stored_entity.nonce != nonce:
             msg: str = (
                 f"storage inconsistency detected while verifying put entity {wrapped_data.data.id} - nonce mismatch!"
@@ -162,24 +159,26 @@ class AbstractDao[T](BaseModel):
             raise DaoInconsistencyError(msg)
         return stored_entity
 
-    @abstractmethod
-    async def patch(self, tokens: dict, document: dict) -> WrappedData[T]:
-        """ """
+    async def patch(self, tokens: dict, document: dict, exclude: dict | None = None) -> WrappedData[T]:
+        tokens_copy = deepcopy(tokens)
+        document_copy = deepcopy(document)
+        if "id" in document_copy:
+            del document_copy["id"]
 
-    async def patch_partial(self, tokens: dict, document: dict, exclude: dict | None = None) -> WrappedData[T]:
-        document_metadata_path: Path = self._assert_metadata_exists(tokens=tokens)
-        previous_state: WrappedData[T] = await self.get(tokens=tokens)
+        document_metadata_path: Path = self._assert_metadata_exists(tokens=tokens_copy)
+        previous_state: WrappedData[T] = await self.get(tokens=tokens_copy)
 
         # if we made it this far we are safe to update
 
         # merge
         nonce: str = str(uuid.uuid4())
         previous_state_dict = previous_state.data
-        new_state = AbstractDao.recursive_dict_merge(previous_state_dict, document)
+        new_state = AbstractDao.recursive_dict_merge(previous_state_dict, document_copy)
         wrapped_data: WrappedData[T] = WrappedData[T](data=new_state, nonce=nonce)
 
         # serialize to storage
-        dump_params: dict = {"exclude_none": True}
+        dump_params: dict = {"exclude_none": True}  # exclude `None`
+        dump_params["exclude"] = {"data": {"contents"}}  # default exclude contents
         if exclude is not None:
             dump_params["exclude"] = exclude
         wrapped_data_raw: str = wrapped_data.model_dump_json(**dump_params)
@@ -188,7 +187,7 @@ class AbstractDao[T](BaseModel):
             os.fsync(file)
 
         # now validate we stored
-        stored_entity: WrappedData[T] = await self.get(tokens=tokens)
+        stored_entity: WrappedData[T] = await self.get(tokens=tokens_copy)
         if stored_entity.nonce != nonce:
             msg: str = (
                 f"storage inconsistency detected while verifying patched document {wrapped_data.data.id} - nonce mismatch!"
