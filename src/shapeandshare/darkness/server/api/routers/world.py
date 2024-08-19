@@ -114,8 +114,7 @@ async def world_create(request: WorldCreateRequest) -> Response[WorldCreateRespo
         # catch everything else
         raise HTTPException(status_code=500, detail=f"Uncaught exception: {str(error)}") from error
 
-    response = Response[WorldCreateResponse](data=WorldCreateResponse(id=world_id))
-    return response
+    return Response[WorldCreateResponse](data=WorldCreateResponse(id=world_id))
 
 
 ### /world/world_id/chunk/
