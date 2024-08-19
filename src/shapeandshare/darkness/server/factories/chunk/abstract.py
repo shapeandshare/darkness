@@ -9,6 +9,7 @@ from asyncio import Queue
 from pydantic import BaseModel
 
 from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
+from ....sdk.contracts.dtos.tiles.address import Address
 from ....sdk.contracts.dtos.tiles.chunk import Chunk
 from ....sdk.contracts.dtos.tiles.tile import Tile
 from ....sdk.contracts.dtos.tiles.world import World
@@ -34,12 +35,12 @@ class AbstractChunkFactory(BaseModel):
     async def create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> str:
         """ """
 
-    async def mutate_tile(self, tokens: dict, mutate: float, tile_type: TileType) -> None:
+    async def mutate_tile(self, tokens: Address, mutate: float, tile_type: TileType) -> None:
         if secrets.randbelow(100) <= mutate:
             # then we spawn the tile type
             await self.tiledao.patch(tokens=tokens, document={"tile_type": tile_type})
 
-    async def convert_tile(self, tokens: dict, source: TileType, target: TileType) -> None:
+    async def convert_tile(self, tokens: Address, source: TileType, target: TileType) -> None:
         # get
         target_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
         target_tile.data = Tile.model_validate(target_tile.data)
@@ -48,10 +49,10 @@ class AbstractChunkFactory(BaseModel):
             # update
             await self.tiledao.patch(tokens=tokens, document={"tile_type": target})
 
-    async def adjecent_liquids(self, tokens: dict) -> list[TileType]:
+    async def adjecent_liquids(self, tokens: Address) -> list[TileType]:
         return await self.adjecent_to(tokens=tokens, types=[TileType.OCEAN, TileType.WATER])
 
-    async def adjecent_to(self, tokens: dict, types: list[TileType] | None) -> list[TileType]:
+    async def adjecent_to(self, tokens: Address, types: list[TileType] | None) -> list[TileType]:
         adjecent_targets: list[TileType] = []
 
         target_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
@@ -59,12 +60,12 @@ class AbstractChunkFactory(BaseModel):
 
         async def adjecent_producer(queue: Queue):
             for _, adjecent_id in target_tile.data.next.items():
-                await queue.put(item={**tokens, "tile_id": adjecent_id})
+                await queue.put(item={**tokens.model_dump(), "tile_id": adjecent_id})
 
         async def step_one():
             async def consumer(queue: Queue):
                 while not queue.empty():
-                    work_item = await queue.get()
+                    work_item = Address.model_validate(await queue.get())
                     adjecent_tile: WrappedData[Tile] = await self.tiledao.get(tokens=work_item)
                     adjecent_tile.data = Tile.model_validate(adjecent_tile.data)
                     if adjecent_tile.data.tile_type in types and adjecent_tile.data.tile_type not in adjecent_targets:
@@ -78,7 +79,7 @@ class AbstractChunkFactory(BaseModel):
 
         return adjecent_targets
 
-    async def grow_tile(self, tokens: dict) -> None:
+    async def grow_tile(self, tokens: Address) -> None:
         # get
         target_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
         target_tile.data = Tile.model_validate(target_tile.data)
@@ -105,7 +106,7 @@ class AbstractChunkFactory(BaseModel):
 
         # TODO: grass+(dirt)
 
-    async def brackish_tile(self, tokens: dict) -> None:
+    async def brackish_tile(self, tokens: Address) -> None:
         # Convert inner Ocean to Water Tiles
 
         # See if we are next to another ocean tile
@@ -121,7 +122,7 @@ class AbstractChunkFactory(BaseModel):
         # #     # 3. then check my nexts
         # #     # 4. Return False (not ocean)
 
-    async def erode_tile(self, tokens: dict) -> None:
+    async def erode_tile(self, tokens: Address) -> None:
         # get
         target_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
         target_tile.data = Tile.model_validate(target_tile.data)
@@ -134,11 +135,11 @@ class AbstractChunkFactory(BaseModel):
                 if target_tile.data.tile_type not in (TileType.ROCK, TileType.SHORE):
                     await self.tiledao.patch(tokens=tokens, document={"tile_type": TileType.SHORE})
 
-    async def gen_geo_bind(self, tokens: dict, conn_dir: TileConnectionType, target_tile_id: str) -> None:
+    async def gen_geo_bind(self, tokens: Address, conn_dir: TileConnectionType, target_tile_id: str) -> None:
         tile_partial: dict = {"next": {conn_dir: target_tile_id}}
         await self.tiledao.patch(tokens=tokens, document=tile_partial)
 
-    async def generate_ocean_block(self, tokens: dict, window: Window):
+    async def generate_ocean_block(self, tokens: Address, window: Window):
         tile_map: dict[str, str] = {}
 
         async def flat_producer(window: Window, queue: Queue):
@@ -161,7 +162,7 @@ class AbstractChunkFactory(BaseModel):
                     local_tile_id: str = await queue.get()
                     tile_map[local_tile_id] = str(uuid.uuid4())
                     local_tile: Tile = Tile(id=tile_map[local_tile_id], tile_type=TileType.OCEAN)
-                    tokens_tile: dict = {**tokens, "tile_id": local_tile.id}
+                    tokens_tile: Address = Address.model_validate({**tokens.model_dump(), "tile_id": local_tile.id})
 
                     # create tile
                     await self.tiledao.post(tokens=tokens_tile, document=local_tile)
@@ -210,8 +211,9 @@ class AbstractChunkFactory(BaseModel):
                     _target_tile_id: str = f"tile_{local_x - 1}_{local_y}"
                     if _target_tile_id in tile_map:
                         target_tile_id = tile_map[_target_tile_id]
+                        tokens_tile: Address = Address.model_validate({**tokens.model_dump(), "tile_id": local_tile_id})
                         await self.gen_geo_bind(
-                            tokens={**tokens, "tile_id": local_tile_id},
+                            tokens=tokens_tile,
                             target_tile_id=target_tile_id,
                             conn_dir=TileConnectionType.LEFT,
                         )
@@ -220,8 +222,9 @@ class AbstractChunkFactory(BaseModel):
                     _target_tile_id: str = f"tile_{local_x + 1}_{local_y}"
                     if _target_tile_id in tile_map:
                         target_tile_id = tile_map[_target_tile_id]
+                        tokens_tile: Address = Address.model_validate({**tokens.model_dump(), "tile_id": local_tile_id})
                         await self.gen_geo_bind(
-                            tokens={**tokens, "tile_id": local_tile_id},
+                            tokens=tokens_tile,
                             target_tile_id=target_tile_id,
                             conn_dir=TileConnectionType.RIGHT,
                         )
@@ -230,8 +233,9 @@ class AbstractChunkFactory(BaseModel):
                     _target_tile_id: str = f"tile_{local_x}_{local_y - 1}"
                     if _target_tile_id in tile_map:
                         target_tile_id = tile_map[_target_tile_id]
+                        tokens_tile: Address = Address.model_validate({**tokens.model_dump(), "tile_id": local_tile_id})
                         await self.gen_geo_bind(
-                            tokens={**tokens, "tile_id": local_tile_id},
+                            tokens=tokens_tile,
                             target_tile_id=target_tile_id,
                             conn_dir=TileConnectionType.UP,
                         )
@@ -240,8 +244,9 @@ class AbstractChunkFactory(BaseModel):
                     _target_tile_id: str = f"tile_{local_x}_{local_y + 1}"
                     if _target_tile_id in tile_map:
                         target_tile_id = tile_map[_target_tile_id]
+                        tokens_tile: Address = Address.model_validate({**tokens.model_dump(), "tile_id": local_tile_id})
                         await self.gen_geo_bind(
-                            tokens={**tokens, "tile_id": local_tile_id},
+                            tokens=tokens_tile,
                             target_tile_id=target_tile_id,
                             conn_dir=TileConnectionType.DOWN,
                         )

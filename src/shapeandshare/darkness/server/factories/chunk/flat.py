@@ -5,6 +5,7 @@ from asyncio import Queue
 
 from ....sdk.contracts.dtos.coordinate import Coordinate
 from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
+from ....sdk.contracts.dtos.tiles.address import Address
 from ....sdk.contracts.dtos.tiles.chunk import Chunk
 from ....sdk.contracts.dtos.tiles.world import World
 from ....sdk.contracts.dtos.window import Window
@@ -16,14 +17,16 @@ logger = logging.getLogger()
 
 class FlatChunkFactory(AbstractChunkFactory):
     async def terrain_generate(self, world_id: str, chunk: Chunk) -> None:
-        tokens_chunk: dict = {"world_id": world_id, "chunk_id": chunk.id}
+        tokens_chunk: Address = Address.model_validate({"world_id": world_id, "chunk_id": chunk.id})
 
         # Lets shovel in some biome default or dirt tiles!
         async def step_one():
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    tokens_tile: dict = {**tokens_chunk, "tile_id": local_tile_id}
+                    tokens_tile: Address = Address.model_validate(
+                        {**tokens_chunk.model_dump(), "tile_id": local_tile_id}
+                    )
                     # Mutate tiles to biome default (or dirt)
                     await self.mutate_tile(
                         tokens=tokens_tile,
@@ -42,7 +45,9 @@ class FlatChunkFactory(AbstractChunkFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    tokens_tile: dict = {**tokens_chunk, "tile_id": local_tile_id}
+                    tokens_tile: Address = Address.model_validate(
+                        {**tokens_chunk.model_dump(), "tile_id": local_tile_id}
+                    )
                     await self.mutate_tile(
                         tokens=tokens_tile,
                         mutate=0.5,  # 0.5% change (very low)
@@ -60,7 +65,9 @@ class FlatChunkFactory(AbstractChunkFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    tokens_tile: dict = {**tokens_chunk, "tile_id": local_tile_id}
+                    tokens_tile: Address = Address.model_validate(
+                        {**tokens_chunk.model_dump(), "tile_id": local_tile_id}
+                    )
                     # Convert inner Ocean to Water Tiles
                     await self.brackish_tile(tokens=tokens_tile)
                     queue.task_done()
@@ -75,7 +82,9 @@ class FlatChunkFactory(AbstractChunkFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    tokens_tile: dict = {**tokens_chunk, "tile_id": local_tile_id}
+                    tokens_tile: Address = Address.model_validate(
+                        {**tokens_chunk.model_dump(), "tile_id": local_tile_id}
+                    )
                     await self.erode_tile(tokens=tokens_tile)
                     queue.task_done()
 
@@ -88,12 +97,11 @@ class FlatChunkFactory(AbstractChunkFactory):
         if name is None:
             name = "roshar"
 
-        # tokens: dict = {"world_id": world_id}
-        tokens_world: dict = {"world_id": world_id}
+        tokens_world: Address = Address.model_validate({"world_id": world_id})
 
         # 1. blank, named chunk
         chunk: Chunk = Chunk(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
-        tokens_chunk: dict = {**tokens_world, "chunk_id": chunk.id}
+        tokens_chunk: Address = Address.model_validate({**tokens_world.model_dump(), "chunk_id": chunk.id})
         await self.chunkdao.post(tokens=tokens_chunk, document=chunk)
 
         # update world metadata
@@ -121,14 +129,16 @@ class FlatChunkFactory(AbstractChunkFactory):
         return Chunk.model_validate((await self.chunkdao.get(tokens=tokens_chunk)).data)
 
     async def quantum(self, world_id: str, chunk: Chunk) -> None:
-        tokens_chunk: dict = {"world_id": world_id, "chunk_id": chunk.id}
+        tokens_chunk: Address = Address.model_validate({"world_id": world_id, "chunk_id": chunk.id})
 
         # Grow Tiles
         async def step_five():
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    tokens_tile: dict = {**tokens_chunk, "tile_id": local_tile_id}
+                    tokens_tile: Address = Address.model_validate(
+                        {**tokens_chunk.model_dump(), "tile_id": local_tile_id}
+                    )
                     await self.grow_tile(tokens=tokens_tile)
                     queue.task_done()
 

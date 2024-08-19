@@ -37,22 +37,22 @@ class AbstractDao[T](BaseModel):
         super().__init__(**kwargs)
         self.storage_base_path.mkdir(parents=True, exist_ok=True)
 
-    def _document_path(self, tokens: dict) -> Path:
-        return self.storage_base_path / Address(**tokens).resolve()
+    def _document_path(self, tokens: Address) -> Path:
+        return self.storage_base_path / tokens.resolve()
 
-    def _assert_metadata_exists(self, tokens: dict) -> Path:
+    def _assert_metadata_exists(self, tokens: Address) -> Path:
         document_metadata_path: Path = self._document_path(tokens=tokens)
         if not document_metadata_path.exists():
             raise DaoDoesNotExistError("document metadata does not exist")
         return document_metadata_path
 
-    def _assert_metadata_does_not_exists(self, tokens: dict) -> Path:
+    def _assert_metadata_does_not_exists(self, tokens: Address) -> Path:
         document_metadata_path: Path = self._document_path(tokens=tokens)
         if document_metadata_path.exists():
             raise DaoConflictError("document metadata already exists")
         return document_metadata_path
 
-    def _assert_metadata_parent_exists(self, tokens: dict) -> Path:
+    def _assert_metadata_parent_exists(self, tokens: Address) -> Path:
         document_metadata_path: Path = self._document_path(tokens=tokens)
         if not document_metadata_path.parents[2].exists():
             raise DaoDoesNotExistError("document container does not exist")
@@ -63,7 +63,7 @@ class AbstractDao[T](BaseModel):
         if not document_metadata_path.parent.exists():
             document_metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
-    async def get(self, tokens: dict) -> WrappedData[T]:
+    async def get(self, tokens: Address) -> WrappedData[T]:
         tokens_copy = deepcopy(tokens)
         document_metadata_path: Path = self._assert_metadata_exists(tokens=tokens_copy)
         with open(file=document_metadata_path, mode="r", encoding="utf-8") as file:
@@ -71,7 +71,7 @@ class AbstractDao[T](BaseModel):
             json_data: str = file.read()
         return WrappedData[T].model_validate_json(json_data)
 
-    async def post(self, tokens: dict, document: T, exclude: dict | None = None) -> WrappedData[T]:
+    async def post(self, tokens: Address, document: T, exclude: dict | None = None) -> WrappedData[T]:
         tokens_copy = deepcopy(tokens)
 
         self._assert_metadata_does_not_exists(tokens=tokens_copy)
@@ -96,7 +96,9 @@ class AbstractDao[T](BaseModel):
             raise DaoInconsistencyError(msg)
         return stored_entity
 
-    async def put(self, tokens: dict, wrapped_document: WrappedData[T], exclude: dict | None = None) -> WrappedData[T]:
+    async def put(
+        self, tokens: Address, wrapped_document: WrappedData[T], exclude: dict | None = None
+    ) -> WrappedData[T]:
         tokens_copy = deepcopy(tokens)
 
         document_metadata_path: Path = self._assert_metadata_exists(tokens=tokens_copy)
@@ -135,7 +137,7 @@ class AbstractDao[T](BaseModel):
             raise DaoInconsistencyError(msg)
         return stored_entity
 
-    async def patch(self, tokens: dict, document: dict, exclude: dict | None = None) -> WrappedData[T]:
+    async def patch(self, tokens: Address, document: dict, exclude: dict | None = None) -> WrappedData[T]:
         tokens_copy = deepcopy(tokens)
         document_copy = deepcopy(document)
         if "id" in document_copy:
@@ -171,7 +173,7 @@ class AbstractDao[T](BaseModel):
             raise DaoInconsistencyError(msg)
         return stored_entity
 
-    async def delete(self, tokens: dict) -> bool:
+    async def delete(self, tokens: Address) -> bool:
         document_metadata_path: Path = self._assert_metadata_exists(tokens=tokens)
         shutil.rmtree(document_metadata_path.parent)
         return True

@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from ....sdk.contracts.dtos.entities.entity import Entity
 from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
+from ....sdk.contracts.dtos.tiles.address import Address
 from ....sdk.contracts.dtos.tiles.tile import Tile
 from ....sdk.contracts.errors.server.factory import FactoryError
 from ....sdk.contracts.types.entity import EntityType
@@ -25,7 +26,7 @@ class AbstractEntityFactory(BaseModel):
         for local_id in ids:
             await queue.put(local_id)
 
-    async def generate(self, tokens: dict) -> None:
+    async def generate(self, tokens: Address) -> None:
         # get entities ids for the tile
         local_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
         local_tile.data = Tile.model_validate(local_tile.data)
@@ -36,24 +37,24 @@ class AbstractEntityFactory(BaseModel):
         # Review types now
         if local_tile.data.tile_type == TileType.GRASS:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.GRASS)
-            tokens_entity: dict = {**tokens, "entity_id": new_entity.id}
+            tokens_entity: Address = Address.model_validate({**tokens.model_dump(), "entity_id": new_entity.id})
             await self.entitydao.post(tokens=tokens_entity, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
         elif local_tile.data.tile_type == TileType.FOREST:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.TREE)
-            tokens_entity: dict = {**tokens, "entity_id": new_entity.id}
+            tokens_entity: Address = Address.model_validate({**tokens.model_dump(), "entity_id": new_entity.id})
             await self.entitydao.post(tokens=tokens_entity, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
             new_entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.MYCELIUM)
-            tokens_entity: dict = {**tokens, "entity_id": new_entity.id}
+            tokens_entity: Address = Address.model_validate({**tokens.model_dump(), "entity_id": new_entity.id})
             await self.entitydao.post(tokens=tokens_entity, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
         elif local_tile.data.tile_type == TileType.OCEAN:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.FISH)
-            tokens_entity: dict = {**tokens, "entity_id": new_entity.id}
+            tokens_entity: Address = Address.model_validate({**tokens.model_dump(), "entity_id": new_entity.id})
             await self.entitydao.post(tokens=tokens_entity, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
@@ -74,7 +75,7 @@ class AbstractEntityFactory(BaseModel):
 
     ###
 
-    async def grow_entities(self, tokens: dict):
+    async def grow_entities(self, tokens: Address):
         # get entities ids for the tile
         local_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
         local_tile.data = Tile.model_validate(local_tile.data)
@@ -89,7 +90,9 @@ class AbstractEntityFactory(BaseModel):
                     local_entity_id: str = await queue.get()
 
                     # TODO: Process entity
-                    tokens_entity: dict = {**tokens, "entity_id": local_entity_id}
+                    tokens_entity: Address = Address.model_validate(
+                        {**tokens.model_dump(), "entity_id": local_entity_id}
+                    )
                     wrapped_entity: WrappedData[Entity] = await self.entitydao.get(tokens=tokens_entity)
                     wrapped_entity.data = Entity.model_validate(wrapped_entity.data)
                     # print(wrapped_entity.model_dump())
