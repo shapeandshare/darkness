@@ -26,39 +26,39 @@ class AbstractEntityFactory(BaseModel):
         for local_id in ids:
             await queue.put(local_id)
 
-    async def generate(self, tokens: Address) -> None:
+    async def generate(self, address: Address) -> None:
         # get entities ids for the tile
-        local_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
+        local_tile: WrappedData[Tile] = await self.tiledao.get(address=address)
         local_tile.data = Tile.model_validate(local_tile.data)
         if len(local_tile.data.ids) > 0:
-            msg: str = f"entity generation can not occur on a tile with pre-existing entities, {tokens}"
+            msg: str = f"entity generation can not occur on a tile with pre-existing entities, {address}"
             raise FactoryError(msg)
 
         # Review types now
         if local_tile.data.tile_type == TileType.GRASS:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.GRASS)
-            tokens_entity: Address = Address.model_validate({**tokens.model_dump(), "entity_id": new_entity.id})
-            await self.entitydao.post(tokens=tokens_entity, document=new_entity)
+            address_entity: Address = Address.model_validate({**address.model_dump(), "entity_id": new_entity.id})
+            await self.entitydao.post(address=address_entity, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
         elif local_tile.data.tile_type == TileType.FOREST:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.TREE)
-            tokens_entity: Address = Address.model_validate({**tokens.model_dump(), "entity_id": new_entity.id})
-            await self.entitydao.post(tokens=tokens_entity, document=new_entity)
+            address_entity: Address = Address.model_validate({**address.model_dump(), "entity_id": new_entity.id})
+            await self.entitydao.post(address=address_entity, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
             new_entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.MYCELIUM)
-            tokens_entity: Address = Address.model_validate({**tokens.model_dump(), "entity_id": new_entity.id})
-            await self.entitydao.post(tokens=tokens_entity, document=new_entity)
+            address_entity: Address = Address.model_validate({**address.model_dump(), "entity_id": new_entity.id})
+            await self.entitydao.post(address=address_entity, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
         elif local_tile.data.tile_type == TileType.OCEAN:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.FISH)
-            tokens_entity: Address = Address.model_validate({**tokens.model_dump(), "entity_id": new_entity.id})
-            await self.entitydao.post(tokens=tokens_entity, document=new_entity)
+            address_entity: Address = Address.model_validate({**address.model_dump(), "entity_id": new_entity.id})
+            await self.entitydao.post(address=address_entity, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
-        await self.tiledao.patch(tokens=tokens, document={"ids": local_tile.data.ids})
+        await self.tiledao.patch(address=address, document={"ids": local_tile.data.ids})
 
     ### entity agent logic
     async def entity_mycelium(self, wrapped_entity: WrappedData[Entity]):
@@ -75,9 +75,9 @@ class AbstractEntityFactory(BaseModel):
 
     ###
 
-    async def grow_entities(self, tokens: Address):
+    async def grow_entities(self, address: Address):
         # get entities ids for the tile
-        local_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
+        local_tile: WrappedData[Tile] = await self.tiledao.get(address=address)
         local_tile.data = Tile.model_validate(local_tile.data)
 
         async def entity_producer(queue: Queue):
@@ -90,10 +90,10 @@ class AbstractEntityFactory(BaseModel):
                     local_entity_id: str = await queue.get()
 
                     # TODO: Process entity
-                    tokens_entity: Address = Address.model_validate(
-                        {**tokens.model_dump(), "entity_id": local_entity_id}
+                    address_entity: Address = Address.model_validate(
+                        {**address.model_dump(), "entity_id": local_entity_id}
                     )
-                    wrapped_entity: WrappedData[Entity] = await self.entitydao.get(tokens=tokens_entity)
+                    wrapped_entity: WrappedData[Entity] = await self.entitydao.get(address=address_entity)
                     wrapped_entity.data = Entity.model_validate(wrapped_entity.data)
                     # print(wrapped_entity.model_dump())
 

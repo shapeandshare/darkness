@@ -35,38 +35,38 @@ class AbstractChunkFactory(BaseModel):
     async def create(self, world_id: str, name: str | None, dimensions: tuple[int, int], biome: TileType) -> str:
         """ """
 
-    async def mutate_tile(self, tokens: Address, mutate: float, tile_type: TileType) -> None:
+    async def mutate_tile(self, address: Address, mutate: float, tile_type: TileType) -> None:
         if secrets.randbelow(100) <= mutate:
             # then we spawn the tile type
-            await self.tiledao.patch(tokens=tokens, document={"tile_type": tile_type})
+            await self.tiledao.patch(address=address, document={"tile_type": tile_type})
 
-    async def convert_tile(self, tokens: Address, source: TileType, target: TileType) -> None:
+    async def convert_tile(self, address: Address, source: TileType, target: TileType) -> None:
         # get
-        target_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
+        target_tile: WrappedData[Tile] = await self.tiledao.get(address=address)
         target_tile.data = Tile.model_validate(target_tile.data)
         # check
         if target_tile.data.tile_type == source:
             # update
-            await self.tiledao.patch(tokens=tokens, document={"tile_type": target})
+            await self.tiledao.patch(address=address, document={"tile_type": target})
 
-    async def adjecent_liquids(self, tokens: Address) -> list[TileType]:
-        return await self.adjecent_to(tokens=tokens, types=[TileType.OCEAN, TileType.WATER])
+    async def adjecent_liquids(self, address: Address) -> list[TileType]:
+        return await self.adjecent_to(address=address, types=[TileType.OCEAN, TileType.WATER])
 
-    async def adjecent_to(self, tokens: Address, types: list[TileType] | None) -> list[TileType]:
+    async def adjecent_to(self, address: Address, types: list[TileType] | None) -> list[TileType]:
         adjecent_targets: list[TileType] = []
 
-        target_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
+        target_tile: WrappedData[Tile] = await self.tiledao.get(address=address)
         target_tile.data = Tile.model_validate(target_tile.data)
 
         async def adjecent_producer(queue: Queue):
             for _, adjecent_id in target_tile.data.next.items():
-                await queue.put(item={**tokens.model_dump(), "tile_id": adjecent_id})
+                await queue.put(item={**address.model_dump(), "tile_id": adjecent_id})
 
         async def step_one():
             async def consumer(queue: Queue):
                 while not queue.empty():
                     work_item = Address.model_validate(await queue.get())
-                    adjecent_tile: WrappedData[Tile] = await self.tiledao.get(tokens=work_item)
+                    adjecent_tile: WrappedData[Tile] = await self.tiledao.get(address=work_item)
                     adjecent_tile.data = Tile.model_validate(adjecent_tile.data)
                     if adjecent_tile.data.tile_type in types and adjecent_tile.data.tile_type not in adjecent_targets:
                         adjecent_targets.append(adjecent_tile.data.tile_type)
@@ -79,20 +79,20 @@ class AbstractChunkFactory(BaseModel):
 
         return adjecent_targets
 
-    async def grow_tile(self, tokens: Address) -> None:
+    async def grow_tile(self, address: Address) -> None:
         # get
-        target_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
+        target_tile: WrappedData[Tile] = await self.tiledao.get(address=address)
         target_tile.data = Tile.model_validate(target_tile.data)
         # dirt -> grass
         if target_tile.data.tile_type == TileType.DIRT:
-            adjecent_liquids: list[TileType] = await self.adjecent_liquids(tokens=tokens)
+            adjecent_liquids: list[TileType] = await self.adjecent_liquids(address=address)
             if TileType.WATER in adjecent_liquids and TileType.OCEAN not in adjecent_liquids:
-                await self.tiledao.patch(tokens=tokens, document={"tile_type": TileType.GRASS})
+                await self.tiledao.patch(address=address, document={"tile_type": TileType.GRASS})
 
         # grass+water (no dirt/ocean) -> forest
         if target_tile.data.tile_type == TileType.GRASS:
             neighbors: list[TileType] = await self.adjecent_to(
-                tokens=tokens,
+                address=address,
                 types=[TileType.WATER, TileType.GRASS, TileType.OCEAN],
             )
 
@@ -102,17 +102,17 @@ class AbstractChunkFactory(BaseModel):
 
             if len(neighbors) > 1:
                 # next to more than one kind (grass/water)
-                await self.tiledao.patch(tokens=tokens, document={"tile_type": TileType.FOREST})
+                await self.tiledao.patch(address=address, document={"tile_type": TileType.FOREST})
 
         # TODO: grass+(dirt)
 
-    async def brackish_tile(self, tokens: Address) -> None:
+    async def brackish_tile(self, address: Address) -> None:
         # Convert inner Ocean to Water Tiles
 
         # See if we are next to another ocean tile
-        neighbors: list[TileType] = await self.adjecent_to(tokens=tokens, types=[TileType.OCEAN])
+        neighbors: list[TileType] = await self.adjecent_to(address=address, types=[TileType.OCEAN])
         if len(neighbors) < 1:
-            await self.convert_tile(tokens=tokens, source=TileType.OCEAN, target=TileType.WATER)
+            await self.convert_tile(address=address, source=TileType.OCEAN, target=TileType.WATER)
 
         # TODO: are we an isolated ocean body? if so then we are water
         #
@@ -122,24 +122,24 @@ class AbstractChunkFactory(BaseModel):
         # #     # 3. then check my nexts
         # #     # 4. Return False (not ocean)
 
-    async def erode_tile(self, tokens: Address) -> None:
+    async def erode_tile(self, address: Address) -> None:
         # get
-        target_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
+        target_tile: WrappedData[Tile] = await self.tiledao.get(address=address)
         target_tile.data = Tile.model_validate(target_tile.data)
 
         # shore erosion
         if target_tile.data.tile_type not in [TileType.UNKNOWN, TileType.OCEAN, TileType.WATER, TileType.SHORE]:
-            adjecent_liquids: list[TileType] = await self.adjecent_liquids(tokens=tokens)
+            adjecent_liquids: list[TileType] = await self.adjecent_liquids(address=address)
             # Apply erosion - rocks and be left by oceans, everything else becomes shore
             if TileType.OCEAN in adjecent_liquids:
                 if target_tile.data.tile_type not in (TileType.ROCK, TileType.SHORE):
-                    await self.tiledao.patch(tokens=tokens, document={"tile_type": TileType.SHORE})
+                    await self.tiledao.patch(address=address, document={"tile_type": TileType.SHORE})
 
-    async def gen_geo_bind(self, tokens: Address, conn_dir: TileConnectionType, target_tile_id: str) -> None:
+    async def gen_geo_bind(self, address: Address, conn_dir: TileConnectionType, target_tile_id: str) -> None:
         tile_partial: dict = {"next": {conn_dir: target_tile_id}}
-        await self.tiledao.patch(tokens=tokens, document=tile_partial)
+        await self.tiledao.patch(address=address, document=tile_partial)
 
-    async def generate_ocean_block(self, tokens: Address, window: Window):
+    async def generate_ocean_block(self, address: Address, window: Window):
         tile_map: dict[str, str] = {}
 
         async def flat_producer(window: Window, queue: Queue):
@@ -162,23 +162,23 @@ class AbstractChunkFactory(BaseModel):
                     local_tile_id: str = await queue.get()
                     tile_map[local_tile_id] = str(uuid.uuid4())
                     local_tile: Tile = Tile(id=tile_map[local_tile_id], tile_type=TileType.OCEAN)
-                    tokens_tile: Address = Address.model_validate({**tokens.model_dump(), "tile_id": local_tile.id})
+                    address_tile: Address = Address.model_validate({**address.model_dump(), "tile_id": local_tile.id})
 
                     # create tile
-                    await self.tiledao.post(tokens=tokens_tile, document=local_tile)
+                    await self.tiledao.post(address=address_tile, document=local_tile)
                     # msg: str = f"({local_tile_id}) brought into existence as {TileType.OCEAN}"
                     # logger.debug(msg)
 
                     # Update the chunk --
 
                     # get
-                    wrapped_chunk: WrappedData[Chunk] = await self.chunkdao.get(tokens=tokens)
+                    wrapped_chunk: WrappedData[Chunk] = await self.chunkdao.get(address=address)
                     wrapped_chunk.data = Chunk.model_validate(wrapped_chunk.data)
 
                     wrapped_chunk.data.ids.add(tile_map[local_tile_id])
 
                     # put -- store chunk update (tile addition)
-                    await self.chunkdao.patch(tokens=tokens, document={"ids": wrapped_chunk.data.ids})
+                    await self.chunkdao.patch(address=address, document={"ids": wrapped_chunk.data.ids})
 
                     queue.task_done()
 
@@ -188,7 +188,7 @@ class AbstractChunkFactory(BaseModel):
         await step_one()
 
         # set origin tile on chunk
-        await self.chunkdao.patch(tokens=tokens, document={"origin": tile_map["tile_1_1"]})
+        await self.chunkdao.patch(address=address, document={"origin": tile_map["tile_1_1"]})
 
         # 2. Connect everything together
         async def step_two():
@@ -211,9 +211,11 @@ class AbstractChunkFactory(BaseModel):
                     _target_tile_id: str = f"tile_{local_x - 1}_{local_y}"
                     if _target_tile_id in tile_map:
                         target_tile_id = tile_map[_target_tile_id]
-                        tokens_tile: Address = Address.model_validate({**tokens.model_dump(), "tile_id": local_tile_id})
+                        address_tile: Address = Address.model_validate(
+                            {**address.model_dump(), "tile_id": local_tile_id}
+                        )
                         await self.gen_geo_bind(
-                            tokens=tokens_tile,
+                            address=address_tile,
                             target_tile_id=target_tile_id,
                             conn_dir=TileConnectionType.LEFT,
                         )
@@ -222,9 +224,11 @@ class AbstractChunkFactory(BaseModel):
                     _target_tile_id: str = f"tile_{local_x + 1}_{local_y}"
                     if _target_tile_id in tile_map:
                         target_tile_id = tile_map[_target_tile_id]
-                        tokens_tile: Address = Address.model_validate({**tokens.model_dump(), "tile_id": local_tile_id})
+                        address_tile: Address = Address.model_validate(
+                            {**address.model_dump(), "tile_id": local_tile_id}
+                        )
                         await self.gen_geo_bind(
-                            tokens=tokens_tile,
+                            address=address_tile,
                             target_tile_id=target_tile_id,
                             conn_dir=TileConnectionType.RIGHT,
                         )
@@ -233,9 +237,11 @@ class AbstractChunkFactory(BaseModel):
                     _target_tile_id: str = f"tile_{local_x}_{local_y - 1}"
                     if _target_tile_id in tile_map:
                         target_tile_id = tile_map[_target_tile_id]
-                        tokens_tile: Address = Address.model_validate({**tokens.model_dump(), "tile_id": local_tile_id})
+                        address_tile: Address = Address.model_validate(
+                            {**address.model_dump(), "tile_id": local_tile_id}
+                        )
                         await self.gen_geo_bind(
-                            tokens=tokens_tile,
+                            address=address_tile,
                             target_tile_id=target_tile_id,
                             conn_dir=TileConnectionType.UP,
                         )
@@ -244,9 +250,11 @@ class AbstractChunkFactory(BaseModel):
                     _target_tile_id: str = f"tile_{local_x}_{local_y + 1}"
                     if _target_tile_id in tile_map:
                         target_tile_id = tile_map[_target_tile_id]
-                        tokens_tile: Address = Address.model_validate({**tokens.model_dump(), "tile_id": local_tile_id})
+                        address_tile: Address = Address.model_validate(
+                            {**address.model_dump(), "tile_id": local_tile_id}
+                        )
                         await self.gen_geo_bind(
-                            tokens=tokens_tile,
+                            address=address_tile,
                             target_tile_id=target_tile_id,
                             conn_dir=TileConnectionType.DOWN,
                         )

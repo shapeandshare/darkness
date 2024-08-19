@@ -39,13 +39,13 @@ class StateService(BaseModel):
         return await self.world_factory.create(name=request.name)
 
     async def world_lite_get(self, request: WorldGetRequest) -> World:
-        tokens_world: Address = Address.model_validate({"world_id": request.id})
-        return World.model_validate((await self.worlddao.get(tokens=tokens_world)).data)
+        address_world: Address = Address.model_validate({"world_id": request.id})
+        return World.model_validate((await self.worlddao.get(address=address_world)).data)
 
     async def world_get(self, request: WorldGetRequest) -> World:
         # Build a complete World from Lite objects
-        tokens_world: Address = Address.model_validate({"world_id": request.id})
-        world: World = World.model_validate((await self.worlddao.get(tokens=tokens_world)).data)
+        address_world: Address = Address.model_validate({"world_id": request.id})
+        world: World = World.model_validate((await self.worlddao.get(address=address_world)).data)
 
         partial_world = world.model_dump(exclude={"ids"})
         world: World = World.model_validate(partial_world)
@@ -58,8 +58,8 @@ class StateService(BaseModel):
 
     async def world_delete(self, request: WorldDeleteRequest) -> None:
         logger.debug("[StateService] deleting world")
-        tokens_world: Address = Address.model_validate({"world_id": request.id})
-        await self.worlddao.delete(tokens=tokens_world)
+        address_world: Address = Address.model_validate({"world_id": request.id})
+        await self.worlddao.delete(address=address_world)
 
     ### Chunk ##################################
 
@@ -70,29 +70,29 @@ class StateService(BaseModel):
         )
 
         # Entity Factory Terrain Creation
-        tokens_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": new_chunk.id})
-        await self.entity_factory.terrain_generate(tokens=tokens_chunk, chunk=new_chunk)
-        new_chunk: Chunk = Chunk.model_validate((await self.chunkdao.get(tokens=tokens_chunk)).data)
+        address_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": new_chunk.id})
+        await self.entity_factory.terrain_generate(address=address_chunk, chunk=new_chunk)
+        new_chunk: Chunk = Chunk.model_validate((await self.chunkdao.get(address=address_chunk)).data)
 
         # Entity Factory Quantum
-        await self.entity_factory.quantum(tokens=tokens_chunk, chunk=new_chunk)
+        await self.entity_factory.quantum(address=address_chunk, chunk=new_chunk)
 
         return new_chunk.id
 
     async def chunk_delete(self, request: ChunkDeleteRequest) -> None:
         msg: str = f"[WorldService] deleting chunk {id}"
         logger.debug(msg)
-        tokens_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": request.chunk_id})
-        await self.chunkdao.delete(tokens=tokens_chunk)
+        address_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": request.chunk_id})
+        await self.chunkdao.delete(address=address_chunk)
 
     async def chunk_lite_get(self, request: ChunkGetRequest) -> Chunk:
-        tokens_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": request.chunk_id})
-        return (await self.chunkdao.get(tokens=tokens_chunk)).data
+        address_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": request.chunk_id})
+        return (await self.chunkdao.get(address=address_chunk)).data
 
     async def chunk_get(self, request: ChunkGetRequest) -> Chunk:
         # Builds a complete Chunk from Lite objects
-        tokens_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": request.chunk_id})
-        chunk: Chunk = Chunk.model_validate((await self.chunkdao.get(tokens=tokens_chunk)).data)
+        address_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": request.chunk_id})
+        chunk: Chunk = Chunk.model_validate((await self.chunkdao.get(address=address_chunk)).data)
 
         chunk_partial = chunk.model_dump(exclude={"tile_ids"})
         chunk: Chunk = Chunk.model_validate(chunk_partial)
@@ -100,15 +100,15 @@ class StateService(BaseModel):
         # re-hydrate the tiles
         tile_ids: set[str] = chunk.ids
         for tile_id in tile_ids:
-            tokens_tile: Address = Address.model_validate(
+            address_tile: Address = Address.model_validate(
                 {"world_id": request.world_id, "chunk_id": chunk.id, "tile_id": tile_id}
             )
-            tile: Tile = await self.tile_get(tokens=tokens_tile)
+            tile: Tile = await self.tile_get(address=address_tile)
 
             # re-hydrate the entities
             entity_ids: set[str] = tile.ids
             for entity_id in entity_ids:
-                tokens_entity: Address = Address.model_validate(
+                address_entity: Address = Address.model_validate(
                     {
                         "world_id": request.world_id,
                         "chunk_id": chunk.id,
@@ -116,7 +116,7 @@ class StateService(BaseModel):
                         "entity_id": entity_id,
                     }
                 )
-                entity: Entity = await self.entity_get(tokens=tokens_entity)
+                entity: Entity = await self.entity_get(address=address_entity)
 
                 # add finalized entity to tile
                 tile.contents[entity_id] = entity
@@ -128,14 +128,14 @@ class StateService(BaseModel):
 
     ### Tile ##################################
 
-    async def tile_get(self, tokens: Address) -> Tile:
-        wrapped_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
+    async def tile_get(self, address: Address) -> Tile:
+        wrapped_tile: WrappedData[Tile] = await self.tiledao.get(address=address)
         tile: Tile = Tile.model_validate(wrapped_tile.data)
         return tile
 
     ### Entity ##################################
 
-    async def entity_get(self, tokens: Address) -> Entity:
-        wrapped_entity: WrappedData[Entity] = await self.entitydao.get(tokens=tokens)
+    async def entity_get(self, address: Address) -> Entity:
+        wrapped_entity: WrappedData[Entity] = await self.entitydao.get(address=address)
         entity: Entity = Entity.model_validate(wrapped_entity.data)
         return entity

@@ -12,13 +12,13 @@ logger = logging.getLogger()
 class EntityFactory(AbstractEntityFactory):
     """ """
 
-    async def terrain_generate(self, tokens: Address, chunk: Chunk) -> None:
+    async def terrain_generate(self, address: Address, chunk: Chunk) -> None:
         async def step_one():
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    tokens_tile: Address = Address.model_validate({**tokens.model_dump(), "tile_id": local_tile_id})
-                    await self.generate(tokens=tokens_tile)
+                    address_tile: Address = Address.model_validate({**address.model_dump(), "tile_id": local_tile_id})
+                    await self.generate(address=address_tile)
                     queue.task_done()
 
             queue = asyncio.Queue()
@@ -26,14 +26,14 @@ class EntityFactory(AbstractEntityFactory):
 
         await step_one()
 
-    async def quantum(self, tokens: Address, chunk: Chunk):
+    async def quantum(self, address: Address, chunk: Chunk):
         # Entity Factory Quantum
         async def step_six():
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    tokens_tile: Address = Address.model_validate({**tokens.model_dump(), "tile_id": local_tile_id})
-                    await self.grow_entities(tokens=tokens_tile)
+                    address_tile: Address = Address.model_validate({**address.model_dump(), "tile_id": local_tile_id})
+                    await self.grow_entities(address=address_tile)
                     queue.task_done()
 
             queue = asyncio.Queue()
