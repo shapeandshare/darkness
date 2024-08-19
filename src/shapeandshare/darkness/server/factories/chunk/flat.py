@@ -16,17 +16,13 @@ logger = logging.getLogger()
 
 
 class FlatChunkFactory(AbstractChunkFactory):
-    async def terrain_generate(self, world_id: str, chunk: Chunk) -> None:
-        address_chunk: Address = Address.model_validate({"world_id": world_id, "chunk_id": chunk.id})
-
+    async def terrain_generate(self, address: Address, chunk: Chunk) -> None:
         # Lets shovel in some biome default or dirt tiles!
         async def step_one():
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    address_tile: Address = Address.model_validate(
-                        {**address_chunk.model_dump(), "tile_id": local_tile_id}
-                    )
+                    address_tile: Address = Address.model_validate({**address.model_dump(), "tile_id": local_tile_id})
                     # Mutate tiles to biome default (or dirt)
                     await self.mutate_tile(
                         address=address_tile,
@@ -45,9 +41,7 @@ class FlatChunkFactory(AbstractChunkFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    address_tile: Address = Address.model_validate(
-                        {**address_chunk.model_dump(), "tile_id": local_tile_id}
-                    )
+                    address_tile: Address = Address.model_validate({**address.model_dump(), "tile_id": local_tile_id})
                     await self.mutate_tile(
                         address=address_tile,
                         mutate=0.5,  # 0.5% change (very low)
@@ -65,9 +59,7 @@ class FlatChunkFactory(AbstractChunkFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    address_tile: Address = Address.model_validate(
-                        {**address_chunk.model_dump(), "tile_id": local_tile_id}
-                    )
+                    address_tile: Address = Address.model_validate({**address.model_dump(), "tile_id": local_tile_id})
                     # Convert inner Ocean to Water Tiles
                     await self.brackish_tile(address=address_tile)
                     queue.task_done()
@@ -82,9 +74,7 @@ class FlatChunkFactory(AbstractChunkFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    address_tile: Address = Address.model_validate(
-                        {**address_chunk.model_dump(), "tile_id": local_tile_id}
-                    )
+                    address_tile: Address = Address.model_validate({**address.model_dump(), "tile_id": local_tile_id})
                     await self.erode_tile(address=address_tile)
                     queue.task_done()
 
@@ -120,7 +110,8 @@ class FlatChunkFactory(AbstractChunkFactory):
         chunk = Chunk.model_validate((await self.chunkdao.get(address=address_chunk)).data)
 
         # Apply our terrain generation
-        await self.terrain_generate(world_id=world_id, chunk=chunk)
+        address_chunk: Address = Address.model_validate({**address_world.model_dump(), "chunk_id": chunk.id})
+        await self.terrain_generate(address=address_chunk, chunk=chunk)
 
         # Apply a quantum time
         await self.quantum(world_id=world_id, chunk=chunk)
