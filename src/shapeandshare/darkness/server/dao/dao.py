@@ -3,13 +3,13 @@ import os
 import shutil
 import uuid
 from copy import deepcopy
-from enum import Enum
 from pathlib import Path
 from typing import TypeVar
 
 from pydantic import BaseModel
 
 from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
+from ...sdk.contracts.dtos.tiles.address import Address
 from ...sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from ...sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from ...sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
@@ -17,17 +17,6 @@ from ...sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyErr
 logger = logging.getLogger()
 
 T = TypeVar("T")
-
-
-class DocumentType(str, Enum):
-    WORLD = "worlds"
-    CHUNK = "chunk"
-    TILE = "tiles"
-    ENTITY = "entities"
-
-
-# class DocumentPath(BaseModel):
-# tables = ["worlds", "chunks", "tiles", "entities"]
 
 
 class AbstractDao[T](BaseModel):
@@ -49,20 +38,7 @@ class AbstractDao[T](BaseModel):
         self.storage_base_path.mkdir(parents=True, exist_ok=True)
 
     def _document_path(self, tokens: dict) -> Path:
-        path: Path = self.storage_base_path
-        if "world_id" in tokens:
-            path = path / "worlds" / tokens["world_id"]
-
-        if "chunk_id" in tokens:
-            path = path / "chunks" / tokens["chunk_id"]
-
-        if "tile_id" in tokens:
-            path = path / "tiles" / tokens["tile_id"]
-
-        if "entity_id" in tokens:
-            path = path / "entities" / tokens["entity_id"]
-
-        return path / "metadata.json"
+        return self.storage_base_path / Address(**tokens).resolve()
 
     def _assert_metadata_exists(self, tokens: dict) -> Path:
         document_metadata_path: Path = self._document_path(tokens=tokens)
