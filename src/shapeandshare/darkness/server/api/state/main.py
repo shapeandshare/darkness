@@ -6,7 +6,7 @@ import uvicorn
 from fastapi import FastAPI
 
 from ...factories.world import world
-from ..routers import metrics
+from ..common.routers import metrics
 from .routers import world
 
 logging.basicConfig(level=logging.INFO)
