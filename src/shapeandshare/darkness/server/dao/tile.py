@@ -19,7 +19,7 @@ logger = logging.getLogger()
 T = TypeVar("T")
 
 
-class AbstractDao[T](BaseModel):
+class TileDao[T](BaseModel):
     storage_base_path: Path
 
     @staticmethod
@@ -27,7 +27,7 @@ class AbstractDao[T](BaseModel):
         for key, value in dict2.items():
             if key in dict1 and isinstance(dict1[key], dict) and isinstance(value, dict):
                 # Recursively merge nested dictionaries
-                dict1[key] = AbstractDao.recursive_dict_merge(dict1[key], value)
+                dict1[key] = TileDao.recursive_dict_merge(dict1[key], value)
             else:
                 # Merge non-dictionary values
                 dict1[key] = value
@@ -76,7 +76,7 @@ class AbstractDao[T](BaseModel):
 
         self._assert_metadata_does_not_exists(address=address_copy)
         document_metadata_path: Path = self._assert_metadata_parent_exists(address=address_copy)
-        AbstractDao._safe_create(document_metadata_path=document_metadata_path)
+        TileDao._safe_create(document_metadata_path=document_metadata_path)
 
         nonce: str = str(uuid.uuid4())
         wrapped_data: WrappedData[T] = WrappedData[T](data=document, nonce=nonce)
@@ -151,7 +151,7 @@ class AbstractDao[T](BaseModel):
         # merge
         nonce: str = str(uuid.uuid4())
         previous_state_dict = previous_state.data
-        new_state = AbstractDao.recursive_dict_merge(previous_state_dict, document_copy)
+        new_state = TileDao.recursive_dict_merge(previous_state_dict, document_copy)
         wrapped_data: WrappedData[T] = WrappedData[T](data=new_state, nonce=nonce)
 
         # serialize to storage

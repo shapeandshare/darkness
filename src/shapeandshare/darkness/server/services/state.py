@@ -14,7 +14,7 @@ from ...sdk.contracts.dtos.tiles.address import Address
 from ...sdk.contracts.dtos.tiles.chunk import Chunk
 from ...sdk.contracts.dtos.tiles.tile import Tile
 from ...sdk.contracts.dtos.tiles.world import World
-from ..dao.dao import AbstractDao
+from ..dao.tile import TileDao
 from ..factories.chunk.flat import FlatChunkFactory
 from ..factories.entity.entity import EntityFactory
 from ..factories.world.world import WorldFactory
@@ -23,10 +23,10 @@ logger = logging.getLogger()
 
 
 class StateService(BaseModel):
-    worlddao: AbstractDao[World]
-    chunkdao: AbstractDao[Chunk]
-    tiledao: AbstractDao[Tile]
-    entitydao: AbstractDao[Entity]
+    worlddao: TileDao[World]
+    chunkdao: TileDao[Chunk]
+    tiledao: TileDao[Tile]
+    entitydao: TileDao[Entity]
 
     world_factory: WorldFactory
     entity_factory: EntityFactory

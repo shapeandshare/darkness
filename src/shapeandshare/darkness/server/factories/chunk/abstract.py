@@ -16,15 +16,15 @@ from ....sdk.contracts.dtos.tiles.world import World
 from ....sdk.contracts.dtos.window import Window
 from ....sdk.contracts.types.connection import TileConnectionType
 from ....sdk.contracts.types.tile import TileType
-from ...dao.dao import AbstractDao
+from ...dao.tile import TileDao
 
 logger = logging.getLogger()
 
 
 class AbstractChunkFactory(BaseModel):
-    tiledao: AbstractDao[Tile]
-    chunkdao: AbstractDao[Chunk]
-    worlddao: AbstractDao[World]
+    tiledao: TileDao[Tile]
+    chunkdao: TileDao[Chunk]
+    worlddao: TileDao[World]
 
     @staticmethod
     async def producer(ids: set[str], queue: Queue):

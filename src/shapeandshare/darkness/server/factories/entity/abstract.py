@@ -12,14 +12,14 @@ from ....sdk.contracts.dtos.tiles.tile import Tile
 from ....sdk.contracts.errors.server.factory import FactoryError
 from ....sdk.contracts.types.entity import EntityType
 from ....sdk.contracts.types.tile import TileType
-from ...dao.dao import AbstractDao
+from ...dao.tile import TileDao
 
 logger = logging.getLogger()
 
 
 class AbstractEntityFactory(BaseModel):
-    entitydao: AbstractDao[Entity]
-    tiledao: AbstractDao[Tile]
+    entitydao: TileDao[Entity]
+    tiledao: TileDao[Tile]
 
     @staticmethod
     async def producer(ids: set[str], queue: Queue):

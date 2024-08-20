@@ -4,11 +4,11 @@ from pydantic import BaseModel
 
 from ....sdk.contracts.dtos.tiles.address import Address
 from ....sdk.contracts.dtos.tiles.world import World
-from ...dao.dao import AbstractDao
+from ...dao.tile import TileDao
 
 
 class WorldFactory(BaseModel):
-    worlddao: AbstractDao[World]
+    worlddao: TileDao[World]
 
     async def create(self, name: str | None = None) -> str:
         if name is None:
