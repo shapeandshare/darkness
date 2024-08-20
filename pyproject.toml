@@ -39,7 +39,7 @@ dependencies = ["fastapi","pydantic", "uvicorn", "requests", "click"]
 
 
 [project.scripts]
-darkness = "shapeandshare.darkness.server.api.main:main"
+darkness = "shapeandshare.darkness.server.api.state.main"
 
 
 [project.urls]

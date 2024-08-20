@@ -2,20 +2,20 @@ import logging
 import sys
 from pathlib import Path
 
-from ...sdk.contracts.dtos.entities.entity import Entity
-from ...sdk.contracts.dtos.tiles.chunk import Chunk
-from ...sdk.contracts.dtos.tiles.tile import Tile
-from ...sdk.contracts.dtos.tiles.world import World
-from ...sdk.contracts.errors.server.service import ServiceError
-from ..dao.tile import TileDao
-from ..factories.chunk.flat import FlatChunkFactory
-from ..factories.entity.entity import EntityFactory
-from ..factories.world.world import WorldFactory
-from ..services.state import StateService
+from ....sdk.contracts.dtos.entities.entity import Entity
+from ....sdk.contracts.dtos.tiles.chunk import Chunk
+from ....sdk.contracts.dtos.tiles.tile import Tile
+from ....sdk.contracts.dtos.tiles.world import World
+from ....sdk.contracts.errors.server.service import ServiceError
+from ...dao.tile import TileDao
+from ...factories.chunk.flat import FlatChunkFactory
+from ...factories.entity.entity import EntityFactory
+from ...factories.world.world import WorldFactory
+from ...services.state import StateService
 
 logger = logging.getLogger()
 
-STORAGE_BASE_PATH: Path = Path(".") / "data"
+STORAGE_BASE_PATH: Path = Path("..") / "data"
 
 
 class ContextManager:

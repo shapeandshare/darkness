@@ -3,22 +3,22 @@ import traceback
 
 from fastapi import APIRouter, HTTPException
 
-from ....sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
-from ....sdk.contracts.dtos.sdk.requests.chunk.delete import ChunkDeleteRequest
-from ....sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
-from ....sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
-from ....sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
-from ....sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
-from ....sdk.contracts.dtos.sdk.responses.chunk.create import ChunkCreateResponse
-from ....sdk.contracts.dtos.sdk.responses.chunk.get import ChunkGetResponse
-from ....sdk.contracts.dtos.sdk.responses.response import Response
-from ....sdk.contracts.dtos.sdk.responses.world.create import WorldCreateResponse
-from ....sdk.contracts.dtos.sdk.responses.world.get import WorldGetResponse
-from ....sdk.contracts.dtos.tiles.chunk import Chunk
-from ....sdk.contracts.dtos.tiles.world import World
-from ....sdk.contracts.errors.server.dao.conflict import DaoConflictError
-from ....sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
-from ....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
+from .....sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
+from .....sdk.contracts.dtos.sdk.requests.chunk.delete import ChunkDeleteRequest
+from .....sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
+from .....sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
+from .....sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
+from .....sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
+from .....sdk.contracts.dtos.sdk.responses.chunk.create import ChunkCreateResponse
+from .....sdk.contracts.dtos.sdk.responses.chunk.get import ChunkGetResponse
+from .....sdk.contracts.dtos.sdk.responses.response import Response
+from .....sdk.contracts.dtos.sdk.responses.world.create import WorldCreateResponse
+from .....sdk.contracts.dtos.sdk.responses.world.get import WorldGetResponse
+from .....sdk.contracts.dtos.tiles.chunk import Chunk
+from .....sdk.contracts.dtos.tiles.world import World
+from .....sdk.contracts.errors.server.dao.conflict import DaoConflictError
+from .....sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
+from .....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
 from ..context import ContextManager
 
 # from pyinstrument import Profiler
