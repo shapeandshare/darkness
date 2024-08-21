@@ -21,12 +21,11 @@ class ContextManager:
 
     def __init__(self):
         if ContextManager.daoservice is None:
-            worlddao = TileDao[World](storage_base_path=STORAGE_BASE_PATH)
-            chunkdao = TileDao[Chunk](storage_base_path=STORAGE_BASE_PATH)
-            tiledao = TileDao[Tile](storage_base_path=STORAGE_BASE_PATH)
-            entitydao = TileDao[Entity](storage_base_path=STORAGE_BASE_PATH)
             ContextManager.daoservice = DaoService(
-                worlddao=worlddao, chunkdao=chunkdao, tiledao=tiledao, entitydao=entitydao
+                worlddao=TileDao[World](storage_base_path=STORAGE_BASE_PATH),
+                chunkdao=TileDao[Chunk](storage_base_path=STORAGE_BASE_PATH),
+                tiledao=TileDao[Tile](storage_base_path=STORAGE_BASE_PATH),
+                entitydao=TileDao[Entity](storage_base_path=STORAGE_BASE_PATH)
             )
             logger.debug("[ContextManager] assigned new state service to context manager")
         else:

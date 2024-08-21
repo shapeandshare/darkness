@@ -40,7 +40,6 @@ def main(
     app = FastAPI()
 
     logger.debug("[Main] adding metrics routes")
-    # import ..routers.metrics
 
     app.include_router(metrics.router)
 
