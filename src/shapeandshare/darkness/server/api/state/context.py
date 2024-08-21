@@ -11,6 +11,7 @@ from ...dao.tile import TileDao
 from ...factories.chunk.flat import FlatChunkFactory
 from ...factories.entity.entity import EntityFactory
 from ...factories.world.world import WorldFactory
+from ...services.dao import DaoService
 from ...services.state import StateService
 
 logger = logging.getLogger()
@@ -28,16 +29,16 @@ class ContextManager:
             chunkdao = TileDao[Chunk](storage_base_path=STORAGE_BASE_PATH)
             tiledao = TileDao[Tile](storage_base_path=STORAGE_BASE_PATH)
             entitydao = TileDao[Entity](storage_base_path=STORAGE_BASE_PATH)
+            daoservice: DaoService = DaoService(
+                worlddao=worlddao, chunkdao=chunkdao, tiledao=tiledao, entitydao=entitydao
+            )
 
-            world_factory = WorldFactory(worlddao=worlddao)
-            entity_factory = EntityFactory(entitydao=entitydao, tiledao=tiledao)
-            flatchunk_factory = FlatChunkFactory(worlddao=worlddao, chunkdao=chunkdao, tiledao=tiledao)
+            world_factory = WorldFactory(daoservice=daoservice)
+            entity_factory = EntityFactory(daoservice=daoservice)
+            flatchunk_factory = FlatChunkFactory(daoservice=daoservice)
 
             ContextManager.state_service = StateService(
-                worlddao=worlddao,
-                chunkdao=chunkdao,
-                tiledao=tiledao,
-                entitydao=entitydao,
+                daoservice=daoservice,
                 entity_factory=entity_factory,
                 world_factory=world_factory,
                 flatchunk_factory=flatchunk_factory,
