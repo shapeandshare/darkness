@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
 from ...sdk.contracts.dtos.entities.entity import Entity
+from ...sdk.contracts.dtos.sdk.requests.document.document import DocumentRequest
 from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from ...sdk.contracts.dtos.tiles.address import Address
 from ...sdk.contracts.dtos.tiles.chunk import Chunk
@@ -32,43 +33,49 @@ class DaoService(BaseModel):
         raise Exception("Unknown address type")
 
     async def get(
-        self, address: Address
+        self, request: DocumentRequest
     ) -> WrappedData[World] | WrappedData[Chunk] | WrappedData[Tile] | WrappedData[Entity]:
-        document_type: DaoDocumentType = DaoService.address_type(address)
+        document_type: DaoDocumentType = DaoService.address_type(request.address)
+
+        # lite
+        if request.full is False:
+            if document_type == DaoDocumentType.TILE:
+                wrapped_document: WrappedData[Tile] = await self.tiledao.get(address=request.address)
+                wrapped_document.data = Tile.model_validate(wrapped_document.data)
+                return wrapped_document
+
+            if document_type == DaoDocumentType.ENTITY:
+                wrapped_document: WrappedData[Entity] = await self.entitydao.get(address=request.address)
+                wrapped_document.data = Entity.model_validate(wrapped_document.data)
+                return wrapped_document
+
+            if document_type == DaoDocumentType.CHUNK:
+                wrapped_document: WrappedData[Chunk] = await self.chunkdao.get(address=request.address)
+                wrapped_document.data = Chunk.model_validate(wrapped_document.data)
+                return wrapped_document
+
+            if document_type == DaoDocumentType.WORLD:
+                wrapped_document: WrappedData[World] = await self.worlddao.get(address=request.address)
+                wrapped_document.data = World.model_validate(wrapped_document.data)
+                return wrapped_document
+        else:
+            # else we are `full` - get all descenents
+            raise NotImplementedError("else we are `full` - get all descenents")
+
+    async def delete(self, request: DocumentRequest) -> bool:
+        document_type: DaoDocumentType = DaoService.address_type(request.address)
+
         if document_type == DaoDocumentType.TILE:
-            wrapped_document: WrappedData[Tile] = await self.tiledao.get(address=address)
-            wrapped_document.data = Tile.model_validate(wrapped_document.data)
-            return wrapped_document
+            return await self.tiledao.delete(address=request.address)
 
         if document_type == DaoDocumentType.ENTITY:
-            wrapped_document: WrappedData[Entity] = await self.entitydao.get(address=address)
-            wrapped_document.data = Entity.model_validate(wrapped_document.data)
-            return wrapped_document
+            return await self.entitydao.delete(address=request.address)
 
         if document_type == DaoDocumentType.CHUNK:
-            wrapped_document: WrappedData[Chunk] = await self.chunkdao.get(address=address)
-            wrapped_document.data = Chunk.model_validate(wrapped_document.data)
-            return wrapped_document
+            return await self.chunkdao.delete(address=request.address)
 
         if document_type == DaoDocumentType.WORLD:
-            wrapped_document: WrappedData[World] = await self.worlddao.get(address=address)
-            wrapped_document.data = World.model_validate(wrapped_document.data)
-            return wrapped_document
-
-    async def delete(self, address: Address) -> bool:
-        document_type: DaoDocumentType = DaoService.address_type(address)
-
-        if document_type == DaoDocumentType.TILE:
-            return await self.tiledao.delete(address=address)
-
-        if document_type == DaoDocumentType.ENTITY:
-            return await self.entitydao.delete(address=address)
-
-        if document_type == DaoDocumentType.CHUNK:
-            return await self.chunkdao.delete(address=address)
-
-        if document_type == DaoDocumentType.WORLD:
-            return await self.worlddao.delete(address=address)
+            return await self.worlddao.delete(address=request.address)
 
     async def patch(
         self, address: Address, document: dict, exclude: dict | None = None
