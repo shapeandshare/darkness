@@ -12,7 +12,7 @@ from ...services.dao import DaoService
 
 logger = logging.getLogger()
 
-STORAGE_BASE_PATH: Path = Path("..") / "data"
+STORAGE_BASE_PATH: Path = Path(".") / "data"
 
 
 class ContextManager:

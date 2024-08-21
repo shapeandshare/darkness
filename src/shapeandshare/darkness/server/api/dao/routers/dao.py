@@ -87,6 +87,7 @@ async def world_delete(world_id: str) -> Response[bool]:
 @router.patch("/world/{world_id}")
 async def world_patch(world_id: str, document: dict) -> Response[WrappedData[World]]:
     try:
+        assert world_id == document["id"]
         address: Address = Address(world_id=world_id)
         result: WrappedData[World] = await ContextManager.daoservice.patch(address=address, document=document)
         response = Response[WrappedData[World]](data=result)
@@ -102,6 +103,10 @@ async def world_patch(world_id: str, document: dict) -> Response[WrappedData[Wor
         traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
+    except AssertionError as error:
+        traceback.print_exc()
+        logger.error(str(error))
+        raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
         traceback.print_exc()
         logger.error(str(error))
@@ -113,8 +118,10 @@ async def world_patch(world_id: str, document: dict) -> Response[WrappedData[Wor
 @router.post("/world/{world_id}")
 async def world_post(world_id: str, document: World) -> Response[WrappedData[World]]:
     try:
+        assert world_id == document.id
         address: Address = Address(world_id=world_id)
         result: WrappedData[World] = await ContextManager.daoservice.post(address=address, document=document)
+        logger.info(result)
         response = Response[WrappedData[World]](data=result)
     except DaoConflictError as error:
         traceback.print_exc()
@@ -128,6 +135,10 @@ async def world_post(world_id: str, document: World) -> Response[WrappedData[Wor
         traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
+    except AssertionError as error:
+        traceback.print_exc()
+        logger.error(str(error))
+        raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
         traceback.print_exc()
         logger.error(str(error))
@@ -139,6 +150,7 @@ async def world_post(world_id: str, document: World) -> Response[WrappedData[Wor
 @router.put("/world/{world_id}")
 async def world_put(world_id: str, wrapped_document: WrappedData[World]) -> Response[WrappedData[World]]:
     try:
+        assert world_id == wrapped_document.data.id
         address: Address = Address(world_id=world_id)
         result: WrappedData[World] = await ContextManager.daoservice.put(
             address=address, wrapped_document=wrapped_document
@@ -156,6 +168,10 @@ async def world_put(world_id: str, wrapped_document: WrappedData[World]) -> Resp
         traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
+    except AssertionError as error:
+        traceback.print_exc()
+        logger.error(str(error))
+        raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
         traceback.print_exc()
         logger.error(str(error))
@@ -224,6 +240,7 @@ async def chunk_delete(world_id: str, chunk_id: str) -> Response[bool]:
 @router.patch("/world/{world_id}/chunk/{chunk_id}")
 async def chunk_patch(world_id: str, chunk_id: str, document: dict) -> Response[WrappedData[Chunk]]:
     try:
+        assert chunk_id == document["id"]
         address: Address = Address(world_id=world_id, chunk_id=chunk_id)
         result: WrappedData[Chunk] = await ContextManager.daoservice.patch(address=address, document=document)
         response = Response[WrappedData[Chunk]](data=result)
@@ -239,6 +256,10 @@ async def chunk_patch(world_id: str, chunk_id: str, document: dict) -> Response[
         traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
+    except AssertionError as error:
+        traceback.print_exc()
+        logger.error(str(error))
+        raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
         traceback.print_exc()
         logger.error(str(error))
@@ -250,6 +271,7 @@ async def chunk_patch(world_id: str, chunk_id: str, document: dict) -> Response[
 @router.post("/world/{world_id}/chunk/{chunk_id}")
 async def chunk_post(world_id: str, chunk_id: str, document: Chunk) -> Response[WrappedData[Chunk]]:
     try:
+        assert chunk_id == document.id
         address: Address = Address(world_id=world_id, chunk_id=chunk_id)
         result: WrappedData[Chunk] = await ContextManager.daoservice.post(address=address, document=document)
         response = Response[WrappedData[Chunk]](data=result)
@@ -265,6 +287,10 @@ async def chunk_post(world_id: str, chunk_id: str, document: Chunk) -> Response[
         traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
+    except AssertionError as error:
+        traceback.print_exc()
+        logger.error(str(error))
+        raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
         traceback.print_exc()
         logger.error(str(error))
@@ -276,6 +302,7 @@ async def chunk_post(world_id: str, chunk_id: str, document: Chunk) -> Response[
 @router.put("/world/{world_id}/chunk/{chunk_id}")
 async def chunk_put(world_id: str, chunk_id: str, wrapped_document: WrappedData[Chunk]) -> Response[WrappedData[Chunk]]:
     try:
+        assert chunk_id == wrapped_document.data.id
         address: Address = Address(world_id=world_id, chunk_id=chunk_id)
         result: WrappedData[Chunk] = await ContextManager.daoservice.put(
             address=address, wrapped_document=wrapped_document
@@ -293,6 +320,10 @@ async def chunk_put(world_id: str, chunk_id: str, wrapped_document: WrappedData[
         traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
+    except AssertionError as error:
+        traceback.print_exc()
+        logger.error(str(error))
+        raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
         traceback.print_exc()
         logger.error(str(error))
@@ -365,6 +396,7 @@ async def tile_delete(world_id: str, chunk_id: str, tile_id: str) -> Response[bo
 @router.patch("/world/{world_id}/chunk/{chunk_id}/tile/{tile_id}")
 async def tile_patch(world_id: str, chunk_id: str, tile_id: str, document: dict) -> Response[WrappedData[Tile]]:
     try:
+        assert tile_id == document["id"]
         address: Address = Address(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id)
         result: WrappedData[Tile] = await ContextManager.daoservice.patch(address=address, document=document)
         response = Response[WrappedData[Tile]](data=result)
@@ -380,6 +412,10 @@ async def tile_patch(world_id: str, chunk_id: str, tile_id: str, document: dict)
         traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
+    except AssertionError as error:
+        traceback.print_exc()
+        logger.error(str(error))
+        raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
         traceback.print_exc()
         logger.error(str(error))
@@ -391,6 +427,7 @@ async def tile_patch(world_id: str, chunk_id: str, tile_id: str, document: dict)
 @router.post("/world/{world_id}/chunk/{chunk_id}/tile/{tile_id}")
 async def tile_post(world_id: str, chunk_id: str, tile_id: str, document: Tile) -> Response[WrappedData[Tile]]:
     try:
+        assert tile_id == document.id
         address: Address = Address(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id)
         result: WrappedData[Tile] = await ContextManager.daoservice.post(address=address, document=document)
         response = Response[WrappedData[Tile]](data=result)
@@ -406,6 +443,10 @@ async def tile_post(world_id: str, chunk_id: str, tile_id: str, document: Tile) 
         traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
+    except AssertionError as error:
+        traceback.print_exc()
+        logger.error(str(error))
+        raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
         traceback.print_exc()
         logger.error(str(error))
@@ -419,6 +460,7 @@ async def tile_put(
     world_id: str, chunk_id: str, tile_id: str, wrapped_document: WrappedData[Tile]
 ) -> Response[WrappedData[Tile]]:
     try:
+        assert tile_id == wrapped_document.data.id
         address: Address = Address(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id)
         result: WrappedData[Tile] = await ContextManager.daoservice.put(
             address=address, wrapped_document=wrapped_document
@@ -436,6 +478,10 @@ async def tile_put(
         traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
+    except AssertionError as error:
+        traceback.print_exc()
+        logger.error(str(error))
+        raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
         traceback.print_exc()
         logger.error(str(error))
@@ -512,6 +558,7 @@ async def entity_patch(
     world_id: str, chunk_id: str, tile_id: str, entity_id: str, document: dict
 ) -> Response[WrappedData[Entity]]:
     try:
+        assert entity_id == document["id"]
         address: Address = Address(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, entity_id=entity_id)
         result: WrappedData[Entity] = await ContextManager.daoservice.patch(address=address, document=document)
         response = Response[WrappedData[Entity]](data=result)
@@ -527,6 +574,10 @@ async def entity_patch(
         traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
+    except AssertionError as error:
+        traceback.print_exc()
+        logger.error(str(error))
+        raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
         traceback.print_exc()
         logger.error(str(error))
@@ -540,6 +591,7 @@ async def entity_post(
     world_id: str, chunk_id: str, tile_id: str, entity_id: str, document: Entity
 ) -> Response[WrappedData[Entity]]:
     try:
+        assert entity_id == document.id
         address: Address = Address(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, entity_id=entity_id)
         result: WrappedData[Entity] = await ContextManager.daoservice.post(address=address, document=document)
         response = Response[WrappedData[Entity]](data=result)
@@ -555,6 +607,10 @@ async def entity_post(
         traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
+    except AssertionError as error:
+        traceback.print_exc()
+        logger.error(str(error))
+        raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
         traceback.print_exc()
         logger.error(str(error))
@@ -568,6 +624,7 @@ async def entity_put(
     world_id: str, chunk_id: str, tile_id: str, entity_id: str, wrapped_document: WrappedData[Entity]
 ) -> Response[WrappedData[Entity]]:
     try:
+        assert entity_id == wrapped_document.data.id
         address: Address = Address(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, entity_id=entity_id)
         result: WrappedData[Entity] = await ContextManager.daoservice.put(
             address=address, wrapped_document=wrapped_document
@@ -585,6 +642,10 @@ async def entity_put(
         traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
+    except AssertionError as error:
+        traceback.print_exc()
+        logger.error(str(error))
+        raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
         traceback.print_exc()
         logger.error(str(error))
