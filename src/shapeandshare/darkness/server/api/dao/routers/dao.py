@@ -36,18 +36,15 @@ router: APIRouter = APIRouter(
 async def world_get(world_id: str, full: bool = False) -> Response[WrappedData[World]]:
     try:
         request: DocumentRequest = DocumentRequest(address=Address(world_id=world_id), full=full)
-        wrapped_document: WrappedData[World] = await ContextManager.daoservice.get(request=request)
-        response = Response[WrappedData[World]](data=WrappedData[World](data=wrapped_document))
+        wrapped_document: dict = await ContextManager.daoservice.get(request=request)
+        response = Response[WrappedData[World]](data=wrapped_document)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
@@ -65,15 +62,12 @@ async def world_delete(world_id: str) -> Response[bool]:
         success: bool = await ContextManager.daoservice.delete(request=request)
         response = Response[bool](data=success)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
@@ -89,22 +83,18 @@ async def world_patch(world_id: str, document: dict) -> Response[WrappedData[Wor
     try:
         assert world_id == document["id"]
         address: Address = Address(world_id=world_id)
-        result: WrappedData[World] = await ContextManager.daoservice.patch(address=address, document=document)
+        result: dict = await ContextManager.daoservice.patch(address=address, document=document)
         response = Response[WrappedData[World]](data=result)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except AssertionError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
@@ -120,23 +110,18 @@ async def world_post(world_id: str, document: World) -> Response[WrappedData[Wor
     try:
         assert world_id == document.id
         address: Address = Address(world_id=world_id)
-        result: WrappedData[World] = await ContextManager.daoservice.post(address=address, document=document)
-        logger.info(result)
+        result: dict = await ContextManager.daoservice.post(address=address, document=document)
         response = Response[WrappedData[World]](data=result)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except AssertionError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
@@ -152,24 +137,18 @@ async def world_put(world_id: str, wrapped_document: WrappedData[World]) -> Resp
     try:
         assert world_id == wrapped_document.data.id
         address: Address = Address(world_id=world_id)
-        result: WrappedData[World] = await ContextManager.daoservice.put(
-            address=address, wrapped_document=wrapped_document
-        )
+        result: dict = await ContextManager.daoservice.put(address=address, wrapped_document=wrapped_document)
         response = Response[WrappedData[World]](data=result)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except AssertionError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
@@ -189,18 +168,15 @@ async def world_put(world_id: str, wrapped_document: WrappedData[World]) -> Resp
 async def chunk_get(world_id: str, chunk_id: str, full: bool = False) -> Response[WrappedData[Chunk]]:
     try:
         request: DocumentRequest = DocumentRequest(address=Address(world_id=world_id, chunk_id=chunk_id), full=full)
-        wrapped_document: WrappedData[Chunk] = await ContextManager.daoservice.get(request=request)
-        response = Response[WrappedData[Chunk]](data=WrappedData[Chunk](data=wrapped_document))
+        wrapped_document: dict = await ContextManager.daoservice.get(request=request)
+        response = Response[WrappedData[Chunk]](data=wrapped_document)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
@@ -218,15 +194,12 @@ async def chunk_delete(world_id: str, chunk_id: str) -> Response[bool]:
         success: bool = await ContextManager.daoservice.delete(request=request)
         response = Response[bool](data=success)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
@@ -242,22 +215,18 @@ async def chunk_patch(world_id: str, chunk_id: str, document: dict) -> Response[
     try:
         assert chunk_id == document["id"]
         address: Address = Address(world_id=world_id, chunk_id=chunk_id)
-        result: WrappedData[Chunk] = await ContextManager.daoservice.patch(address=address, document=document)
+        result: dict = await ContextManager.daoservice.patch(address=address, document=document)
         response = Response[WrappedData[Chunk]](data=result)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except AssertionError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
@@ -273,22 +242,18 @@ async def chunk_post(world_id: str, chunk_id: str, document: Chunk) -> Response[
     try:
         assert chunk_id == document.id
         address: Address = Address(world_id=world_id, chunk_id=chunk_id)
-        result: WrappedData[Chunk] = await ContextManager.daoservice.post(address=address, document=document)
+        result: dict = await ContextManager.daoservice.post(address=address, document=document)
         response = Response[WrappedData[Chunk]](data=result)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except AssertionError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
@@ -304,24 +269,18 @@ async def chunk_put(world_id: str, chunk_id: str, wrapped_document: WrappedData[
     try:
         assert chunk_id == wrapped_document.data.id
         address: Address = Address(world_id=world_id, chunk_id=chunk_id)
-        result: WrappedData[Chunk] = await ContextManager.daoservice.put(
-            address=address, wrapped_document=wrapped_document
-        )
+        result: dict = await ContextManager.daoservice.put(address=address, wrapped_document=wrapped_document)
         response = Response[WrappedData[Chunk]](data=result)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except AssertionError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
@@ -343,18 +302,15 @@ async def tile_get(world_id: str, chunk_id: str, tile_id: str, full: bool = Fals
         request: DocumentRequest = DocumentRequest(
             address=Address(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id), full=full
         )
-        wrapped_document: WrappedData[Tile] = await ContextManager.daoservice.get(request=request)
-        response = Response[WrappedData[Tile]](data=WrappedData[Tile](data=wrapped_document))
+        wrapped_document: dict = await ContextManager.daoservice.get(request=request)
+        response = Response[WrappedData[Tile]](data=wrapped_document)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
@@ -374,15 +330,12 @@ async def tile_delete(world_id: str, chunk_id: str, tile_id: str) -> Response[bo
         success: bool = await ContextManager.daoservice.delete(request=request)
         response = Response[bool](data=success)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
@@ -398,22 +351,18 @@ async def tile_patch(world_id: str, chunk_id: str, tile_id: str, document: dict)
     try:
         assert tile_id == document["id"]
         address: Address = Address(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id)
-        result: WrappedData[Tile] = await ContextManager.daoservice.patch(address=address, document=document)
+        result: dict = await ContextManager.daoservice.patch(address=address, document=document)
         response = Response[WrappedData[Tile]](data=result)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except AssertionError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
@@ -429,22 +378,18 @@ async def tile_post(world_id: str, chunk_id: str, tile_id: str, document: Tile) 
     try:
         assert tile_id == document.id
         address: Address = Address(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id)
-        result: WrappedData[Tile] = await ContextManager.daoservice.post(address=address, document=document)
+        result: dict = await ContextManager.daoservice.post(address=address, document=document)
         response = Response[WrappedData[Tile]](data=result)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except AssertionError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
@@ -462,24 +407,18 @@ async def tile_put(
     try:
         assert tile_id == wrapped_document.data.id
         address: Address = Address(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id)
-        result: WrappedData[Tile] = await ContextManager.daoservice.put(
-            address=address, wrapped_document=wrapped_document
-        )
+        result: dict = await ContextManager.daoservice.put(address=address, wrapped_document=wrapped_document)
         response = Response[WrappedData[Tile]](data=result)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except AssertionError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
@@ -503,18 +442,15 @@ async def entity_get(
         request: DocumentRequest = DocumentRequest(
             address=Address(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, entity_id=entity_id), full=full
         )
-        wrapped_document: WrappedData[Entity] = await ContextManager.daoservice.get(request=request)
-        response = Response[WrappedData[Entity]](data=WrappedData[Entity](data=wrapped_document))
+        wrapped_document: dict = await ContextManager.daoservice.get(request=request)
+        response = Response[WrappedData[Entity]](data=wrapped_document)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
@@ -534,15 +470,12 @@ async def entity_delete(world_id: str, chunk_id: str, tile_id: str, entity_id: s
         success: bool = await ContextManager.daoservice.delete(request=request)
         response = Response[bool](data=success)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
@@ -560,22 +493,18 @@ async def entity_patch(
     try:
         assert entity_id == document["id"]
         address: Address = Address(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, entity_id=entity_id)
-        result: WrappedData[Entity] = await ContextManager.daoservice.patch(address=address, document=document)
+        result: dict = await ContextManager.daoservice.patch(address=address, document=document)
         response = Response[WrappedData[Entity]](data=result)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except AssertionError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
@@ -593,22 +522,18 @@ async def entity_post(
     try:
         assert entity_id == document.id
         address: Address = Address(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, entity_id=entity_id)
-        result: WrappedData[Entity] = await ContextManager.daoservice.post(address=address, document=document)
+        result: dict = await ContextManager.daoservice.post(address=address, document=document)
         response = Response[WrappedData[Entity]](data=result)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except AssertionError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
@@ -626,24 +551,18 @@ async def entity_put(
     try:
         assert entity_id == wrapped_document.data.id
         address: Address = Address(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, entity_id=entity_id)
-        result: WrappedData[Entity] = await ContextManager.daoservice.put(
-            address=address, wrapped_document=wrapped_document
-        )
+        result: dict = await ContextManager.daoservice.put(address=address, wrapped_document=wrapped_document)
         response = Response[WrappedData[Entity]](data=result)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except AssertionError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=400, detail="document id mismatch") from error
     except Exception as error:
