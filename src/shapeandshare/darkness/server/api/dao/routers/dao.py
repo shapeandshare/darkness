@@ -450,7 +450,7 @@ async def tile_put(
 
 
 @router.get("/world/{world_id}/chunk/{chunk_id}/tile/{tile_id}/entity/{entity_id}")
-async def tile_get(
+async def entity_get(
     world_id: str, chunk_id: str, tile_id: str, entity_id: str, full: bool = False
 ) -> Response[WrappedData[Entity]]:
     try:
@@ -480,7 +480,7 @@ async def tile_get(
 
 
 @router.delete("/world/{world_id}/chunk/{chunk_id}/tile/{tile_id}/{entity_id}")
-async def tile_delete(world_id: str, chunk_id: str, tile_id: str, entity_id: str) -> Response[bool]:
+async def entity_delete(world_id: str, chunk_id: str, tile_id: str, entity_id: str) -> Response[bool]:
     try:
         request: DocumentRequest = DocumentRequest(
             address=Address(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, entity_id=entity_id)
@@ -508,7 +508,7 @@ async def tile_delete(world_id: str, chunk_id: str, tile_id: str, entity_id: str
 
 
 @router.patch("/world/{world_id}/chunk/{chunk_id}/tile/{tile_id}/{entity_id}")
-async def tile_patch(
+async def entity_patch(
     world_id: str, chunk_id: str, tile_id: str, entity_id: str, document: dict
 ) -> Response[WrappedData[Entity]]:
     try:
@@ -536,7 +536,7 @@ async def tile_patch(
 
 
 @router.post("/world/{world_id}/chunk/{chunk_id}/tile/{tile_id}/{entity_id}")
-async def tile_post(
+async def entity_post(
     world_id: str, chunk_id: str, tile_id: str, entity_id: str, document: Entity
 ) -> Response[WrappedData[Entity]]:
     try:
@@ -564,7 +564,7 @@ async def tile_post(
 
 
 @router.put("/world/{world_id}/chunk/{chunk_id}/tile/{tile_id}/{entity_id}")
-async def tile_put(
+async def entity_put(
     world_id: str, chunk_id: str, tile_id: str, entity_id: str, wrapped_document: WrappedData[Entity]
 ) -> Response[WrappedData[Entity]]:
     try:

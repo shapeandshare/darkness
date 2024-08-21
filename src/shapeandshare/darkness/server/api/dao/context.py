@@ -25,7 +25,7 @@ class ContextManager:
                 worlddao=TileDao[World](storage_base_path=STORAGE_BASE_PATH),
                 chunkdao=TileDao[Chunk](storage_base_path=STORAGE_BASE_PATH),
                 tiledao=TileDao[Tile](storage_base_path=STORAGE_BASE_PATH),
-                entitydao=TileDao[Entity](storage_base_path=STORAGE_BASE_PATH)
+                entitydao=TileDao[Entity](storage_base_path=STORAGE_BASE_PATH),
             )
             logger.debug("[ContextManager] assigned new state service to context manager")
         else:

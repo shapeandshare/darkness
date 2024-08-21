@@ -21,7 +21,7 @@ from .commands.world.delete import WorldDeleteCommand
 from .commands.world.get import WorldGetCommand
 
 
-class Client:
+class StateClient:
     # metrics/health
     health_get_command: HealthGetCommand
 

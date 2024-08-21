@@ -2,7 +2,7 @@ import requests
 
 from ....sdk.common.utils import address_type, document_path
 from ....sdk.contracts.dtos.entities.entity import Entity
-from ....sdk.contracts.dtos.sdk.requests.document.document import DocumentRequest
+from ....sdk.contracts.dtos.sdk.requests.document.put import DocumentPutRequest
 from ....sdk.contracts.dtos.sdk.responses.response import Response
 from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from ....sdk.contracts.dtos.tiles.chunk import Chunk
@@ -12,9 +12,15 @@ from ....sdk.contracts.types.dao_document import DaoDocumentType
 from ..abstract import AbstractCommand
 
 
-class DocumentGetCommand(AbstractCommand):
+class DocumentPutCommand(AbstractCommand):
     async def execute(
-        self, request: DocumentRequest
+        self,
+        request: (
+            DocumentPutRequest[World]
+            | DocumentPutRequest[Chunk]
+            | DocumentPutRequest[Tile]
+            | DocumentPutRequest[Entity]
+        ),
     ) -> (
         Response[WrappedData[World]]
         | Response[WrappedData[Chunk]]
@@ -25,10 +31,8 @@ class DocumentGetCommand(AbstractCommand):
         doc_type: DaoDocumentType = address_type(address=request.address)
         doc_path: str = document_path(address=request.address, doc_type=doc_type)
         url: str = f"http://{self.options.tld}/dao/{doc_path}"
-        response: requests.Response = requests.get(
-            url=url,
-            timeout=self.options.timeout,
-            params={"full": request.full},
+        response: requests.Response = requests.patch(
+            url=url, timeout=self.options.timeout, data=request.wrapped_document.model_dump()
         )
         if doc_type == DaoDocumentType.WORLD:
             return Response[WrappedData[World]].model_validate(response.json())

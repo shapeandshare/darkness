@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+from ...sdk.common.utils import address_type
 from ...sdk.contracts.dtos.entities.entity import Entity
 from ...sdk.contracts.dtos.sdk.requests.document.document import DocumentRequest
 from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
@@ -19,23 +20,10 @@ class DaoService(BaseModel):
     tiledao: TileDao[Tile]
     entitydao: TileDao[Entity]
 
-    @staticmethod
-    def address_type(address: Address) -> DaoDocumentType:
-        if address.entity_id is not None:
-            return DaoDocumentType.ENTITY
-        elif address.tile_id is not None:
-            return DaoDocumentType.TILE
-        elif address.chunk_id is not None:
-            return DaoDocumentType.CHUNK
-        elif address.world_id is not None:
-            return DaoDocumentType.WORLD
-
-        raise Exception("Unknown address type")
-
     async def get(
         self, request: DocumentRequest
     ) -> WrappedData[World] | WrappedData[Chunk] | WrappedData[Tile] | WrappedData[Entity]:
-        document_type: DaoDocumentType = DaoService.address_type(request.address)
+        document_type: DaoDocumentType = address_type(request.address)
 
         # lite
         if request.full is False:
@@ -63,7 +51,7 @@ class DaoService(BaseModel):
             raise NotImplementedError("else we are `full` - get all descenents")
 
     async def delete(self, request: DocumentRequest) -> bool:
-        document_type: DaoDocumentType = DaoService.address_type(request.address)
+        document_type: DaoDocumentType = address_type(request.address)
 
         if document_type == DaoDocumentType.TILE:
             return await self.tiledao.delete(address=request.address)
@@ -80,7 +68,7 @@ class DaoService(BaseModel):
     async def patch(
         self, address: Address, document: dict, exclude: dict | None = None
     ) -> WrappedData[World] | WrappedData[Chunk] | WrappedData[Tile] | WrappedData[Entity]:
-        document_type: DaoDocumentType = DaoService.address_type(address)
+        document_type: DaoDocumentType = address_type(address)
 
         if document_type == DaoDocumentType.TILE:
             wrapped_document: WrappedData[Tile] = await self.tiledao.patch(
@@ -113,7 +101,7 @@ class DaoService(BaseModel):
     async def post(
         self, address: Address, document: World | Chunk | Tile | Entity, exclude: dict | None = None
     ) -> WrappedData[World] | WrappedData[Chunk] | WrappedData[Tile] | WrappedData[Entity]:
-        document_type: DaoDocumentType = DaoService.address_type(address)
+        document_type: DaoDocumentType = address_type(address)
 
         if document_type == DaoDocumentType.TILE:
             wrapped_document: WrappedData[Tile] = await self.tiledao.post(
@@ -149,7 +137,7 @@ class DaoService(BaseModel):
         wrapped_document: WrappedData[World] | WrappedData[Chunk] | WrappedData[Tile] | WrappedData[Entity],
         exclude: dict | None = None,
     ) -> WrappedData[World] | WrappedData[Chunk] | WrappedData[Tile] | WrappedData[Entity]:
-        document_type: DaoDocumentType = DaoService.address_type(address)
+        document_type: DaoDocumentType = address_type(address)
 
         if document_type == DaoDocumentType.TILE:
             return await self.tiledao.put(address=address, wrapped_document=wrapped_document, exclude=exclude)
