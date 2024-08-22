@@ -4,6 +4,7 @@ import uuid
 from asyncio import Queue
 
 from ....sdk.contracts.dtos.coordinate import Coordinate
+from ....sdk.contracts.dtos.sdk.requests.document.document import DocumentRequest
 from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from ....sdk.contracts.dtos.tiles.address import Address
 from ....sdk.contracts.dtos.tiles.chunk import Chunk
@@ -95,7 +96,9 @@ class FlatChunkFactory(AbstractChunkFactory):
         await self.daoservice.post(address=address_chunk, document=chunk)
 
         # update world metadata
-        wrapped_world: WrappedData[World] = await self.daoservice.get(address=address_world)
+        wrapped_world: WrappedData[World] = WrappedData[World].model_validate(
+            await self.daoservice.get(request=DocumentRequest(address=address_world))
+        )
         wrapped_world.data.ids.add(chunk.id)
         await self.daoservice.patch(address=address_world, document={"ids": wrapped_world.data.ids})
 
@@ -106,7 +109,10 @@ class FlatChunkFactory(AbstractChunkFactory):
         # Generate an empty 2D block of ocean
         window: Window = Window(min=Coordinate(x=1, y=1), max=Coordinate(x=max_x, y=max_y))
         await self.generate_ocean_block(address=address_chunk, window=window)
-        chunk = Chunk.model_validate((await self.daoservice.get(address=address_chunk)).data)
+
+        chunk = Chunk.model_validate(
+            (await self.daoservice.get(request=DocumentRequest(address=address_chunk)))["data"]
+        )
 
         # Apply our terrain generation
         # address_chunk: Address = Address.model_validate({**address_world.model_dump(), "chunk_id": chunk.id})
@@ -116,7 +122,7 @@ class FlatChunkFactory(AbstractChunkFactory):
         await self.quantum(world_id=world_id, chunk=chunk)
 
         # get final state and return
-        return (await self.daoservice.get(address=address_chunk)).data
+        return Chunk.model_validate((await self.daoservice.get(request=DocumentRequest(address=address_chunk)))["data"])
 
     async def quantum(self, world_id: str, chunk: Chunk) -> None:
         address_chunk: Address = Address.model_validate({"world_id": world_id, "chunk_id": chunk.id})

@@ -2,10 +2,12 @@ import logging
 
 from pydantic import BaseModel
 
+from ...client.dao import DaoClient
 from ...sdk.contracts.dtos.entities.entity import Entity
 from ...sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
 from ...sdk.contracts.dtos.sdk.requests.chunk.delete import ChunkDeleteRequest
 from ...sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
+from ...sdk.contracts.dtos.sdk.requests.document.document import DocumentRequest
 from ...sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
 from ...sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
 from ...sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
@@ -24,9 +26,14 @@ logger = logging.getLogger()
 
 class StateService(BaseModel):
     daoservice: DaoService
+    daoclient: DaoClient
+
     world_factory: WorldFactory
     entity_factory: EntityFactory
     flatchunk_factory: FlatChunkFactory
+
+    class Config:
+        arbitrary_types_allowed = True
 
     ### World ##################################
 
@@ -36,12 +43,14 @@ class StateService(BaseModel):
 
     async def world_lite_get(self, request: WorldGetRequest) -> World:
         address_world: Address = Address.model_validate({"world_id": request.id})
-        return (await self.daoservice.get(address=address_world)).data
+        return World.model_validate((await self.daoservice.get(request=DocumentRequest(address=address_world)))["data"])
 
     async def world_get(self, request: WorldGetRequest) -> World:
         # Build a complete World from Lite objects
         address_world: Address = Address.model_validate({"world_id": request.id})
-        world: World = (await self.daoservice.get(address=address_world)).data
+        world: World = World.model_validate(
+            (await self.daoservice.get(request=DocumentRequest(address=address_world)))["data"]
+        )
 
         partial_world = world.model_dump(exclude={"ids"})
         world: World = World.model_validate(partial_world)
@@ -52,10 +61,10 @@ class StateService(BaseModel):
             world.contents[chunk_id] = local_chunk
         return world
 
-    async def world_delete(self, request: WorldDeleteRequest) -> None:
+    async def world_delete(self, request: WorldDeleteRequest) -> bool:
         logger.debug("[StateService] deleting world")
         address_world: Address = Address.model_validate({"world_id": request.id})
-        await self.daoservice.delete(address=address_world)
+        return await self.daoservice.delete(request=DocumentRequest(address=address_world))
 
     ### Chunk ##################################
 
@@ -68,7 +77,9 @@ class StateService(BaseModel):
         # Entity Factory Terrain Creation
         address_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": new_chunk.id})
         await self.entity_factory.terrain_generate(address=address_chunk, chunk=new_chunk)
-        new_chunk: Chunk = (await self.daoservice.get(address=address_chunk)).data
+        new_chunk: Chunk = Chunk.model_validate(
+            (await self.daoservice.get(request=DocumentRequest(address=address_chunk)))["data"]
+        )
 
         # Entity Factory Quantum
         await self.entity_factory.quantum(address=address_chunk, chunk=new_chunk)
@@ -79,16 +90,18 @@ class StateService(BaseModel):
         msg: str = f"[WorldService] deleting chunk {id}"
         logger.debug(msg)
         address_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": request.chunk_id})
-        await self.daoservice.delete(address=address_chunk)
+        await self.daoservice.delete(request=DocumentRequest(address=address_chunk))
 
     async def chunk_lite_get(self, request: ChunkGetRequest) -> Chunk:
         address_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": request.chunk_id})
-        return (await self.daoservice.get(address=address_chunk)).data
+        return Chunk.model_validate((await self.daoservice.get(request=DocumentRequest(address=address_chunk)))["data"])
 
     async def chunk_get(self, request: ChunkGetRequest) -> Chunk:
         # Builds a complete Chunk from Lite objects
         address_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": request.chunk_id})
-        chunk: Chunk = (await self.daoservice.get(address=address_chunk)).data
+        chunk: Chunk = Chunk.model_validate(
+            (await self.daoservice.get(request=DocumentRequest(address=address_chunk)))["data"]
+        )
 
         chunk_partial = chunk.model_dump(exclude={"tile_ids"})
         chunk: Chunk = Chunk.model_validate(chunk_partial)
@@ -125,11 +138,15 @@ class StateService(BaseModel):
     ### Tile ##################################
 
     async def tile_get(self, address: Address) -> Tile:
-        wrapped_tile: WrappedData[Tile] = await self.daoservice.get(address=address)
+        wrapped_tile: WrappedData[Tile] = WrappedData[Tile].model_validate(
+            await self.daoservice.get(request=DocumentRequest(address=address))
+        )
         return wrapped_tile.data
 
     ### Entity ##################################
 
     async def entity_get(self, address: Address) -> Entity:
-        wrapped_entity: WrappedData[Entity] = await self.daoservice.get(address=address)
+        wrapped_entity: WrappedData[Entity] = WrappedData[Entity].model_validate(
+            await self.daoservice.get(request=DocumentRequest(address=address))
+        )
         return wrapped_entity.data

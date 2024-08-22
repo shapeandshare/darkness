@@ -5,7 +5,9 @@ from asyncio import Queue
 
 from pydantic import BaseModel
 
+from ....client.dao import DaoClient
 from ....sdk.contracts.dtos.entities.entity import Entity
+from ....sdk.contracts.dtos.sdk.requests.document.document import DocumentRequest
 from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from ....sdk.contracts.dtos.tiles.address import Address
 from ....sdk.contracts.dtos.tiles.tile import Tile
@@ -21,6 +23,10 @@ class AbstractEntityFactory(BaseModel):
     # entitydao: TileDao[Entity]
     # tiledao: TileDao[Tile]
     daoservice: DaoService
+    daoclient: DaoClient
+
+    class Config:
+        arbitrary_types_allowed = True
 
     @staticmethod
     async def producer(ids: set[str], queue: Queue):
@@ -29,7 +35,9 @@ class AbstractEntityFactory(BaseModel):
 
     async def generate(self, address: Address) -> None:
         # get entities ids for the tile
-        local_tile: WrappedData[Tile] = await self.daoservice.get(address=address)
+        local_tile: WrappedData[Tile] = WrappedData[Tile].model_validate(
+            await self.daoservice.get(request=DocumentRequest(address=address))
+        )
         if len(local_tile.data.ids) > 0:
             msg: str = f"entity generation can not occur on a tile with pre-existing entities, {address}"
             raise FactoryError(msg)
@@ -77,7 +85,9 @@ class AbstractEntityFactory(BaseModel):
 
     async def grow_entities(self, address: Address):
         # get entities ids for the tile
-        local_tile: WrappedData[Tile] = await self.daoservice.get(address=address)
+        local_tile: WrappedData[Tile] = WrappedData[Tile].model_validate(
+            await self.daoservice.get(request=DocumentRequest(address=address))
+        )
 
         async def entity_producer(queue: Queue):
             for entity_id in local_tile.data.ids:
@@ -92,7 +102,9 @@ class AbstractEntityFactory(BaseModel):
                     address_entity: Address = Address.model_validate(
                         {**address.model_dump(), "entity_id": local_entity_id}
                     )
-                    wrapped_entity: WrappedData[Entity] = await self.daoservice.get(address=address_entity)
+                    wrapped_entity: WrappedData[Entity] = WrappedData[Entity].model_validate(
+                        await self.daoservice.get(request=DocumentRequest(address=address_entity))
+                    )
                     # print(wrapped_entity.model_dump())
 
                     if wrapped_entity.data.entity_type == EntityType.MYCELIUM:

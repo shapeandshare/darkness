@@ -20,6 +20,9 @@ class DaoService(BaseModel):
     tiledao: TileDao[Tile]
     entitydao: TileDao[Entity]
 
+    class Config:
+        arbitrary_types_allowed = True
+
     async def get(self, request: DocumentRequest) -> dict:
         document_type: DaoDocumentType = address_type(request.address)
 

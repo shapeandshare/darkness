@@ -8,6 +8,8 @@ from asyncio import Queue
 
 from pydantic import BaseModel
 
+from ....client.dao import DaoClient
+from ....sdk.contracts.dtos.sdk.requests.document.document import DocumentRequest
 from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from ....sdk.contracts.dtos.tiles.address import Address
 from ....sdk.contracts.dtos.tiles.chunk import Chunk
@@ -22,6 +24,10 @@ logger = logging.getLogger()
 
 class AbstractChunkFactory(BaseModel):
     daoservice: DaoService
+    daoclient: DaoClient
+
+    class Config:
+        arbitrary_types_allowed = True
 
     @staticmethod
     async def producer(ids: set[str], queue: Queue):
@@ -39,7 +45,9 @@ class AbstractChunkFactory(BaseModel):
 
     async def convert_tile(self, address: Address, source: TileType, target: TileType) -> None:
         # get
-        target_tile: WrappedData[Tile] = await self.daoservice.get(address=address)
+        target_tile: WrappedData[Tile] = WrappedData[Tile].model_validate(
+            await self.daoservice.get(request=DocumentRequest(address=address))
+        )
         # check
         if target_tile.data.tile_type == source:
             # update
@@ -51,7 +59,9 @@ class AbstractChunkFactory(BaseModel):
     async def adjecent_to(self, address: Address, types: list[TileType] | None) -> list[TileType]:
         adjecent_targets: list[TileType] = []
 
-        target_tile: WrappedData[Tile] = await self.daoservice.get(address=address)
+        target_tile: WrappedData[Tile] = WrappedData[Tile].model_validate(
+            await self.daoservice.get(request=DocumentRequest(address=address))
+        )
 
         async def adjecent_producer(queue: Queue):
             for _, adjecent_id in target_tile.data.next.items():
@@ -61,7 +71,9 @@ class AbstractChunkFactory(BaseModel):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     work_item = Address.model_validate(await queue.get())
-                    adjecent_tile: WrappedData[Tile] = await self.daoservice.get(address=work_item)
+                    adjecent_tile: WrappedData[Tile] = WrappedData[Tile].model_validate(
+                        await self.daoservice.get(request=DocumentRequest(address=work_item))
+                    )
                     if adjecent_tile.data.tile_type in types and adjecent_tile.data.tile_type not in adjecent_targets:
                         adjecent_targets.append(adjecent_tile.data.tile_type)
                     queue.task_done()
@@ -75,7 +87,9 @@ class AbstractChunkFactory(BaseModel):
 
     async def grow_tile(self, address: Address) -> None:
         # get
-        target_tile: WrappedData[Tile] = await self.daoservice.get(address=address)
+        target_tile: WrappedData[Tile] = WrappedData[Tile].model_validate(
+            await self.daoservice.get(request=DocumentRequest(address=address))
+        )
         # dirt -> grass
         if target_tile.data.tile_type == TileType.DIRT:
             adjecent_liquids: list[TileType] = await self.adjecent_liquids(address=address)
@@ -117,7 +131,9 @@ class AbstractChunkFactory(BaseModel):
 
     async def erode_tile(self, address: Address) -> None:
         # get
-        target_tile: WrappedData[Tile] = await self.daoservice.get(address=address)
+        target_tile: WrappedData[Tile] = WrappedData[Tile].model_validate(
+            await self.daoservice.get(request=DocumentRequest(address=address))
+        )
 
         # shore erosion
         if target_tile.data.tile_type not in [TileType.UNKNOWN, TileType.OCEAN, TileType.WATER, TileType.SHORE]:
@@ -164,7 +180,9 @@ class AbstractChunkFactory(BaseModel):
                     # Update the chunk --
 
                     # get
-                    wrapped_chunk: WrappedData[Chunk] = await self.daoservice.get(address=address)
+                    wrapped_chunk: WrappedData[Chunk] = WrappedData[Chunk].model_validate(
+                        await self.daoservice.get(request=DocumentRequest(address=address))
+                    )
                     wrapped_chunk.data = Chunk.model_validate(wrapped_chunk.data)
 
                     wrapped_chunk.data.ids.add(tile_map[local_tile_id])

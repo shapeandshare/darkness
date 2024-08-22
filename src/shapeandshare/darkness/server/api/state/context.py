@@ -2,7 +2,9 @@ import logging
 import sys
 from pathlib import Path
 
+from ....client.dao import DaoClient
 from ....sdk.contracts.dtos.entities.entity import Entity
+from ....sdk.contracts.dtos.sdk.command_options import CommandOptions
 from ....sdk.contracts.dtos.tiles.chunk import Chunk
 from ....sdk.contracts.dtos.tiles.tile import Tile
 from ....sdk.contracts.dtos.tiles.world import World
@@ -25,6 +27,9 @@ class ContextManager:
 
     def __init__(self):
         if ContextManager.state_service is None:
+            options: CommandOptions = CommandOptions(sleep_time=5, retry_count=3, tld="127.0.0.1:8001", timeout=60)
+            daoclient: DaoClient = DaoClient(options=options)
+
             worlddao = TileDao[World](storage_base_path=STORAGE_BASE_PATH)
             chunkdao = TileDao[Chunk](storage_base_path=STORAGE_BASE_PATH)
             tiledao = TileDao[Tile](storage_base_path=STORAGE_BASE_PATH)
@@ -33,12 +38,13 @@ class ContextManager:
                 worlddao=worlddao, chunkdao=chunkdao, tiledao=tiledao, entitydao=entitydao
             )
 
-            world_factory = WorldFactory(daoservice=daoservice)
-            entity_factory = EntityFactory(daoservice=daoservice)
-            flatchunk_factory = FlatChunkFactory(daoservice=daoservice)
+            world_factory = WorldFactory(daoservice=daoservice, daoclient=daoclient)
+            entity_factory = EntityFactory(daoservice=daoservice, daoclient=daoclient)
+            flatchunk_factory = FlatChunkFactory(daoservice=daoservice, daoclient=daoclient)
 
             ContextManager.state_service = StateService(
                 daoservice=daoservice,
+                daoclient=daoclient,
                 entity_factory=entity_factory,
                 world_factory=world_factory,
                 flatchunk_factory=flatchunk_factory,
