@@ -5,3 +5,4 @@ uvicorn
 requests
 click
 # pyinstrument
+pymongo[srv]

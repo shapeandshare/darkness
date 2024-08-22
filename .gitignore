@@ -9,3 +9,4 @@ build/
 dist/
 venv/
 *.egg-info
+infra/
