@@ -18,7 +18,7 @@ from ...services.state import StateService
 
 logger = logging.getLogger()
 
-STORAGE_BASE_PATH: Path = Path("..") / "data"
+STORAGE_BASE_PATH: Path = Path(".") / "data"
 
 
 class ContextManager:

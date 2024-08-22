@@ -34,12 +34,14 @@ class DocumentPostCommand(AbstractCommand):
         response: requests.Response = requests.post(
             url=url, timeout=self.options.timeout, data=request.document.model_dump_json()
         )
+        payload = response.json()
+        response.close()
         if doc_type == DaoDocumentType.WORLD:
-            return Response[WrappedData[World]].model_validate(response.json())
+            return Response[WrappedData[World]].model_validate(payload)
         elif doc_type == DaoDocumentType.CHUNK:
-            return Response[WrappedData[Chunk]].model_validate(response.json())
+            return Response[WrappedData[Chunk]].model_validate(payload)
         elif doc_type == DaoDocumentType.TILE:
-            return Response[WrappedData[Tile]].model_validate(response.json())
+            return Response[WrappedData[Tile]].model_validate(payload)
         elif doc_type == DaoDocumentType.ENTITY:
-            return Response[WrappedData[Entity]].model_validate(response.json())
+            return Response[WrappedData[Entity]].model_validate(payload)
         raise Exception("Unknown document requested")

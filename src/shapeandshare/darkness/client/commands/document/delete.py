@@ -16,4 +16,7 @@ class DocumentDeleteCommand(AbstractCommand):
             url=url,
             timeout=self.options.timeout,
         )
-        return Response[bool].model_validate(response.json())
+
+        payload = response.json()
+        response.close()
+        return Response[bool].model_validate(payload)

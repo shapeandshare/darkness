@@ -464,7 +464,7 @@ async def entity_get(
     return response
 
 
-@router.delete("/world/{world_id}/chunk/{chunk_id}/tile/{tile_id}/{entity_id}")
+@router.delete("/world/{world_id}/chunk/{chunk_id}/tile/{tile_id}/entity/{entity_id}")
 async def entity_delete(world_id: str, chunk_id: str, tile_id: str, entity_id: str) -> Response[bool]:
     try:
         request: DocumentRequest = DocumentRequest(
@@ -489,7 +489,7 @@ async def entity_delete(world_id: str, chunk_id: str, tile_id: str, entity_id: s
     return response
 
 
-@router.patch("/world/{world_id}/chunk/{chunk_id}/tile/{tile_id}/{entity_id}")
+@router.patch("/world/{world_id}/chunk/{chunk_id}/tile/{tile_id}/entity/{entity_id}")
 async def entity_patch(
     world_id: str, chunk_id: str, tile_id: str, entity_id: str, document: dict
 ) -> Response[WrappedData[Entity]]:
@@ -519,7 +519,7 @@ async def entity_patch(
     return response
 
 
-@router.post("/world/{world_id}/chunk/{chunk_id}/tile/{tile_id}/{entity_id}")
+@router.post("/world/{world_id}/chunk/{chunk_id}/tile/{tile_id}/entity/{entity_id}")
 async def entity_post(
     world_id: str, chunk_id: str, tile_id: str, entity_id: str, document: Entity
 ) -> Response[WrappedData[Entity]]:
@@ -548,7 +548,7 @@ async def entity_post(
     return response
 
 
-@router.put("/world/{world_id}/chunk/{chunk_id}/tile/{tile_id}/{entity_id}")
+@router.put("/world/{world_id}/chunk/{chunk_id}/tile/{tile_id}/entity/{entity_id}")
 async def entity_put(
     world_id: str, chunk_id: str, tile_id: str, entity_id: str, wrapped_document: WrappedData[Entity]
 ) -> Response[WrappedData[Entity]]:

@@ -7,20 +7,17 @@ from pydantic import BaseModel
 
 from ....client.dao import DaoClient
 from ....sdk.contracts.dtos.entities.entity import Entity
-from ....sdk.contracts.dtos.sdk.requests.document.document import DocumentRequest
 from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from ....sdk.contracts.dtos.tiles.address import Address
 from ....sdk.contracts.dtos.tiles.tile import Tile
 from ....sdk.contracts.errors.server.factory import FactoryError
 from ....sdk.contracts.types.entity import EntityType
 from ....sdk.contracts.types.tile import TileType
-from ...services.dao import DaoService
 
 logger = logging.getLogger()
 
 
 class AbstractEntityFactory(BaseModel):
-    daoservice: DaoService
     daoclient: DaoClient
 
     class Config:
@@ -33,9 +30,7 @@ class AbstractEntityFactory(BaseModel):
 
     async def generate(self, address: Address) -> None:
         # get entities ids for the tile
-        local_tile: WrappedData[Tile] = WrappedData[Tile].model_validate(
-            await self.daoservice.get(request=DocumentRequest(address=address))
-        )
+        local_tile: WrappedData[Tile] = await self.daoclient.document_get(address=address, full=False)
         if len(local_tile.data.ids) > 0:
             msg: str = f"entity generation can not occur on a tile with pre-existing entities, {address}"
             raise FactoryError(msg)
@@ -44,27 +39,27 @@ class AbstractEntityFactory(BaseModel):
         if local_tile.data.tile_type == TileType.GRASS:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.GRASS)
             address_entity: Address = Address.model_validate({**address.model_dump(), "entity_id": new_entity.id})
-            await self.daoservice.post(address=address_entity, document=new_entity)
+            await self.daoclient.document_post(address=address_entity, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
         elif local_tile.data.tile_type == TileType.FOREST:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.TREE)
             address_entity: Address = Address.model_validate({**address.model_dump(), "entity_id": new_entity.id})
-            await self.daoservice.post(address=address_entity, document=new_entity)
+            await self.daoclient.document_post(address=address_entity, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
             new_entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.MYCELIUM)
             address_entity: Address = Address.model_validate({**address.model_dump(), "entity_id": new_entity.id})
-            await self.daoservice.post(address=address_entity, document=new_entity)
+            await self.daoclient.document_post(address=address_entity, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
         elif local_tile.data.tile_type == TileType.OCEAN:
             new_entity: Entity = Entity(id=str(uuid.uuid4()), entity_type=EntityType.FISH)
             address_entity: Address = Address.model_validate({**address.model_dump(), "entity_id": new_entity.id})
-            await self.daoservice.post(address=address_entity, document=new_entity)
+            await self.daoclient.document_post(address=address_entity, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
-        await self.daoservice.patch(address=address, document={"ids": list(local_tile.data.ids)})
+        await self.daoclient.document_patch(address=address, document={"ids": list(local_tile.data.ids)})
 
     ### entity agent logic
     async def entity_mycelium(self, wrapped_entity: WrappedData[Entity]):
@@ -83,9 +78,7 @@ class AbstractEntityFactory(BaseModel):
 
     async def grow_entities(self, address: Address):
         # get entities ids for the tile
-        local_tile: WrappedData[Tile] = WrappedData[Tile].model_validate(
-            await self.daoservice.get(request=DocumentRequest(address=address))
-        )
+        local_tile: WrappedData[Tile] = await self.daoclient.document_get(address=address, full=False)
 
         async def entity_producer(queue: Queue):
             for entity_id in local_tile.data.ids:
@@ -100,8 +93,8 @@ class AbstractEntityFactory(BaseModel):
                     address_entity: Address = Address.model_validate(
                         {**address.model_dump(), "entity_id": local_entity_id}
                     )
-                    wrapped_entity: WrappedData[Entity] = WrappedData[Entity].model_validate(
-                        await self.daoservice.get(request=DocumentRequest(address=address_entity))
+                    wrapped_entity: WrappedData[Entity] = await self.daoclient.document_get(
+                        address=address_entity, full=False
                     )
                     # print(wrapped_entity.model_dump())
 
