@@ -20,8 +20,6 @@ logger = logging.getLogger()
 
 
 class AbstractEntityFactory(BaseModel):
-    # entitydao: TileDao[Entity]
-    # tiledao: TileDao[Tile]
     daoservice: DaoService
     daoclient: DaoClient
 
@@ -66,7 +64,7 @@ class AbstractEntityFactory(BaseModel):
             await self.daoservice.post(address=address_entity, document=new_entity)
             local_tile.data.ids.add(new_entity.id)
 
-        await self.daoservice.patch(address=address, document={"ids": local_tile.data.ids})
+        await self.daoservice.patch(address=address, document={"ids": list(local_tile.data.ids)})
 
     ### entity agent logic
     async def entity_mycelium(self, wrapped_entity: WrappedData[Entity]):

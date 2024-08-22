@@ -43,14 +43,17 @@ class StateService(BaseModel):
 
     async def world_lite_get(self, request: WorldGetRequest) -> World:
         address_world: Address = Address.model_validate({"world_id": request.id})
-        return World.model_validate((await self.daoservice.get(request=DocumentRequest(address=address_world)))["data"])
+        wrapped_world: WrappedData[World] = await self.daoclient.document_get(address=address_world, full=False)
+        return wrapped_world.data
 
     async def world_get(self, request: WorldGetRequest) -> World:
+        # TODO: needs conversion to daoclient backend
+
         # Build a complete World from Lite objects
         address_world: Address = Address.model_validate({"world_id": request.id})
-        world: World = World.model_validate(
-            (await self.daoservice.get(request=DocumentRequest(address=address_world)))["data"]
-        )
+
+        wrapped_world = await self.daoclient.document_get(address=address_world, full=False)
+        world: World = wrapped_world.data
 
         partial_world = world.model_dump(exclude={"ids"})
         world: World = World.model_validate(partial_world)
@@ -64,7 +67,7 @@ class StateService(BaseModel):
     async def world_delete(self, request: WorldDeleteRequest) -> bool:
         logger.debug("[StateService] deleting world")
         address_world: Address = Address.model_validate({"world_id": request.id})
-        return await self.daoservice.delete(request=DocumentRequest(address=address_world))
+        return await self.daoclient.document_delete(address=address_world)
 
     ### Chunk ##################################
 
@@ -77,9 +80,9 @@ class StateService(BaseModel):
         # Entity Factory Terrain Creation
         address_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": new_chunk.id})
         await self.entity_factory.terrain_generate(address=address_chunk, chunk=new_chunk)
-        new_chunk: Chunk = Chunk.model_validate(
-            (await self.daoservice.get(request=DocumentRequest(address=address_chunk)))["data"]
-        )
+
+        wrapped_chunk = await self.daoclient.document_get(address=address_chunk, full=False)
+        new_chunk: Chunk = wrapped_chunk.data
 
         # Entity Factory Quantum
         await self.entity_factory.quantum(address=address_chunk, chunk=new_chunk)

@@ -81,7 +81,8 @@ async def world_delete(world_id: str) -> Response[bool]:
 @router.patch("/world/{world_id}")
 async def world_patch(world_id: str, document: dict) -> Response[WrappedData[World]]:
     try:
-        assert world_id == document["id"]
+        if "id" in document:
+            assert world_id == document["id"]
         address: Address = Address(world_id=world_id)
         result: dict = await ContextManager.daoservice.patch(address=address, document=document)
         response = Response[WrappedData[World]](data=result)
@@ -213,7 +214,8 @@ async def chunk_delete(world_id: str, chunk_id: str) -> Response[bool]:
 @router.patch("/world/{world_id}/chunk/{chunk_id}")
 async def chunk_patch(world_id: str, chunk_id: str, document: dict) -> Response[WrappedData[Chunk]]:
     try:
-        assert chunk_id == document["id"]
+        if "id" in document:
+            assert chunk_id == document["id"]
         address: Address = Address(world_id=world_id, chunk_id=chunk_id)
         result: dict = await ContextManager.daoservice.patch(address=address, document=document)
         response = Response[WrappedData[Chunk]](data=result)
@@ -349,7 +351,8 @@ async def tile_delete(world_id: str, chunk_id: str, tile_id: str) -> Response[bo
 @router.patch("/world/{world_id}/chunk/{chunk_id}/tile/{tile_id}")
 async def tile_patch(world_id: str, chunk_id: str, tile_id: str, document: dict) -> Response[WrappedData[Tile]]:
     try:
-        assert tile_id == document["id"]
+        if "id" in document:
+            assert tile_id == document["id"]
         address: Address = Address(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id)
         result: dict = await ContextManager.daoservice.patch(address=address, document=document)
         response = Response[WrappedData[Tile]](data=result)
@@ -491,7 +494,8 @@ async def entity_patch(
     world_id: str, chunk_id: str, tile_id: str, entity_id: str, document: dict
 ) -> Response[WrappedData[Entity]]:
     try:
-        assert entity_id == document["id"]
+        if "id" in document:
+            assert entity_id == document["id"]
         address: Address = Address(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, entity_id=entity_id)
         result: dict = await ContextManager.daoservice.patch(address=address, document=document)
         response = Response[WrappedData[Entity]](data=result)

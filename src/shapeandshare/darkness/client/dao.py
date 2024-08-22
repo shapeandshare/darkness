@@ -100,7 +100,7 @@ class DaoClient:
     async def document_post(
         self, address: Address, document: World | Chunk | Tile | Entity
     ) -> WrappedData[World] | WrappedData[Chunk] | WrappedData[Tile] | WrappedData[Entity]:
-        doc_type: DaoDocumentType = address_type(address=address.address)
+        doc_type: DaoDocumentType = address_type(address=address)
 
         if doc_type == DaoDocumentType.WORLD:
             request: DocumentPostRequest[World] = DocumentPostRequest[World](address=address, document=document)

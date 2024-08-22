@@ -1,3 +1,5 @@
+import json
+
 import requests
 
 from ....sdk.common.utils import address_type, document_path
@@ -25,7 +27,9 @@ class DocumentPatchCommand(AbstractCommand):
         doc_type: DaoDocumentType = address_type(address=request.address)
         doc_path: str = document_path(address=request.address, doc_type=doc_type)
         url: str = f"http://{self.options.tld}/dao/{doc_path}"
-        response: requests.Response = requests.patch(url=url, timeout=self.options.timeout, data=request.document)
+        response: requests.Response = requests.patch(
+            url=url, timeout=self.options.timeout, data=json.dumps(request.document)
+        )
         if doc_type == DaoDocumentType.WORLD:
             return Response[WrappedData[World]].model_validate(response.json())
         elif doc_type == DaoDocumentType.CHUNK:

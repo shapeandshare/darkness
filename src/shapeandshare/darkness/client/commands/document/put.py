@@ -32,7 +32,7 @@ class DocumentPutCommand(AbstractCommand):
         doc_path: str = document_path(address=request.address, doc_type=doc_type)
         url: str = f"http://{self.options.tld}/dao/{doc_path}"
         response: requests.Response = requests.patch(
-            url=url, timeout=self.options.timeout, data=request.wrapped_document.model_dump()
+            url=url, timeout=self.options.timeout, data=request.wrapped_document.model_dump_json()
         )
         if doc_type == DaoDocumentType.WORLD:
             return Response[WrappedData[World]].model_validate(response.json())

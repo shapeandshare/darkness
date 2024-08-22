@@ -9,7 +9,6 @@ from asyncio import Queue
 from pydantic import BaseModel
 
 from ....client.dao import DaoClient
-from ....sdk.contracts.dtos.sdk.requests.document.document import DocumentRequest
 from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from ....sdk.contracts.dtos.tiles.address import Address
 from ....sdk.contracts.dtos.tiles.chunk import Chunk
@@ -17,13 +16,11 @@ from ....sdk.contracts.dtos.tiles.tile import Tile
 from ....sdk.contracts.dtos.window import Window
 from ....sdk.contracts.types.connection import TileConnectionType
 from ....sdk.contracts.types.tile import TileType
-from ...services.dao import DaoService
 
 logger = logging.getLogger()
 
 
 class AbstractChunkFactory(BaseModel):
-    daoservice: DaoService
     daoclient: DaoClient
 
     class Config:
@@ -41,17 +38,15 @@ class AbstractChunkFactory(BaseModel):
     async def mutate_tile(self, address: Address, mutate: float, tile_type: TileType) -> None:
         if secrets.randbelow(100) <= mutate:
             # then we spawn the tile type
-            await self.daoservice.patch(address=address, document={"tile_type": tile_type})
+            await self.daoclient.document_patch(address=address, document={"tile_type": tile_type})
 
     async def convert_tile(self, address: Address, source: TileType, target: TileType) -> None:
         # get
-        target_tile: WrappedData[Tile] = WrappedData[Tile].model_validate(
-            await self.daoservice.get(request=DocumentRequest(address=address))
-        )
+        target_tile: WrappedData[Tile] = await self.daoclient.document_get(address=address, full=False)
         # check
         if target_tile.data.tile_type == source:
             # update
-            await self.daoservice.patch(address=address, document={"tile_type": target})
+            await self.daoclient.document_patch(address=address, document={"tile_type": target})
 
     async def adjecent_liquids(self, address: Address) -> list[TileType]:
         return await self.adjecent_to(address=address, types=[TileType.OCEAN, TileType.WATER])
@@ -59,9 +54,7 @@ class AbstractChunkFactory(BaseModel):
     async def adjecent_to(self, address: Address, types: list[TileType] | None) -> list[TileType]:
         adjecent_targets: list[TileType] = []
 
-        target_tile: WrappedData[Tile] = WrappedData[Tile].model_validate(
-            await self.daoservice.get(request=DocumentRequest(address=address))
-        )
+        target_tile: WrappedData[Tile] = await self.daoclient.document_get(address=address, full=False)
 
         async def adjecent_producer(queue: Queue):
             for _, adjecent_id in target_tile.data.next.items():
@@ -71,9 +64,8 @@ class AbstractChunkFactory(BaseModel):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     work_item = Address.model_validate(await queue.get())
-                    adjecent_tile: WrappedData[Tile] = WrappedData[Tile].model_validate(
-                        await self.daoservice.get(request=DocumentRequest(address=work_item))
-                    )
+                    adjecent_tile: WrappedData[Tile] = await self.daoclient.document_get(address=work_item, full=False)
+
                     if adjecent_tile.data.tile_type in types and adjecent_tile.data.tile_type not in adjecent_targets:
                         adjecent_targets.append(adjecent_tile.data.tile_type)
                     queue.task_done()
@@ -87,14 +79,12 @@ class AbstractChunkFactory(BaseModel):
 
     async def grow_tile(self, address: Address) -> None:
         # get
-        target_tile: WrappedData[Tile] = WrappedData[Tile].model_validate(
-            await self.daoservice.get(request=DocumentRequest(address=address))
-        )
+        target_tile: WrappedData[Tile] = await self.daoclient.document_get(address=address, full=False)
         # dirt -> grass
         if target_tile.data.tile_type == TileType.DIRT:
             adjecent_liquids: list[TileType] = await self.adjecent_liquids(address=address)
             if TileType.WATER in adjecent_liquids and TileType.OCEAN not in adjecent_liquids:
-                await self.daoservice.patch(address=address, document={"tile_type": TileType.GRASS})
+                await self.daoclient.document_patch(address=address, document={"tile_type": TileType.GRASS})
 
         # grass+water (no dirt/ocean) -> forest
         if target_tile.data.tile_type == TileType.GRASS:
@@ -109,7 +99,7 @@ class AbstractChunkFactory(BaseModel):
 
             if len(neighbors) > 1:
                 # next to more than one kind (grass/water)
-                await self.daoservice.patch(address=address, document={"tile_type": TileType.FOREST})
+                await self.daoclient.document_patch(address=address, document={"tile_type": TileType.FOREST})
 
         # TODO: grass+(dirt)
 
@@ -131,9 +121,7 @@ class AbstractChunkFactory(BaseModel):
 
     async def erode_tile(self, address: Address) -> None:
         # get
-        target_tile: WrappedData[Tile] = WrappedData[Tile].model_validate(
-            await self.daoservice.get(request=DocumentRequest(address=address))
-        )
+        target_tile: WrappedData[Tile] = await self.daoclient.document_get(address=address, full=False)
 
         # shore erosion
         if target_tile.data.tile_type not in [TileType.UNKNOWN, TileType.OCEAN, TileType.WATER, TileType.SHORE]:
@@ -141,11 +129,11 @@ class AbstractChunkFactory(BaseModel):
             # Apply erosion - rocks and be left by oceans, everything else becomes shore
             if TileType.OCEAN in adjecent_liquids:
                 if target_tile.data.tile_type not in (TileType.ROCK, TileType.SHORE):
-                    await self.daoservice.patch(address=address, document={"tile_type": TileType.SHORE})
+                    await self.daoclient.document_patch(address=address, document={"tile_type": TileType.SHORE})
 
     async def gen_geo_bind(self, address: Address, conn_dir: TileConnectionType, target_tile_id: str) -> None:
         tile_partial: dict = {"next": {conn_dir: target_tile_id}}
-        await self.daoservice.patch(address=address, document=tile_partial)
+        await self.daoclient.document_patch(address=address, document=tile_partial)
 
     async def generate_ocean_block(self, address: Address, window: Window):
         tile_map: dict[str, str] = {}
@@ -173,22 +161,20 @@ class AbstractChunkFactory(BaseModel):
                     address_tile: Address = Address.model_validate({**address.model_dump(), "tile_id": local_tile.id})
 
                     # create tile
-                    await self.daoservice.post(address=address_tile, document=local_tile)
+                    await self.daoclient.document_post(address=address_tile, document=local_tile)
                     # msg: str = f"({local_tile_id}) brought into existence as {TileType.OCEAN}"
                     # logger.debug(msg)
 
                     # Update the chunk --
 
                     # get
-                    wrapped_chunk: WrappedData[Chunk] = WrappedData[Chunk].model_validate(
-                        await self.daoservice.get(request=DocumentRequest(address=address))
-                    )
-                    wrapped_chunk.data = Chunk.model_validate(wrapped_chunk.data)
+                    wrapped_chunk: WrappedData[Chunk] = await self.daoclient.document_get(address=address, full=False)
 
+                    # update
                     wrapped_chunk.data.ids.add(tile_map[local_tile_id])
 
                     # put -- store chunk update (tile addition)
-                    await self.daoservice.patch(address=address, document={"ids": wrapped_chunk.data.ids})
+                    await self.daoclient.document_patch(address=address, document={"ids": list(wrapped_chunk.data.ids)})
 
                     queue.task_done()
 
@@ -198,7 +184,7 @@ class AbstractChunkFactory(BaseModel):
         await step_one()
 
         # set origin tile on chunk
-        await self.daoservice.patch(address=address, document={"origin": tile_map["tile_1_1"]})
+        await self.daoclient.document_patch(address=address, document={"origin": tile_map["tile_1_1"]})
 
         # 2. Connect everything together
         async def step_two():

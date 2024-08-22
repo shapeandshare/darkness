@@ -27,7 +27,7 @@ class ContextManager:
 
     def __init__(self):
         if ContextManager.state_service is None:
-            options: CommandOptions = CommandOptions(sleep_time=5, retry_count=3, tld="127.0.0.1:8001", timeout=60)
+            options: CommandOptions = CommandOptions(sleep_time=5, retry_count=30, tld="127.0.0.1:8001", timeout=60)
             daoclient: DaoClient = DaoClient(options=options)
 
             worlddao = TileDao[World](storage_base_path=STORAGE_BASE_PATH)
@@ -38,9 +38,9 @@ class ContextManager:
                 worlddao=worlddao, chunkdao=chunkdao, tiledao=tiledao, entitydao=entitydao
             )
 
-            world_factory = WorldFactory(daoservice=daoservice, daoclient=daoclient)
+            world_factory = WorldFactory(daoclient=daoclient)
             entity_factory = EntityFactory(daoservice=daoservice, daoclient=daoclient)
-            flatchunk_factory = FlatChunkFactory(daoservice=daoservice, daoclient=daoclient)
+            flatchunk_factory = FlatChunkFactory(daoclient=daoclient)
 
             ContextManager.state_service = StateService(
                 daoservice=daoservice,

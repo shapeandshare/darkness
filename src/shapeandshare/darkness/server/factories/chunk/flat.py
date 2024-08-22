@@ -4,7 +4,6 @@ import uuid
 from asyncio import Queue
 
 from ....sdk.contracts.dtos.coordinate import Coordinate
-from ....sdk.contracts.dtos.sdk.requests.document.document import DocumentRequest
 from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from ....sdk.contracts.dtos.tiles.address import Address
 from ....sdk.contracts.dtos.tiles.chunk import Chunk
@@ -93,14 +92,12 @@ class FlatChunkFactory(AbstractChunkFactory):
         # 1. blank, named chunk
         chunk: Chunk = Chunk(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
         address_chunk: Address = Address.model_validate({**address_world.model_dump(), "chunk_id": chunk.id})
-        await self.daoservice.post(address=address_chunk, document=chunk)
+        await self.daoclient.document_post(address=address_chunk, document=chunk)
 
         # update world metadata
-        wrapped_world: WrappedData[World] = WrappedData[World].model_validate(
-            await self.daoservice.get(request=DocumentRequest(address=address_world))
-        )
+        wrapped_world: WrappedData[World] = await self.daoclient.document_get(address=address_world, full=False)
         wrapped_world.data.ids.add(chunk.id)
-        await self.daoservice.patch(address=address_world, document={"ids": wrapped_world.data.ids})
+        await self.daoclient.document_patch(address=address_world, document={"ids": list(wrapped_world.data.ids)})
 
         # Define the maximum size
         max_x, max_y = dimensions
@@ -110,19 +107,17 @@ class FlatChunkFactory(AbstractChunkFactory):
         window: Window = Window(min=Coordinate(x=1, y=1), max=Coordinate(x=max_x, y=max_y))
         await self.generate_ocean_block(address=address_chunk, window=window)
 
-        chunk = Chunk.model_validate(
-            (await self.daoservice.get(request=DocumentRequest(address=address_chunk)))["data"]
-        )
+        chunk: Chunk = (await self.daoclient.document_get(address=address_chunk, full=False)).data
 
         # Apply our terrain generation
-        # address_chunk: Address = Address.model_validate({**address_world.model_dump(), "chunk_id": chunk.id})
         await self.terrain_generate(address=address_chunk, chunk=chunk)
 
         # Apply a quantum time
         await self.quantum(world_id=world_id, chunk=chunk)
 
         # get final state and return
-        return Chunk.model_validate((await self.daoservice.get(request=DocumentRequest(address=address_chunk)))["data"])
+        chunk: Chunk = (await self.daoclient.document_get(address=address_chunk, full=False)).data
+        return chunk
 
     async def quantum(self, world_id: str, chunk: Chunk) -> None:
         address_chunk: Address = Address.model_validate({"world_id": world_id, "chunk_id": chunk.id})
