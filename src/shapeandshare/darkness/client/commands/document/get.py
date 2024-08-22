@@ -32,6 +32,7 @@ class DocumentGetCommand(AbstractCommand):
         )
         payload = response.json()
         response.close()
+
         if doc_type == DaoDocumentType.WORLD:
             return Response[WrappedData[World]].model_validate(payload)
         elif doc_type == DaoDocumentType.CHUNK:
