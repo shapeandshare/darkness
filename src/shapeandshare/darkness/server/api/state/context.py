@@ -1,6 +1,5 @@
 import logging
 import sys
-from pathlib import Path
 
 from ....client.dao import DaoClient, get_mongodb
 from ....sdk.contracts.errors.server.service import ServiceError
@@ -10,8 +9,6 @@ from ...factories.world.world import WorldFactory
 from ...services.state import StateService
 
 logger = logging.getLogger()
-
-STORAGE_BASE_PATH: Path = Path(".") / "data"
 
 
 class ContextManager:

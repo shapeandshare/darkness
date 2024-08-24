@@ -9,4 +9,5 @@ build/
 dist/
 venv/
 *.egg-info
-infra/
+infra/assets
+infra/mongodb-macos-aarch64-7.0.12
