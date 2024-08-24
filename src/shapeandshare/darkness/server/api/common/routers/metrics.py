@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter
 
-from ....sdk.contracts.dtos.sdk.responses.response import Response
+from .....sdk.contracts.dtos.sdk.responses.response import Response
 
 logger = logging.getLogger()
 

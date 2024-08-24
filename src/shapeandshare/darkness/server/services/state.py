@@ -1,7 +1,9 @@
 import logging
 
 from pydantic import BaseModel
+from pymongo.results import DeleteResult
 
+from ...client.dao import DaoClient
 from ...sdk.contracts.dtos.entities.entity import Entity
 from ...sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
 from ...sdk.contracts.dtos.sdk.requests.chunk.delete import ChunkDeleteRequest
@@ -9,14 +11,11 @@ from ...sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
 from ...sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
 from ...sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
 from ...sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
-from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
+from ...sdk.contracts.dtos.tiles.address import Address
 from ...sdk.contracts.dtos.tiles.chunk import Chunk
 from ...sdk.contracts.dtos.tiles.tile import Tile
 from ...sdk.contracts.dtos.tiles.world import World
-from ..dao.chunk import ChunkDao
-from ..dao.entity import EntityDao
-from ..dao.tile import TileDao
-from ..dao.world import WorldDao
+from ...sdk.contracts.types.dao_document import DaoDocumentType
 from ..factories.chunk.flat import FlatChunkFactory
 from ..factories.entity.entity import EntityFactory
 from ..factories.world.world import WorldFactory
@@ -25,13 +24,19 @@ logger = logging.getLogger()
 
 
 class StateService(BaseModel):
-    worlddao: WorldDao
-    chunkdao: ChunkDao
-    tiledao: TileDao
-    entitydao: EntityDao
+    daoclient: DaoClient
+
     world_factory: WorldFactory
     entity_factory: EntityFactory
     flatchunk_factory: FlatChunkFactory
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    ### Worlds ##################################
+
+    async def worlds_get(self) -> list[World]:
+        return await self.daoclient.get_all(doc_type=DaoDocumentType.WORLD)
 
     ### World ##################################
 
@@ -40,11 +45,15 @@ class StateService(BaseModel):
         return await self.world_factory.create(name=request.name)
 
     async def world_lite_get(self, request: WorldGetRequest) -> World:
-        return World.model_validate((await self.worlddao.get(tokens={"world_id": request.id})).data)
+        address_world: Address = Address.model_validate({"world_id": request.id})
+        return await self.daoclient.get(address=address_world)
 
     async def world_get(self, request: WorldGetRequest) -> World:
+        # TODO: needs conversion to daoclient backend
+
         # Build a complete World from Lite objects
-        world: World = World.model_validate((await self.worlddao.get(tokens={"world_id": request.id})).data)
+        address_world: Address = Address.model_validate({"world_id": request.id})
+        world: World = await self.daoclient.get(address=address_world)
 
         partial_world = world.model_dump(exclude={"ids"})
         world: World = World.model_validate(partial_world)
@@ -55,9 +64,13 @@ class StateService(BaseModel):
             world.contents[chunk_id] = local_chunk
         return world
 
-    async def world_delete(self, request: WorldDeleteRequest) -> None:
+    async def world_delete(self, request: WorldDeleteRequest) -> bool:
         logger.debug("[StateService] deleting world")
-        await self.worlddao.delete(tokens={"world_id": request.id})
+        address_world: Address = Address.model_validate({"world_id": request.id})
+        result: DeleteResult = await self.daoclient.delete(address=address_world)
+        if result.deleted_count == 1:
+            return True
+        return False
 
     ### Chunk ##################################
 
@@ -68,33 +81,30 @@ class StateService(BaseModel):
         )
 
         # Entity Factory Terrain Creation
-        await self.entity_factory.terrain_generate(
-            tokens={"world_id": request.world_id, "chunk_id": new_chunk.id}, chunk=new_chunk
-        )
-        new_chunk: Chunk = Chunk.model_validate(
-            (await self.chunkdao.get(tokens={"world_id": request.world_id, "chunk_id": new_chunk.id})).data
-        )
+        address_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": new_chunk.id})
+        await self.entity_factory.terrain_generate(address=address_chunk, chunk=new_chunk)
+
+        new_chunk: Chunk = await self.daoclient.get(address=address_chunk)
 
         # Entity Factory Quantum
-        await self.entity_factory.quantum(
-            tokens={"world_id": request.world_id, "chunk_id": new_chunk.id}, chunk=new_chunk
-        )
+        await self.entity_factory.quantum(address=address_chunk, chunk=new_chunk)
 
         return new_chunk.id
 
     async def chunk_delete(self, request: ChunkDeleteRequest) -> None:
         msg: str = f"[WorldService] deleting chunk {id}"
         logger.debug(msg)
-        await self.chunkdao.delete(tokens={"world_id": request.world_id, "chunk_id": request.chunk_id})
+        address_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": request.chunk_id})
+        await self.daoclient.delete(address=address_chunk)
 
     async def chunk_lite_get(self, request: ChunkGetRequest) -> Chunk:
-        return (await self.chunkdao.get(tokens={"world_id": request.world_id, "chunk_id": request.chunk_id})).data
+        address_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": request.chunk_id})
+        return await self.daoclient.get(address=address_chunk)
 
     async def chunk_get(self, request: ChunkGetRequest) -> Chunk:
         # Builds a complete Chunk from Lite objects
-        chunk: Chunk = Chunk.model_validate(
-            (await self.chunkdao.get(tokens={"world_id": request.world_id, "chunk_id": request.chunk_id})).data
-        )
+        address_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": request.chunk_id})
+        chunk: Chunk = await self.daoclient.get(address=address_chunk)
 
         chunk_partial = chunk.model_dump(exclude={"tile_ids"})
         chunk: Chunk = Chunk.model_validate(chunk_partial)
@@ -102,21 +112,23 @@ class StateService(BaseModel):
         # re-hydrate the tiles
         tile_ids: set[str] = chunk.ids
         for tile_id in tile_ids:
-            tile: Tile = await self.tile_get(
-                tokens={"world_id": request.world_id, "chunk_id": chunk.id, "tile_id": tile_id}
+            address_tile: Address = Address.model_validate(
+                {"world_id": request.world_id, "chunk_id": chunk.id, "tile_id": tile_id}
             )
+            tile: Tile = await self.tile_get(address=address_tile)
 
             # re-hydrate the entities
             entity_ids: set[str] = tile.ids
             for entity_id in entity_ids:
-                entity: Entity = await self.entity_get(
-                    tokens={
+                address_entity: Address = Address.model_validate(
+                    {
                         "world_id": request.world_id,
                         "chunk_id": chunk.id,
                         "tile_id": tile_id,
                         "entity_id": entity_id,
                     }
                 )
+                entity: Entity = await self.entity_get(address=address_entity)
 
                 # add finalized entity to tile
                 tile.contents[entity_id] = entity
@@ -128,14 +140,10 @@ class StateService(BaseModel):
 
     ### Tile ##################################
 
-    async def tile_get(self, tokens: dict) -> Tile:
-        wrapped_tile: WrappedData[Tile] = await self.tiledao.get(tokens=tokens)
-        tile: Tile = Tile.model_validate(wrapped_tile.data)
-        return tile
+    async def tile_get(self, address: Address) -> Tile:
+        return await self.daoclient.get(address=address)
 
     ### Entity ##################################
 
-    async def entity_get(self, tokens: dict) -> Entity:
-        wrapped_entity: WrappedData[Entity] = await self.entitydao.get(tokens=tokens)
-        entity: Entity = Entity.model_validate(wrapped_entity.data)
-        return entity
+    async def entity_get(self, address: Address) -> Entity:
+        return await self.daoclient.get(address=address)

@@ -3,22 +3,22 @@ import traceback
 
 from fastapi import APIRouter, HTTPException
 
-from ....sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
-from ....sdk.contracts.dtos.sdk.requests.chunk.delete import ChunkDeleteRequest
-from ....sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
-from ....sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
-from ....sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
-from ....sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
-from ....sdk.contracts.dtos.sdk.responses.chunk.create import ChunkCreateResponse
-from ....sdk.contracts.dtos.sdk.responses.chunk.get import ChunkGetResponse
-from ....sdk.contracts.dtos.sdk.responses.response import Response
-from ....sdk.contracts.dtos.sdk.responses.world.create import WorldCreateResponse
-from ....sdk.contracts.dtos.sdk.responses.world.get import WorldGetResponse
-from ....sdk.contracts.dtos.tiles.chunk import Chunk
-from ....sdk.contracts.dtos.tiles.world import World
-from ....sdk.contracts.errors.server.dao.conflict import DaoConflictError
-from ....sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
-from ....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
+from .....sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
+from .....sdk.contracts.dtos.sdk.requests.chunk.delete import ChunkDeleteRequest
+from .....sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
+from .....sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
+from .....sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
+from .....sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
+from .....sdk.contracts.dtos.sdk.responses.chunk.create import ChunkCreateResponse
+from .....sdk.contracts.dtos.sdk.responses.chunk.get import ChunkGetResponse
+from .....sdk.contracts.dtos.sdk.responses.response import Response
+from .....sdk.contracts.dtos.sdk.responses.world.create import WorldCreateResponse
+from .....sdk.contracts.dtos.sdk.responses.world.get import WorldGetResponse
+from .....sdk.contracts.dtos.tiles.chunk import Chunk
+from .....sdk.contracts.dtos.tiles.world import World
+from .....sdk.contracts.errors.server.dao.conflict import DaoConflictError
+from .....sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
+from .....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
 from ..context import ContextManager
 
 # from pyinstrument import Profiler
@@ -47,15 +47,12 @@ async def world_get(world_id: str, full: bool = False) -> Response[WorldGetRespo
             world_lite: World = await ContextManager.state_service.world_lite_get(request=request)
             response = Response[WorldGetResponse](data=WorldGetResponse(world=world_lite))
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
@@ -74,15 +71,12 @@ async def world_delete(world_id: str) -> None:
     try:
         await ContextManager.state_service.world_delete(request=request)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
@@ -97,15 +91,12 @@ async def world_create(request: WorldCreateRequest) -> Response[WorldCreateRespo
     try:
         world_id: str = await ContextManager.state_service.world_create(request=request)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
@@ -114,8 +105,7 @@ async def world_create(request: WorldCreateRequest) -> Response[WorldCreateRespo
         # catch everything else
         raise HTTPException(status_code=500, detail=f"Uncaught exception: {str(error)}") from error
 
-    response = Response[WorldCreateResponse](data=WorldCreateResponse(id=world_id))
-    return response
+    return Response[WorldCreateResponse](data=WorldCreateResponse(id=world_id))
 
 
 ### /world/world_id/chunk/
@@ -132,15 +122,12 @@ async def chunk_create(world_id: str, request: ChunkCreateRequest) -> Response[C
         chunk_id: str = await ContextManager.state_service.chunk_create(request=request)
         # profiler.print()
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(error)
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
@@ -164,21 +151,18 @@ async def chunk_get(world_id: str, chunk_id: str, full: bool = True) -> Response
             chunk: Chunk = await ContextManager.state_service.chunk_lite_get(request=request)
             response = Response[ChunkGetResponse](data=ChunkGetResponse(chunk=chunk))
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
         traceback.print_exc()
         logger.error(str(error))
-        traceback.print_exc()
+        # catch everything else
         raise HTTPException(status_code=500, detail=f"Uncaught exception: {str(error)}") from error
 
     return response
@@ -190,15 +174,12 @@ async def chunk_delete(world_id: str, chunk_id: str) -> None:
     try:
         await ContextManager.state_service.chunk_delete(request=request)
     except DaoConflictError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
     except DaoInconsistencyError as error:
-        traceback.print_exc()
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:

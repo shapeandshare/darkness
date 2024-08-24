@@ -5,7 +5,9 @@ import click
 import uvicorn
 from fastapi import FastAPI
 
-from .routers import metrics, world
+from ...factories.world import world
+from ..common.routers import metrics
+from .routers import world, worlds
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
@@ -42,6 +44,9 @@ def main(
 
     logger.debug("[Main] adding world routes")
     app.include_router(world.router)
+
+    logger.debug("[Main] adding worlds routes")
+    app.include_router(worlds.router)
 
     logger.info("[Main] online")
 

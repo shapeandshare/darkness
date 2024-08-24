@@ -1,8 +1,0 @@
-
-
-#global:
-#  postgresql:
-#    auth:
-#      username: darknesss-admin
-#      password: asd
-#      postgresPassword:

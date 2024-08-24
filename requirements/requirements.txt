@@ -4,4 +4,5 @@ pydantic>=2
 uvicorn
 requests
 click
-# pyinstrument
+#pyinstrument
+pymongo[srv]

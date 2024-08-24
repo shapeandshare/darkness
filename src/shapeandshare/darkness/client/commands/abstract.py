@@ -79,7 +79,7 @@ class AbstractCommand(BaseModel):
         """
 
         if depth < 1:
-            raise ExceededRetryCountError(json.dumps({"request": request.dict(), "depth": depth}))
+            raise ExceededRetryCountError(json.dumps({"request": request.model_dump(), "depth": depth}))
         depth -= 1
 
         params: dict = self._build_requests_params(request=request)
@@ -119,7 +119,7 @@ class AbstractCommand(BaseModel):
             json.dumps(
                 {
                     "status_code": response.status_code,
-                    "request": request.dict(),
+                    "request": request.model_dump(),
                     "depth": depth,
                 }
             )

@@ -25,7 +25,8 @@ disable=
     missing-module-docstring,
     missing-class-docstring,
     empty-docstring,
-    arguments-differ
+    arguments-differ,
+    duplicate-code
 
 
 [FORMAT]

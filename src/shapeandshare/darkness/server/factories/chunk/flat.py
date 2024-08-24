@@ -4,7 +4,7 @@ import uuid
 from asyncio import Queue
 
 from ....sdk.contracts.dtos.coordinate import Coordinate
-from ....sdk.contracts.dtos.sdk.wrapped_data import WrappedData
+from ....sdk.contracts.dtos.tiles.address import Address
 from ....sdk.contracts.dtos.tiles.chunk import Chunk
 from ....sdk.contracts.dtos.tiles.world import World
 from ....sdk.contracts.dtos.window import Window
@@ -15,17 +15,16 @@ logger = logging.getLogger()
 
 
 class FlatChunkFactory(AbstractChunkFactory):
-    async def terrain_generate(self, world_id: str, chunk: Chunk) -> None:
-        tokens: dict = {"world_id": world_id, "chunk_id": chunk.id}
-
+    async def terrain_generate(self, address: Address, chunk: Chunk) -> None:
         # Lets shovel in some biome default or dirt tiles!
         async def step_one():
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
+                    address_tile: Address = Address.model_validate({**address.model_dump(), "tile_id": local_tile_id})
                     # Mutate tiles to biome default (or dirt)
                     await self.mutate_tile(
-                        tokens={**tokens, "tile_id": local_tile_id},
+                        address=address_tile,
                         mutate=90,  # percentage of 100%
                         tile_type=(chunk.biome if chunk.biome else TileType.DIRT),
                     )
@@ -41,8 +40,9 @@ class FlatChunkFactory(AbstractChunkFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
+                    address_tile: Address = Address.model_validate({**address.model_dump(), "tile_id": local_tile_id})
                     await self.mutate_tile(
-                        tokens={**tokens, "tile_id": local_tile_id},
+                        address=address_tile,
                         mutate=0.5,  # 0.5% change (very low)
                         tile_type=TileType.ROCK,
                     )
@@ -58,8 +58,9 @@ class FlatChunkFactory(AbstractChunkFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
+                    address_tile: Address = Address.model_validate({**address.model_dump(), "tile_id": local_tile_id})
                     # Convert inner Ocean to Water Tiles
-                    await self.brackish_tile(tokens={**tokens, "tile_id": local_tile_id})
+                    await self.brackish_tile(address=address_tile)
                     queue.task_done()
 
             queue = asyncio.Queue()
@@ -72,7 +73,8 @@ class FlatChunkFactory(AbstractChunkFactory):
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    await self.erode_tile(tokens={**tokens, "tile_id": local_tile_id})
+                    address_tile: Address = Address.model_validate({**address.model_dump(), "tile_id": local_tile_id})
+                    await self.erode_tile(address=address_tile)
                     queue.task_done()
 
             queue = asyncio.Queue()
@@ -84,45 +86,49 @@ class FlatChunkFactory(AbstractChunkFactory):
         if name is None:
             name = "roshar"
 
-        tokens: dict = {"world_id": world_id}
+        address_world: Address = Address.model_validate({"world_id": world_id})
 
         # 1. blank, named chunk
         chunk: Chunk = Chunk(id=str(uuid.uuid4()), name=name, dimensions=dimensions, biome=biome)
-        await self.chunkdao.post(tokens=tokens, document=chunk)
+        address_chunk: Address = Address.model_validate({**address_world.model_dump(), "chunk_id": chunk.id})
+        await self.daoclient.post(address=address_chunk, document=chunk)
 
         # update world metadata
-        wrapped_world: WrappedData[World] = await self.worlddao.get(tokens=tokens)
-        wrapped_world.data = World.model_validate(wrapped_world.data)
-        wrapped_world.data.ids.add(chunk.id)
-        await self.worlddao.patch(tokens=tokens, document={"ids": wrapped_world.data.ids})
+        world: World = await self.daoclient.get(address=address_world)
+        world.ids.add(chunk.id)
+        await self.daoclient.patch(address=address_world, document={"ids": list(world.ids)})
 
         # Define the maximum size
         max_x, max_y = dimensions
 
-        tokens["chunk_id"] = chunk.id
+        # address["chunk_id"] = chunk.id
         # Generate an empty 2D block of ocean
         window: Window = Window(min=Coordinate(x=1, y=1), max=Coordinate(x=max_x, y=max_y))
-        await self.generate_ocean_block(tokens=tokens, window=window)
-        chunk = Chunk.model_validate((await self.chunkdao.get(tokens=tokens)).data)
+        await self.generate_ocean_block(address=address_chunk, window=window)
+
+        chunk: Chunk = await self.daoclient.get(address=address_chunk)
 
         # Apply our terrain generation
-        await self.terrain_generate(world_id=world_id, chunk=chunk)
+        await self.terrain_generate(address=address_chunk, chunk=chunk)
 
         # Apply a quantum time
         await self.quantum(world_id=world_id, chunk=chunk)
 
         # get final state and return
-        return Chunk.model_validate((await self.chunkdao.get(tokens=tokens)).data)
+        return await self.daoclient.get(address=address_chunk)
 
     async def quantum(self, world_id: str, chunk: Chunk) -> None:
-        tokens: dict = {"world_id": world_id, "chunk_id": chunk.id}
+        address_chunk: Address = Address.model_validate({"world_id": world_id, "chunk_id": chunk.id})
 
         # Grow Tiles
         async def step_five():
             async def consumer(queue: Queue):
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
-                    await self.grow_tile(tokens={**tokens, "tile_id": local_tile_id})
+                    address_tile: Address = Address.model_validate(
+                        {**address_chunk.model_dump(), "tile_id": local_tile_id}
+                    )
+                    await self.grow_tile(address=address_tile)
                     queue.task_done()
 
             queue = asyncio.Queue()
