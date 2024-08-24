@@ -2,7 +2,6 @@ import requests
 
 from ....sdk.contracts.dtos.sdk.responses.response import Response
 from ....sdk.contracts.dtos.sdk.responses.worlds.get import WorldsGetResponse
-from ....sdk.contracts.dtos.tiles.world import World
 from ..abstract import AbstractCommand
 
 
