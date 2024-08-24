@@ -87,8 +87,6 @@ class DaoClient(BaseModel):
         doc_type: DaoDocumentType = address_type(address=address)
         return self.collections[doc_type.value].insert_one(json.loads(document.model_dump_json()))
 
-    # async def post_many(self, container_address: Address, documents: ):
-
     async def patch(self, address: Address, document: dict) -> UpdateResult:
         # document CAN NOT CONTAIN set variables.  It MUST be serialized before this call, so help you
         doc_type: DaoDocumentType = address_type(address=address)
