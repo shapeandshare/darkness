@@ -61,6 +61,22 @@ class DaoClient(BaseModel):
             return World.model_validate(result)
         raise Exception("invalid document type")
 
+    async def get_all(self, doc_type: DaoDocumentType) -> list[World] | list[Chunk] | list[Tile] | list[Entity]:
+        results = self.collections[doc_type].find()
+        documents: list[World] | list[Chunk] | list[Tile] | list[Entity] = []
+        for result in results:
+            if doc_type == DaoDocumentType.ENTITY:
+                documents.append(Entity.model_validate(result))
+            elif doc_type == DaoDocumentType.TILE:
+                documents.append(Tile.model_validate(result))
+            elif doc_type == DaoDocumentType.CHUNK:
+                documents.append(Chunk.model_validate(result))
+            elif doc_type == DaoDocumentType.WORLD:
+                documents.append(World.model_validate(result))
+            else:
+                raise Exception("invalid document type")
+        return documents
+
     async def get_multi(
         self, addresses: list[Address], doc_type: DaoDocumentType
     ) -> list[World] | list[Chunk] | list[Tile] | list[Entity]:
@@ -85,10 +101,10 @@ class DaoClient(BaseModel):
 
     async def post(self, address: Address, document: World | Chunk | Tile | Entity) -> InsertOneResult:
         doc_type: DaoDocumentType = address_type(address=address)
-        return self.collections[doc_type.value].insert_one(json.loads(document.model_dump_json()))
+        return self.collections[doc_type].insert_one(json.loads(document.model_dump_json()))
 
     async def patch(self, address: Address, document: dict) -> UpdateResult:
         # document CAN NOT CONTAIN set variables.  It MUST be serialized before this call, so help you
         doc_type: DaoDocumentType = address_type(address=address)
         document_id: str = get_document_id_from_address(address=address, doc_type=doc_type)
-        return self.collections[doc_type.value].update_one(filter={"id": document_id}, update={"$set": document})
+        return self.collections[doc_type].update_one(filter={"id": document_id}, update={"$set": document})

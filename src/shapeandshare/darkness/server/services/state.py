@@ -15,6 +15,7 @@ from ...sdk.contracts.dtos.tiles.address import Address
 from ...sdk.contracts.dtos.tiles.chunk import Chunk
 from ...sdk.contracts.dtos.tiles.tile import Tile
 from ...sdk.contracts.dtos.tiles.world import World
+from ...sdk.contracts.types.dao_document import DaoDocumentType
 from ..factories.chunk.flat import FlatChunkFactory
 from ..factories.entity.entity import EntityFactory
 from ..factories.world.world import WorldFactory
@@ -31,6 +32,11 @@ class StateService(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+    ### Worlds ##################################
+
+    async def worlds_get(self) -> list[World]:
+        return await self.daoclient.get_all(doc_type=DaoDocumentType.WORLD)
 
     ### World ##################################
 

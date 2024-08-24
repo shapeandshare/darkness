@@ -7,7 +7,7 @@ from fastapi import FastAPI
 
 from ...factories.world import world
 from ..common.routers import metrics
-from .routers import world
+from .routers import world, worlds
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
@@ -40,11 +40,13 @@ def main(
     app = FastAPI()
 
     logger.debug("[Main] adding metrics routes")
-
     app.include_router(metrics.router)
 
     logger.debug("[Main] adding world routes")
     app.include_router(world.router)
+
+    logger.debug("[Main] adding worlds routes")
+    app.include_router(worlds.router)
 
     logger.info("[Main] online")
 

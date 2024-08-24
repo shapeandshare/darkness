@@ -9,6 +9,7 @@ from ..sdk.contracts.dtos.sdk.responses.chunk.create import ChunkCreateResponse
 from ..sdk.contracts.dtos.sdk.responses.chunk.get import ChunkGetResponse
 from ..sdk.contracts.dtos.sdk.responses.world.create import WorldCreateResponse
 from ..sdk.contracts.dtos.sdk.responses.world.get import WorldGetResponse
+from ..sdk.contracts.dtos.sdk.responses.worlds.get import WorldsGetResponse
 from ..sdk.contracts.dtos.tiles.chunk import Chunk
 from ..sdk.contracts.dtos.tiles.world import World
 from ..sdk.contracts.types.tile import TileType
@@ -19,6 +20,7 @@ from .commands.metrics.health.get import HealthGetCommand
 from .commands.world.create import WorldCreateCommand
 from .commands.world.delete import WorldDeleteCommand
 from .commands.world.get import WorldGetCommand
+from .commands.worlds.get import WorldsGetCommand
 
 
 class StateClient:
@@ -34,6 +36,9 @@ class StateClient:
     world_create_command: WorldCreateCommand
     world_get_command: WorldGetCommand
     world_delete_command: WorldDeleteCommand
+
+    # worlds
+    worlds_get_command: WorldsGetCommand
 
     def __init__(self, options: CommandOptions | None = None):
         command_dict: dict = {}
@@ -52,6 +57,9 @@ class StateClient:
         self.world_create_command = WorldCreateCommand.model_validate(command_dict)
         self.world_get_command = WorldGetCommand.model_validate(command_dict)
         self.world_delete_command = WorldDeleteCommand.model_validate(command_dict)
+
+        # worlds
+        self.worlds_get_command = WorldsGetCommand.model_validate(command_dict)
 
     # metrics
 
@@ -100,3 +108,9 @@ class StateClient:
         request: WorldGetRequest = WorldGetRequest(world_id=world_id, full=full)
         response: WorldGetResponse = await self.world_get_command.execute(request)
         return response.world
+
+    # worlds
+
+    async def worlds_get(self) -> list[World]:
+        response: WorldsGetResponse = await self.worlds_get_command.execute()
+        return response.worlds
