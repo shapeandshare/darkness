@@ -2,8 +2,7 @@ import logging
 import sys
 from pathlib import Path
 
-from ....client.dao import DaoClient
-from ....sdk.contracts.dtos.sdk.command_options import CommandOptions
+from ....client.dao import DaoClient, get_mongodb
 from ....sdk.contracts.errors.server.service import ServiceError
 from ...factories.chunk.flat import FlatChunkFactory
 from ...factories.entity.entity import EntityFactory
@@ -21,8 +20,9 @@ class ContextManager:
 
     def __init__(self):
         if ContextManager.state_service is None:
-            options: CommandOptions = CommandOptions(sleep_time=5, retry_count=30, tld="127.0.0.1:8001", timeout=60)
-            daoclient: DaoClient = DaoClient(options=options)
+            daoclient: DaoClient = DaoClient(
+                database=get_mongodb(hostname="127.0.0.1", port=27017, database="darkness")
+            )
 
             world_factory = WorldFactory(daoclient=daoclient)
             entity_factory = EntityFactory(daoclient=daoclient)

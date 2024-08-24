@@ -8,7 +8,7 @@ from ....sdk.contracts.dtos.tiles.tile import Tile
 from ....sdk.contracts.dtos.tiles.world import World
 from ....sdk.contracts.errors.server.service import ServiceError
 from ...dao.tile import TileDao
-from ...services.dao import DaoService
+from ...services.dao_legacy import DaoServiceLegacy
 
 logger = logging.getLogger()
 
@@ -17,11 +17,11 @@ STORAGE_BASE_PATH: Path = Path(".") / "data"
 
 class ContextManager:
     # Application Level Services
-    daoservice: DaoService | None = None
+    daoservice: DaoServiceLegacy | None = None
 
     def __init__(self):
         if ContextManager.daoservice is None:
-            ContextManager.daoservice = DaoService(
+            ContextManager.daoservice = DaoServiceLegacy(
                 worlddao=TileDao[World](storage_base_path=STORAGE_BASE_PATH),
                 chunkdao=TileDao[Chunk](storage_base_path=STORAGE_BASE_PATH),
                 tiledao=TileDao[Tile](storage_base_path=STORAGE_BASE_PATH),

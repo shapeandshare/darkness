@@ -12,7 +12,7 @@ from ...sdk.contracts.types.dao_document import DaoDocumentType
 from ..dao.tile import TileDao
 
 
-class DaoService(BaseModel):
+class DaoServiceLegacy(BaseModel):
     """ """
 
     worlddao: TileDao[World]

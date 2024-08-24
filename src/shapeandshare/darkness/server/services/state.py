@@ -1,6 +1,7 @@
 import logging
 
 from pydantic import BaseModel
+from pymongo.results import DeleteResult
 
 from ...client.dao import DaoClient
 from ...sdk.contracts.dtos.entities.entity import Entity
@@ -10,7 +11,6 @@ from ...sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
 from ...sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
 from ...sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
 from ...sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
-from ...sdk.contracts.dtos.sdk.wrapped_data import WrappedData
 from ...sdk.contracts.dtos.tiles.address import Address
 from ...sdk.contracts.dtos.tiles.chunk import Chunk
 from ...sdk.contracts.dtos.tiles.tile import Tile
@@ -40,17 +40,14 @@ class StateService(BaseModel):
 
     async def world_lite_get(self, request: WorldGetRequest) -> World:
         address_world: Address = Address.model_validate({"world_id": request.id})
-        wrapped_world: WrappedData[World] = await self.daoclient.document_get(address=address_world, full=False)
-        return wrapped_world.data
+        return await self.daoclient.get(address=address_world)
 
     async def world_get(self, request: WorldGetRequest) -> World:
         # TODO: needs conversion to daoclient backend
 
         # Build a complete World from Lite objects
         address_world: Address = Address.model_validate({"world_id": request.id})
-
-        wrapped_world = await self.daoclient.document_get(address=address_world, full=False)
-        world: World = wrapped_world.data
+        world: World = await self.daoclient.get(address=address_world)
 
         partial_world = world.model_dump(exclude={"ids"})
         world: World = World.model_validate(partial_world)
@@ -64,7 +61,10 @@ class StateService(BaseModel):
     async def world_delete(self, request: WorldDeleteRequest) -> bool:
         logger.debug("[StateService] deleting world")
         address_world: Address = Address.model_validate({"world_id": request.id})
-        return await self.daoclient.document_delete(address=address_world)
+        result: DeleteResult = await self.daoclient.delete(address=address_world)
+        if result.deleted_count == 1:
+            return True
+        return False
 
     ### Chunk ##################################
 
@@ -78,8 +78,7 @@ class StateService(BaseModel):
         address_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": new_chunk.id})
         await self.entity_factory.terrain_generate(address=address_chunk, chunk=new_chunk)
 
-        wrapped_chunk = await self.daoclient.document_get(address=address_chunk, full=False)
-        new_chunk: Chunk = wrapped_chunk.data
+        new_chunk: Chunk = await self.daoclient.get(address=address_chunk)
 
         # Entity Factory Quantum
         await self.entity_factory.quantum(address=address_chunk, chunk=new_chunk)
@@ -90,18 +89,16 @@ class StateService(BaseModel):
         msg: str = f"[WorldService] deleting chunk {id}"
         logger.debug(msg)
         address_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": request.chunk_id})
-        await self.daoclient.document_delete(address=address_chunk)
+        await self.daoclient.delete(address=address_chunk)
 
     async def chunk_lite_get(self, request: ChunkGetRequest) -> Chunk:
         address_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": request.chunk_id})
-        response: WrappedData[Chunk] = await self.daoclient.document_get(address=address_chunk, full=False)
-        return response.data
+        return await self.daoclient.get(address=address_chunk)
 
     async def chunk_get(self, request: ChunkGetRequest) -> Chunk:
         # Builds a complete Chunk from Lite objects
         address_chunk: Address = Address.model_validate({"world_id": request.world_id, "chunk_id": request.chunk_id})
-        wrapped_chunk: WrappedData[Chunk] = await self.daoclient.document_get(address=address_chunk, full=False)
-        chunk: Chunk = wrapped_chunk.data
+        chunk: Chunk = await self.daoclient.get(address=address_chunk)
 
         chunk_partial = chunk.model_dump(exclude={"tile_ids"})
         chunk: Chunk = Chunk.model_validate(chunk_partial)
@@ -138,11 +135,9 @@ class StateService(BaseModel):
     ### Tile ##################################
 
     async def tile_get(self, address: Address) -> Tile:
-        wrapped_tile: WrappedData[Tile] = await self.daoclient.document_get(address=address, full=False)
-        return wrapped_tile.data
+        return await self.daoclient.get(address=address)
 
     ### Entity ##################################
 
     async def entity_get(self, address: Address) -> Entity:
-        wrapped_entity: WrappedData[Entity] = await self.daoclient.document_get(address=address, full=False)
-        return wrapped_entity.data
+        return await self.daoclient.get(address=address)
