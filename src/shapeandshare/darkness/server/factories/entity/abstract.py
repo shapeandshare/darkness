@@ -60,7 +60,7 @@ class AbstractEntityFactory(BaseModel):
             local_tile.ids.add(new_entity.id)
 
         patch: dict = {"ids": list(local_tile.ids)}
-        print(f"tile id {local_tile}, got: {patch}")
+        # print(f"tile id {local_tile}, got: {patch}")
         await self.daoclient.patch(address=address, document=patch)
 
     ### entity agent logic

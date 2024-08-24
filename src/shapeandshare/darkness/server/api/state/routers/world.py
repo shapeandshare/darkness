@@ -2,6 +2,7 @@ import logging
 import traceback
 
 from fastapi import APIRouter, HTTPException
+from pyinstrument import Profiler
 
 from .....sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
 from .....sdk.contracts.dtos.sdk.requests.chunk.delete import ChunkDeleteRequest
@@ -20,9 +21,6 @@ from .....sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from .....sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from .....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
 from ..context import ContextManager
-
-# from pyinstrument import Profiler
-
 
 logger = logging.getLogger()
 
@@ -127,9 +125,9 @@ async def chunk_create(world_id: str, request: ChunkCreateRequest) -> Response[C
     request.world_id = world_id
 
     try:
-        # with Profiler() as profiler:
-        chunk_id: str = await ContextManager.state_service.chunk_create(request=request)
-        # profiler.print()
+        with Profiler() as profiler:
+            chunk_id: str = await ContextManager.state_service.chunk_create(request=request)
+        profiler.print()
     except DaoConflictError as error:
         traceback.print_exc()
         logger.error(str(error))

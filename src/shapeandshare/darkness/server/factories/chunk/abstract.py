@@ -17,6 +17,7 @@ from ....sdk.contracts.dtos.tiles.tile import Tile
 from ....sdk.contracts.dtos.tiles.world import World
 from ....sdk.contracts.dtos.window import Window
 from ....sdk.contracts.types.connection import TileConnectionType
+from ....sdk.contracts.types.dao_document import DaoDocumentType
 from ....sdk.contracts.types.tile import TileType
 
 logger = logging.getLogger()
@@ -58,26 +59,18 @@ class AbstractChunkFactory(BaseModel):
 
         target_tile: Tile = await self.daoclient.get(address=address)
 
-        async def adjecent_producer(queue: Queue):
-            for _, adjecent_id in target_tile.next.items():
-                await queue.put(item={**address.model_dump(), "tile_id": adjecent_id})
+        adjecent_tile_addresses: list[Address] = []
+        for _, adjecent_id in target_tile.next.items():
+            adjecent_tile_addresses.append(Address.model_validate({**address.model_dump(), "tile_id": adjecent_id}))
 
-        async def step_one():
-            async def consumer(queue: Queue):
-                while not queue.empty():
-                    work_item = Address.model_validate(await queue.get())
-                    adjecent_tile: Tile = await self.daoclient.get(address=work_item)
+        adjecent_tiles: list[Tile] = await self.daoclient.get_multi(
+            addresses=adjecent_tile_addresses, doc_type=DaoDocumentType.TILE
+        )
+        for adjecent_tile in adjecent_tiles:
+            if adjecent_tile.tile_type in types:
+                adjecent_targets.append(adjecent_tile.tile_type)
 
-                    if adjecent_tile.tile_type in types and adjecent_tile.tile_type not in adjecent_targets:
-                        adjecent_targets.append(adjecent_tile.tile_type)
-                    queue.task_done()
-
-            queue = asyncio.Queue()
-            await asyncio.gather(adjecent_producer(queue), consumer(queue))
-
-        await step_one()
-
-        return adjecent_targets
+        return list(set(adjecent_targets))
 
     async def grow_tile(self, address: Address) -> None:
         # get
@@ -157,7 +150,10 @@ class AbstractChunkFactory(BaseModel):
 
         # 1. fill a blank nXm area with ocean
         async def step_one():
+            # get container
             async def consumer(queue: Queue):
+                chunk: Chunk = await self.daoclient.get(address=address)
+
                 while not queue.empty():
                     local_tile_id: str = await queue.get()
                     tile_map[local_tile_id] = str(uuid.uuid4())
@@ -169,19 +165,15 @@ class AbstractChunkFactory(BaseModel):
                     # msg: str = f"({local_tile_id}) brought into existence as {TileType.OCEAN}"
                     # logger.debug(msg)
 
-                    # Update the chunk --
-
-                    # get
-                    chunk: Chunk = await self.daoclient.get(address=address)
-
                     # update
                     chunk.ids.add(tile_map[local_tile_id])
-
-                    # put -- store chunk update (tile addition)
-                    document = {"ids": list(chunk.ids)}
-                    await self.daoclient.patch(address=address, document=document)
-
                     queue.task_done()
+
+                # Update the chunk --
+                # put -- store chunk update (tile addition)
+                document = {"ids": list(chunk.ids)}
+                # print(document)
+                await self.daoclient.patch(address=address, document=document)
 
             queue = asyncio.Queue()
             await asyncio.gather(flat_producer(window, queue), consumer(queue))
