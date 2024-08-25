@@ -141,6 +141,14 @@ class StateService(BaseModel):
         await self.flatchunk_factory.quantum(address=address)
         await self.entity_factory.quantum(address=address)
 
+    async def chunk_quantum_tile(self, request: ChunkRequest):
+        address: Address = Address(world_id=request.world_id, chunk_id=request.chunk_id)
+        await self.flatchunk_factory.quantum(address=address)
+
+    async def chunk_quantum_entity(self, request: ChunkRequest):
+        address: Address = Address(world_id=request.world_id, chunk_id=request.chunk_id)
+        await self.entity_factory.quantum(address=address)
+
     ### Tile ##################################
 
     async def tile_get(self, address: Address) -> Tile:

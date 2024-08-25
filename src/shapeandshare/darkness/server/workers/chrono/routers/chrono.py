@@ -2,9 +2,8 @@ import asyncio
 import logging
 import traceback
 from asyncio import Queue
-from http.client import HTTPException
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from .....sdk.contracts.dtos.tiles.world import World
 from .....sdk.contracts.errors.server.dao.conflict import DaoConflictError
@@ -31,7 +30,9 @@ async def world_chrono():
         async def consumer(queue: Queue):
             while not queue.empty():
                 address_dict: dict = await queue.get()
-                await ContextManager.client.chunk_quantum(world_id=address_dict["world_id"], chunk_id=address_dict["chunk_id"])
+                await ContextManager.client.chunk_quantum(
+                    world_id=address_dict["world_id"], chunk_id=address_dict["chunk_id"]
+                )
                 queue.task_done()
 
         async def process():
