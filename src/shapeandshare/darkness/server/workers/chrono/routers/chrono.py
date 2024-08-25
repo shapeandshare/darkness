@@ -5,6 +5,7 @@ from asyncio import Queue
 
 from fastapi import APIRouter, HTTPException
 
+from ..... import ChunkQuantumType
 from .....sdk.contracts.dtos.tiles.world import World
 from .....sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from .....sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
@@ -31,7 +32,7 @@ async def world_chrono():
             while not queue.empty():
                 address_dict: dict = await queue.get()
                 await ContextManager.client.chunk_quantum(
-                    world_id=address_dict["world_id"], chunk_id=address_dict["chunk_id"]
+                    world_id=address_dict["world_id"], chunk_id=address_dict["chunk_id"], scope=ChunkQuantumType.ALL
                 )
                 queue.task_done()
 

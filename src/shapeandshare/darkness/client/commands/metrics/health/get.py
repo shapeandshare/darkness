@@ -28,7 +28,6 @@ class HealthGetCommand(AbstractCommand):
         """
 
         response: requests.Response = requests.get(
-            url=f"http://{self.options.tld}/metrics/health",
-            timeout=self.options.timeout,
+            url=f"http://{self.options.tld}/metrics/health", timeout=self.options.timeout
         )
         return Response[dict].model_validate(response.json()).data
