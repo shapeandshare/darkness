@@ -1,6 +1,7 @@
 
 setup:
 	resources/setup.sh
+	resources/helm-setup.sh
 
 prepare:
 	resources/prepare.sh

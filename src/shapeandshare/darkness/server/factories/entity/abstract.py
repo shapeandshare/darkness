@@ -8,7 +8,6 @@ from pydantic import BaseModel
 from ....sdk.contracts.dtos.entities.entity import Entity
 from ....sdk.contracts.dtos.tiles.address import Address
 from ....sdk.contracts.dtos.tiles.tile import Tile
-from ....sdk.contracts.errors.server.factory import FactoryError
 from ....sdk.contracts.types.entity import EntityType
 from ....sdk.contracts.types.tile import TileType
 from ...clients.dao import DaoClient
@@ -33,7 +32,8 @@ class AbstractEntityFactory(BaseModel):
 
         if len(local_tile.ids) > 0:
             msg: str = f"entity generation can not occur on a tile with pre-existing entities, {address}"
-            raise FactoryError(msg)
+            logger.warning(msg)
+            return
 
         # Review types now
         if local_tile.tile_type == TileType.GRASS:
