@@ -11,7 +11,8 @@ class ContextManager:
     # Application Level Services
     client: StateClient | None = None
 
-    def __init__(self):
+    @staticmethod
+    def deferred_init():
         if ContextManager.client is None:
             ContextManager.client = StateClient()
             logger.debug("[ContextManager] assigned new state client to context manager")

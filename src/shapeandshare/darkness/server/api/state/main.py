@@ -6,6 +6,8 @@ import uvicorn
 from fastapi import FastAPI
 
 from ..common.routers import metrics
+from .context import ContextManager
+from .routers import world, worlds
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
@@ -27,9 +29,7 @@ def main(
     os.environ["DARKNESS_MONGODB_HOST"] = mongodb_hostname
     os.environ["DARKNESS_MONGODB_PORT"] = str(mongodb_port)
     os.environ["DARKNESS_MONGODB_DATABASE"] = mongodb_database
-
-    # these much import after the above env vars are set
-    from .routers import world, worlds
+    ContextManager.deferred_init()
 
     logger.info("[Main] starting")
     app = FastAPI()

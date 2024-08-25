@@ -18,7 +18,7 @@ from ..sdk.contracts.types.tile import TileType
 from .commands.chunk.create import ChunkCreateCommand
 from .commands.chunk.delete import ChunkDeleteCommand
 from .commands.chunk.get import ChunkGetCommand
-from .commands.chunk.post import ChunkQuantumCommand
+from .commands.chunk.quantum import ChunkQuantumCommand
 from .commands.metrics.health.get import HealthGetCommand
 from .commands.world.create import WorldCreateCommand
 from .commands.world.delete import WorldDeleteCommand

@@ -35,7 +35,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-dependencies = ["fastapi", "fastapi-utilities", "pydantic", "uvicorn", "requests", "click", "pymongo"]
+dependencies = ["fastapi", "fastapi-utils[all]", "typing_inspect", "pydantic", "uvicorn", "requests", "click", "pymongo"]
 
 
 [project.scripts]

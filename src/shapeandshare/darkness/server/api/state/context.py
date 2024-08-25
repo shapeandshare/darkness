@@ -15,7 +15,8 @@ class ContextManager:
     # Application Level Services
     state_service: StateService | None = None
 
-    def __init__(self):
+    @staticmethod
+    def deferred_init():
         if ContextManager.state_service is None:
             daoclient: DaoClient = DaoClient(database=get_mongodb())
 

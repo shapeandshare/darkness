@@ -201,7 +201,8 @@ async def chunk_quantum(world_id: str, chunk_id: str, request: ChunkQuantumReque
             await ContextManager.state_service.chunk_quantum_entity(request=chunk_request)
         elif request.scope == ChunkQuantumType.TILE:
             await ContextManager.state_service.chunk_quantum_tile(request=chunk_request)
-        raise Exception("Unknown scope")
+        else:
+            raise Exception("Unknown scope")
     except DaoConflictError as error:
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error

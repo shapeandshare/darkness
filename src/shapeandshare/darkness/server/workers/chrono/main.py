@@ -1,14 +1,28 @@
 import logging
 import os
+from contextlib import asynccontextmanager
 
 import click
 import uvicorn
 from fastapi import FastAPI
+from typing_extensions import AsyncIterator
 
 from ...api.common.routers import metrics
+from .context import ContextManager
+from .routers import chrono
+from .routers.chrono import world_chrono
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
+
+
+# pylint: disable=unused-argument
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[FastAPI]:
+    logger.debug("Starting lifespan")
+    await world_chrono()
+    yield
+    logger.debug("Ending lifespan")
 
 
 # pylint: disable=too-many-arguments,no-value-for-parameter
@@ -45,12 +59,10 @@ def main(
     os.environ["DARKNESS_SERVICE_SLEEP_TIME"] = str(darkness_sleep_time)
     os.environ["DARKNESS_SERVICE_RETRY_COUNT"] = str(darkness_retries)
     os.environ["DARKNESS_SERVICE_TIMEOUT"] = str(darkness_timeout)
-
-    # this must import after the above environment variables have been declared.
-    from .routers import chrono
+    ContextManager.deferred_init()
 
     logger.info("[Main] starting")
-    app = FastAPI()
+    app = FastAPI(lifespan=lifespan)
 
     logger.debug("[Main] adding metrics routes")
     app.include_router(metrics.router)
@@ -59,7 +71,6 @@ def main(
     app.include_router(chrono.router)
 
     uvicorn.run(app, host=hostname, port=port, log_level=logging.getLevelName(log_level))
-    logger.info("[Main] online")
 
 
 if __name__ == "__main__":

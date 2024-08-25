@@ -4,6 +4,7 @@ import traceback
 from asyncio import Queue
 
 from fastapi import APIRouter, HTTPException
+from fastapi_utils.tasks import repeat_every
 
 from ..... import ChunkQuantumType
 from .....sdk.contracts.dtos.tiles.world import World
@@ -20,7 +21,13 @@ router: APIRouter = APIRouter(
 )
 
 
+@repeat_every(seconds=2)
 async def world_chrono():
+    logger.debug("world chrono process executing")
+    if ContextManager.client is None:
+        logger.warning("Chrono client is not yet initialized")
+        return
+
     async def producer_chunk(queue: Queue):
         worlds: list[World] = await ContextManager.client.worlds_get()
         for world in worlds:

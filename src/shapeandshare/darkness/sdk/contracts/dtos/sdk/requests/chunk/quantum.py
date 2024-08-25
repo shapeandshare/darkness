@@ -3,6 +3,6 @@ from .chunk import ChunkRequest
 
 
 class ChunkQuantumRequest(ChunkRequest):
-    world_id: str | None
-    chunk_id: str | None
+    world_id: str | None = None
+    chunk_id: str | None = None
     scope: ChunkQuantumType
