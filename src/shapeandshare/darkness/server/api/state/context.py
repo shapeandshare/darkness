@@ -22,7 +22,7 @@ class ContextManager:
 
             world_factory = WorldFactory(daoclient=daoclient)
             entity_factory = EntityFactory(daoclient=daoclient)
-            flatchunk_factory = FlatChunkFactory(daoclient=daoclient)
+            flatchunk_factory = FlatChunkFactory(daoclient=daoclient, entity_factory=entity_factory)
 
             ContextManager.state_service = StateService(
                 daoclient=daoclient,

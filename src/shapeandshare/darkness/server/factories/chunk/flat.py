@@ -111,10 +111,6 @@ class FlatChunkFactory(AbstractChunkFactory):
         # Apply our terrain generation
         await self.terrain_generate(address=address_chunk, chunk=chunk)
 
-        # # Apply a quantum time
-        # chunk_address: Address = Address(world_id=world_id, chunk_id=chunk.id)
-        # await self.quantum(address=chunk_address)
-
         # get final state and return
         return await self.daoclient.get(address=address_chunk)
 
