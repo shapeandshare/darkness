@@ -19,12 +19,14 @@ from ....sdk.contracts.types.connection import TileConnectionType
 from ....sdk.contracts.types.dao_document import DaoDocumentType
 from ....sdk.contracts.types.tile import TileType
 from ...clients.dao import DaoClient
+from ..entity.entity import EntityFactory
 
 logger = logging.getLogger()
 
 
 class AbstractChunkFactory(BaseModel):
     daoclient: DaoClient
+    entity_factory: EntityFactory
 
     class Config:
         arbitrary_types_allowed = True
@@ -40,16 +42,23 @@ class AbstractChunkFactory(BaseModel):
 
     async def mutate_tile(self, address: Address, mutate: float, tile_type: TileType) -> None:
         if secrets.randbelow(100) <= mutate:
-            # then we spawn the tile type
-            await self.daoclient.patch(address=address, document={"tile_type": tile_type})
+            target_tile: Tile = await self.daoclient.get(address=address)
+            await self.convert_tile(address=address, source=target_tile.tile_type, target=tile_type)
 
     async def convert_tile(self, address: Address, source: TileType, target: TileType) -> None:
         # get
         target_tile: Tile = await self.daoclient.get(address=address)
         # check
         if target_tile.tile_type == source:
+            for child_id in target_tile.ids:
+                await self.daoclient.delete(
+                    address=Address.model_validate({**address.model_dump(), "entity_id": child_id})
+                )
             # update
-            await self.daoclient.patch(address=address, document={"tile_type": target})
+            await self.daoclient.patch(address=address, document={"tile_type": target, "ids": []})
+
+            # repopulate entities
+            await self.entity_factory.generate(address=address)
 
     async def adjecent_liquids(self, address: Address) -> list[TileType]:
         return await self.adjecent_to(address=address, types=[TileType.OCEAN, TileType.WATER])
@@ -77,9 +86,16 @@ class AbstractChunkFactory(BaseModel):
         target_tile: Tile = await self.daoclient.get(address=address)
         # dirt -> grass
         if target_tile.tile_type == TileType.DIRT:
+            # await self.adjecent_to(address=address, types=[TileType.GRASS, TileType.WATER])
+
             adjecent_liquids: list[TileType] = await self.adjecent_liquids(address=address)
-            if TileType.WATER in adjecent_liquids and TileType.OCEAN not in adjecent_liquids:
-                await self.daoclient.patch(address=address, document={"tile_type": TileType.GRASS})
+            if TileType.OCEAN not in adjecent_liquids:
+                if TileType.WATER in adjecent_liquids:
+                    await self.convert_tile(address=address, source=target_tile.tile_type, target=TileType.GRASS)
+                else:
+                    adjecent_flora: list[TileType] = await self.adjecent_to(address=address, types=[TileType.FOREST])
+                    if len(adjecent_flora) > 0:
+                        await self.convert_tile(address=address, source=target_tile.tile_type, target=TileType.GRASS)
 
         # grass+water (no dirt/ocean) -> forest
         if target_tile.tile_type == TileType.GRASS:
@@ -93,8 +109,7 @@ class AbstractChunkFactory(BaseModel):
                 return
 
             if len(neighbors) > 1:
-                # next to more than one kind (grass/water)
-                await self.daoclient.patch(address=address, document={"tile_type": TileType.FOREST})
+                await self.convert_tile(address=address, source=target_tile.tile_type, target=TileType.FOREST)
 
         # TODO: grass+(dirt)
 
@@ -124,7 +139,8 @@ class AbstractChunkFactory(BaseModel):
             # Apply erosion - rocks and be left by oceans, everything else becomes shore
             if TileType.OCEAN in adjecent_liquids:
                 if target_tile.tile_type not in (TileType.ROCK, TileType.SHORE):
-                    await self.daoclient.patch(address=address, document={"tile_type": TileType.SHORE})
+                    # await self.daoclient.patch(address=address, document={"tile_type": TileType.SHORE})
+                    await self.convert_tile(address=address, source=target_tile.tile_type, target=TileType.SHORE)
 
     async def gen_geo_bind(self, address: Address, conn_dir: TileConnectionType, target_tile_id: str) -> None:
         # TODO: move to native mongodb to make this efficient ..
