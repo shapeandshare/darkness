@@ -2,9 +2,9 @@ import uuid
 
 from pydantic import BaseModel
 
-from ....client.dao import DaoClient
 from ....sdk.contracts.dtos.tiles.address import Address
 from ....sdk.contracts.dtos.tiles.world import World
+from ...clients.dao import DaoClient
 
 
 class WorldFactory(BaseModel):

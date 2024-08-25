@@ -1,8 +1,8 @@
 import logging
 import sys
 
-from ....client.dao import DaoClient, get_mongodb
 from ....sdk.contracts.errors.server.service import ServiceError
+from ...clients.dao import DaoClient, get_mongodb
 from ...factories.chunk.flat import FlatChunkFactory
 from ...factories.entity.entity import EntityFactory
 from ...factories.world.world import WorldFactory
