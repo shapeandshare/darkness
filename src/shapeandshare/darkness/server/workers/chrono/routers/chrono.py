@@ -1,5 +1,7 @@
+import asyncio
 import logging
 import traceback
+from asyncio import Queue
 from http.client import HTTPException
 
 from fastapi import APIRouter
@@ -19,10 +21,26 @@ router: APIRouter = APIRouter(
 
 
 async def world_chrono():
-    worlds: list[World] = await ContextManager.client.worlds_get()
-    for world in worlds:
-        for chunk_id in world.ids:
-            await ContextManager.client.chunk_quantum(world_id=world.id, chunk_id=chunk_id)
+    async def producer_chunk(queue: Queue):
+        worlds: list[World] = await ContextManager.client.worlds_get()
+        for world in worlds:
+            for chunk_id in world.ids:
+                await queue.put({"world_id": world.id, "chunk_id": chunk_id})
+
+    async def step_one():
+        async def consumer(queue: Queue):
+            while not queue.empty():
+                address_dict: dict = await queue.get()
+                await ContextManager.client.chunk_quantum(world_id=address_dict["world_id"], chunk_id=address_dict["chunk_id"])
+                queue.task_done()
+
+        async def process():
+            queue = asyncio.Queue()
+            await asyncio.gather(producer_chunk(queue), consumer(queue))
+
+        await process()
+
+    await step_one()
 
 
 @router.post("")
