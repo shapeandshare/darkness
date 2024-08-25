@@ -1,6 +1,7 @@
 # Application Dependnecies
 fastapi
-fastapi-utilities
+fastapi-utils[all]
+typing_inspect
 pydantic>=2
 uvicorn
 requests

@@ -2,6 +2,7 @@ from ..sdk.contracts.dtos.sdk.command_options import CommandOptions
 from ..sdk.contracts.dtos.sdk.requests.chunk.chunk import ChunkRequest
 from ..sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
 from ..sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
+from ..sdk.contracts.dtos.sdk.requests.chunk.quantum import ChunkQuantumRequest
 from ..sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
 from ..sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
 from ..sdk.contracts.dtos.sdk.requests.world.world import WorldRequest
@@ -12,11 +13,12 @@ from ..sdk.contracts.dtos.sdk.responses.world.get import WorldGetResponse
 from ..sdk.contracts.dtos.sdk.responses.worlds.get import WorldsGetResponse
 from ..sdk.contracts.dtos.tiles.chunk import Chunk
 from ..sdk.contracts.dtos.tiles.world import World
+from ..sdk.contracts.types.chunk_quantum import ChunkQuantumType
 from ..sdk.contracts.types.tile import TileType
 from .commands.chunk.create import ChunkCreateCommand
 from .commands.chunk.delete import ChunkDeleteCommand
 from .commands.chunk.get import ChunkGetCommand
-from .commands.chunk.post import ChunkQuantumCommand
+from .commands.chunk.quantum import ChunkQuantumCommand
 from .commands.metrics.health.get import HealthGetCommand
 from .commands.world.create import WorldCreateCommand
 from .commands.world.delete import WorldDeleteCommand
@@ -96,8 +98,8 @@ class StateClient:
         request: ChunkRequest = ChunkRequest(world_id=world_id, chunk_id=chunk_id)
         await self.chunk_delete_command.execute(request=request)
 
-    async def chunk_quantum(self, world_id: str, chunk_id: str) -> None:
-        request: ChunkRequest = ChunkRequest(world_id=world_id, chunk_id=chunk_id)
+    async def chunk_quantum(self, world_id: str, chunk_id: str, scope: ChunkQuantumType) -> None:
+        request: ChunkQuantumRequest = ChunkQuantumRequest(world_id=world_id, chunk_id=chunk_id, scope=scope)
         await self.chunk_quantum_command.execute(request=request)
 
     # world

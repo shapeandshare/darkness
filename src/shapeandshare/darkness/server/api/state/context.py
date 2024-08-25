@@ -1,8 +1,8 @@
 import logging
 import sys
 
-from ....client.dao import DaoClient, get_mongodb
 from ....sdk.contracts.errors.server.service import ServiceError
+from ...clients.dao import DaoClient, get_mongodb
 from ...factories.chunk.flat import FlatChunkFactory
 from ...factories.entity.entity import EntityFactory
 from ...factories.world.world import WorldFactory
@@ -15,11 +15,10 @@ class ContextManager:
     # Application Level Services
     state_service: StateService | None = None
 
-    def __init__(self):
+    @staticmethod
+    def deferred_init():
         if ContextManager.state_service is None:
-            daoclient: DaoClient = DaoClient(
-                database=get_mongodb(hostname="127.0.0.1", port=27017, database="darkness")
-            )
+            daoclient: DaoClient = DaoClient(database=get_mongodb())
 
             world_factory = WorldFactory(daoclient=daoclient)
             entity_factory = EntityFactory(daoclient=daoclient)
