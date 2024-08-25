@@ -1,8 +1,10 @@
 # Application Dependnecies
 fastapi
+fastapi-utilities
 pydantic>=2
 uvicorn
 requests
 click
 #pyinstrument
 pymongo[srv]
+# apscheduler

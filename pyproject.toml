@@ -22,7 +22,7 @@ where = ["src"]  # list of folders that contain the packages (["."] by default)
 
 [project]
 name = "shapeandshare.darkness"
-version = "0.4.2"
+version = "0.4.3"
 authors = [
   { name="Joshua C. Burt", email="joshburt@shapeandshare.com" },
 ]
@@ -35,7 +35,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-dependencies = ["fastapi", "pydantic", "uvicorn", "requests", "click", "pymongo[srv]"]
+dependencies = ["fastapi", "fastapi-utilities", "pydantic", "uvicorn", "requests", "click", "pymongo"]
 
 
 [project.scripts]

@@ -26,7 +26,9 @@ class EntityFactory(AbstractEntityFactory):
 
         await step_one()
 
-    async def quantum(self, address: Address, chunk: Chunk):
+    async def quantum(self, address: Address):
+        chunk: Chunk = await self.daoclient.get(address=address)
+
         # Entity Factory Quantum
         async def step_six():
             async def consumer(queue: Queue):

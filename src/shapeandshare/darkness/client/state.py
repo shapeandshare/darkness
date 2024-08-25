@@ -1,10 +1,10 @@
 from ..sdk.contracts.dtos.sdk.command_options import CommandOptions
+from ..sdk.contracts.dtos.sdk.requests.chunk.chunk import ChunkRequest
 from ..sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
-from ..sdk.contracts.dtos.sdk.requests.chunk.delete import ChunkDeleteRequest
 from ..sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
 from ..sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
-from ..sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
 from ..sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
+from ..sdk.contracts.dtos.sdk.requests.world.world import WorldRequest
 from ..sdk.contracts.dtos.sdk.responses.chunk.create import ChunkCreateResponse
 from ..sdk.contracts.dtos.sdk.responses.chunk.get import ChunkGetResponse
 from ..sdk.contracts.dtos.sdk.responses.world.create import WorldCreateResponse
@@ -16,6 +16,7 @@ from ..sdk.contracts.types.tile import TileType
 from .commands.chunk.create import ChunkCreateCommand
 from .commands.chunk.delete import ChunkDeleteCommand
 from .commands.chunk.get import ChunkGetCommand
+from .commands.chunk.post import ChunkQuantumCommand
 from .commands.metrics.health.get import HealthGetCommand
 from .commands.world.create import WorldCreateCommand
 from .commands.world.delete import WorldDeleteCommand
@@ -31,6 +32,7 @@ class StateClient:
     chunk_create_command: ChunkCreateCommand
     chunk_delete_command: ChunkDeleteCommand
     chunk_get_command: ChunkGetCommand
+    chunk_quantum_command: ChunkQuantumCommand
 
     # world
     world_create_command: WorldCreateCommand
@@ -52,6 +54,7 @@ class StateClient:
         self.chunk_create_command = ChunkCreateCommand.model_validate(command_dict)
         self.chunk_delete_command = ChunkDeleteCommand.model_validate(command_dict)
         self.chunk_get_command = ChunkGetCommand.model_validate(command_dict)
+        self.chunk_quantum_command = ChunkQuantumCommand.model_validate(command_dict)
 
         # world
         self.world_create_command = WorldCreateCommand.model_validate(command_dict)
@@ -90,8 +93,12 @@ class StateClient:
         return response.chunk
 
     async def chunk_delete(self, world_id: str, chunk_id: str) -> None:
-        request: ChunkDeleteRequest = ChunkDeleteRequest(world_id=world_id, chunk_id=chunk_id)
+        request: ChunkRequest = ChunkRequest(world_id=world_id, chunk_id=chunk_id)
         await self.chunk_delete_command.execute(request=request)
+
+    async def chunk_quantum(self, world_id: str, chunk_id: str) -> None:
+        request: ChunkRequest = ChunkRequest(world_id=world_id, chunk_id=chunk_id)
+        await self.chunk_quantum_command.execute(request=request)
 
     # world
 
@@ -101,7 +108,7 @@ class StateClient:
         return response.id
 
     async def world_delete(self, world_id: str) -> None:
-        request: WorldDeleteRequest = WorldDeleteRequest(world_id=world_id)
+        request: WorldRequest = WorldRequest(world_id=world_id)
         await self.world_delete_command.execute(request=request)
 
     async def world_get(self, world_id: str, full: bool) -> World:

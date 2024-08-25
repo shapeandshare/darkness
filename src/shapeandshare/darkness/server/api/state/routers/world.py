@@ -3,12 +3,12 @@ import traceback
 
 from fastapi import APIRouter, HTTPException
 
+from .....sdk.contracts.dtos.sdk.requests.chunk.chunk import ChunkRequest
 from .....sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
-from .....sdk.contracts.dtos.sdk.requests.chunk.delete import ChunkDeleteRequest
 from .....sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
 from .....sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
-from .....sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
 from .....sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
+from .....sdk.contracts.dtos.sdk.requests.world.world import WorldRequest
 from .....sdk.contracts.dtos.sdk.responses.chunk.create import ChunkCreateResponse
 from .....sdk.contracts.dtos.sdk.responses.chunk.get import ChunkGetResponse
 from .....sdk.contracts.dtos.sdk.responses.response import Response
@@ -66,7 +66,7 @@ async def world_get(world_id: str, full: bool = False) -> Response[WorldGetRespo
 
 @router.delete("/{world_id}")
 async def world_delete(world_id: str) -> None:
-    request: WorldDeleteRequest = WorldDeleteRequest(id=world_id)
+    request: WorldRequest = WorldRequest(id=world_id)
 
     try:
         await ContextManager.state_service.world_delete(request=request)
@@ -170,7 +170,7 @@ async def chunk_get(world_id: str, chunk_id: str, full: bool = True) -> Response
 
 @router.delete("/{world_id}/chunk/{chunk_id}")
 async def chunk_delete(world_id: str, chunk_id: str) -> None:
-    request: ChunkDeleteRequest = ChunkDeleteRequest(world_id=world_id, chunk_id=chunk_id)
+    request: ChunkRequest = ChunkRequest(world_id=world_id, chunk_id=chunk_id)
     try:
         await ContextManager.state_service.chunk_delete(request=request)
     except DaoConflictError as error:
@@ -187,3 +187,9 @@ async def chunk_delete(world_id: str, chunk_id: str) -> None:
         logger.error(str(error))
         # catch everything else
         raise HTTPException(status_code=500, detail=f"Uncaught exception: {str(error)}") from error
+
+
+@router.post("/{world_id}/chunk/{chunk_id}")
+async def chunk_quantum(world_id: str, chunk_id: str) -> None:
+    request: ChunkRequest = ChunkRequest(world_id=world_id, chunk_id=chunk_id)
+    await ContextManager.state_service.chunk_quantum(request=request)
