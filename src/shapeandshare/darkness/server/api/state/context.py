@@ -17,9 +17,7 @@ class ContextManager:
 
     def __init__(self):
         if ContextManager.state_service is None:
-            daoclient: DaoClient = DaoClient(
-                database=get_mongodb(hostname="127.0.0.1", port=27017, database="darkness")
-            )
+            daoclient: DaoClient = DaoClient(database=get_mongodb())
 
             world_factory = WorldFactory(daoclient=daoclient)
             entity_factory = EntityFactory(daoclient=daoclient)
