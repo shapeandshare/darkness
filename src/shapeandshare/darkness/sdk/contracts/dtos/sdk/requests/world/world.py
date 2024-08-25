@@ -1,5 +1,5 @@
 from pydantic import BaseModel
 
 
-class WorldDeleteRequest(BaseModel):
+class WorldRequest(BaseModel):
     id: str

@@ -3,12 +3,12 @@ from .client.commands.abstract import AbstractCommand
 from .client.commands.chunk.create import ChunkCreateCommand
 from .client.commands.chunk.delete import ChunkDeleteCommand
 from .client.commands.chunk.get import ChunkGetCommand
+from .client.commands.chunk.quantum import ChunkQuantumCommand
 from .client.commands.metrics.health.get import HealthGetCommand
 from .client.commands.world.create import WorldCreateCommand
 from .client.commands.world.delete import WorldDeleteCommand
 from .client.commands.world.get import WorldGetCommand
 from .client.commands.worlds.get import WorldsGetCommand
-from .client.dao import DaoClient
 from .client.state import StateClient
 from .sdk.common.config.environment import (
     demand_env_var,
@@ -22,12 +22,13 @@ from .sdk.contracts.dtos.entities.abstract import AbstractEntity
 from .sdk.contracts.dtos.entities.entity import Entity
 from .sdk.contracts.dtos.sdk.command_options import CommandOptions
 from .sdk.contracts.dtos.sdk.request_status_codes import RequestStatusCodes
+from .sdk.contracts.dtos.sdk.requests.chunk.chunk import ChunkRequest
 from .sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
-from .sdk.contracts.dtos.sdk.requests.chunk.delete import ChunkDeleteRequest
 from .sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
+from .sdk.contracts.dtos.sdk.requests.chunk.quantum import ChunkQuantumRequest
 from .sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
-from .sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
 from .sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
+from .sdk.contracts.dtos.sdk.requests.world.world import WorldRequest
 from .sdk.contracts.dtos.sdk.responses.chunk.create import ChunkCreateResponse
 from .sdk.contracts.dtos.sdk.responses.chunk.delete import ChunkDeleteResponse
 from .sdk.contracts.dtos.sdk.responses.chunk.get import ChunkGetResponse
@@ -50,6 +51,7 @@ from .sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from .sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
 from .sdk.contracts.errors.server.factory import FactoryError
 from .sdk.contracts.errors.server.service import ServiceError
+from .sdk.contracts.types.chunk_quantum import ChunkQuantumType
 from .sdk.contracts.types.connection import TileConnectionType
 from .sdk.contracts.types.dao_document import DaoDocumentType
 from .sdk.contracts.types.entity import EntityType

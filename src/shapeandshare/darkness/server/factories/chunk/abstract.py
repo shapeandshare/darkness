@@ -9,7 +9,6 @@ from asyncio import Queue
 
 from pydantic import BaseModel
 
-from ....client.dao import DaoClient
 from ....sdk.contracts.dtos.entities.entity import Entity
 from ....sdk.contracts.dtos.tiles.address import Address
 from ....sdk.contracts.dtos.tiles.chunk import Chunk
@@ -19,6 +18,7 @@ from ....sdk.contracts.dtos.window import Window
 from ....sdk.contracts.types.connection import TileConnectionType
 from ....sdk.contracts.types.dao_document import DaoDocumentType
 from ....sdk.contracts.types.tile import TileType
+from ...clients.dao import DaoClient
 
 logger = logging.getLogger()
 

@@ -3,12 +3,13 @@ import traceback
 
 from fastapi import APIRouter, HTTPException
 
+from .....sdk.contracts.dtos.sdk.requests.chunk.chunk import ChunkRequest
 from .....sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
-from .....sdk.contracts.dtos.sdk.requests.chunk.delete import ChunkDeleteRequest
 from .....sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
+from .....sdk.contracts.dtos.sdk.requests.chunk.quantum import ChunkQuantumRequest
 from .....sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
-from .....sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
 from .....sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
+from .....sdk.contracts.dtos.sdk.requests.world.world import WorldRequest
 from .....sdk.contracts.dtos.sdk.responses.chunk.create import ChunkCreateResponse
 from .....sdk.contracts.dtos.sdk.responses.chunk.get import ChunkGetResponse
 from .....sdk.contracts.dtos.sdk.responses.response import Response
@@ -19,6 +20,7 @@ from .....sdk.contracts.dtos.tiles.world import World
 from .....sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from .....sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from .....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
+from .....sdk.contracts.types.chunk_quantum import ChunkQuantumType
 from ..context import ContextManager
 
 # from pyinstrument import Profiler
@@ -66,7 +68,7 @@ async def world_get(world_id: str, full: bool = False) -> Response[WorldGetRespo
 
 @router.delete("/{world_id}")
 async def world_delete(world_id: str) -> None:
-    request: WorldDeleteRequest = WorldDeleteRequest(id=world_id)
+    request: WorldRequest = WorldRequest(id=world_id)
 
     try:
         await ContextManager.state_service.world_delete(request=request)
@@ -170,9 +172,37 @@ async def chunk_get(world_id: str, chunk_id: str, full: bool = True) -> Response
 
 @router.delete("/{world_id}/chunk/{chunk_id}")
 async def chunk_delete(world_id: str, chunk_id: str) -> None:
-    request: ChunkDeleteRequest = ChunkDeleteRequest(world_id=world_id, chunk_id=chunk_id)
+    request: ChunkRequest = ChunkRequest(world_id=world_id, chunk_id=chunk_id)
     try:
         await ContextManager.state_service.chunk_delete(request=request)
+    except DaoConflictError as error:
+        logger.error(str(error))
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    except DaoDoesNotExistError as error:
+        logger.error(str(error))
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except DaoInconsistencyError as error:
+        logger.error(str(error))
+        raise HTTPException(status_code=500, detail=str(error)) from error
+    except Exception as error:
+        traceback.print_exc()
+        logger.error(str(error))
+        # catch everything else
+        raise HTTPException(status_code=500, detail=f"Uncaught exception: {str(error)}") from error
+
+
+@router.post("/{world_id}/chunk/{chunk_id}")
+async def chunk_quantum(world_id: str, chunk_id: str, request: ChunkQuantumRequest) -> None:
+    try:
+        chunk_request: ChunkRequest = ChunkRequest(world_id=world_id, chunk_id=chunk_id)
+        if request.scope == ChunkQuantumType.ALL:
+            await ContextManager.state_service.chunk_quantum(request=chunk_request)
+        elif request.scope == ChunkQuantumType.ENTITY:
+            await ContextManager.state_service.chunk_quantum_entity(request=chunk_request)
+        elif request.scope == ChunkQuantumType.TILE:
+            await ContextManager.state_service.chunk_quantum_tile(request=chunk_request)
+        else:
+            raise Exception("Unknown scope")
     except DaoConflictError as error:
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error

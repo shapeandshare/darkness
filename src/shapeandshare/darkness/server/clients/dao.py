@@ -6,16 +6,20 @@ from pymongo.collection import Collection
 from pymongo.database import Database
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
 
-from ..sdk.common.utils import address_type, get_document_id_from_address
-from ..sdk.contracts.dtos.entities.entity import Entity
-from ..sdk.contracts.dtos.tiles.address import Address
-from ..sdk.contracts.dtos.tiles.chunk import Chunk
-from ..sdk.contracts.dtos.tiles.tile import Tile
-from ..sdk.contracts.dtos.tiles.world import World
-from ..sdk.contracts.types.dao_document import DaoDocumentType
+from ... import demand_env_var, demand_env_var_as_int
+from ...sdk.common.utils import address_type, get_document_id_from_address
+from ...sdk.contracts.dtos.entities.entity import Entity
+from ...sdk.contracts.dtos.tiles.address import Address
+from ...sdk.contracts.dtos.tiles.chunk import Chunk
+from ...sdk.contracts.dtos.tiles.tile import Tile
+from ...sdk.contracts.dtos.tiles.world import World
+from ...sdk.contracts.types.dao_document import DaoDocumentType
 
 
-def get_mongodb(hostname: str, port: int, database: str) -> Database:
+def get_mongodb() -> Database:
+    hostname: str = demand_env_var(name="DARKNESS_MONGODB_HOST")
+    port: int = demand_env_var_as_int(name="DARKNESS_MONGODB_PORT")
+    database: str = demand_env_var(name="DARKNESS_MONGODB_DATABASE")
     return MongoClient(hostname, port)[database]
 
 

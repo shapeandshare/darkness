@@ -5,13 +5,13 @@ from asyncio import Queue
 
 from pydantic import BaseModel
 
-from ....client.dao import DaoClient
 from ....sdk.contracts.dtos.entities.entity import Entity
 from ....sdk.contracts.dtos.tiles.address import Address
 from ....sdk.contracts.dtos.tiles.tile import Tile
 from ....sdk.contracts.errors.server.factory import FactoryError
 from ....sdk.contracts.types.entity import EntityType
 from ....sdk.contracts.types.tile import TileType
+from ...clients.dao import DaoClient
 
 logger = logging.getLogger()
 

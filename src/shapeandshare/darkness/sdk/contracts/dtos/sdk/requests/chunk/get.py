@@ -1,9 +1,7 @@
-from pydantic import BaseModel
+from .chunk import ChunkRequest
 
 
-class ChunkGetRequest(BaseModel):
-    world_id: str
-    chunk_id: str
+class ChunkGetRequest(ChunkRequest):
 
     # Used by command sdk
     full: bool | None = None
