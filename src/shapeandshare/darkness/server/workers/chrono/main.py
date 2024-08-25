@@ -6,7 +6,6 @@ import uvicorn
 from fastapi import FastAPI
 
 from ...api.common.routers import metrics
-from .routers import chrono
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
@@ -18,7 +17,7 @@ logger = logging.getLogger()
 @click.option("--port", type=click.INT, default=9000, help="port to bind to")
 @click.option("--log-level", type=click.STRING, default="INFO", help="log level (INFO, DEBUG, WARNING, ERROR, FATAL)")
 @click.option("--darkness-hostname", type=click.STRING, default="0.0.0.0", help="state api address to connect to")
-@click.option("--darkness-port", type=click.INT, default=9000, help="state api port to connect to")
+@click.option("--darkness-port", type=click.INT, default=8000, help="state api port to connect to")
 @click.option("--darkness-sleep-time", type=click.FLOAT, default=1.0, help="state api call sleep time (seconds)")
 @click.option("--darkness-timeout", type=click.FLOAT, default=5.0, help="state api call timeout (seconds)")
 @click.option("--darkness-retries", type=click.INT, default=5, help="state api call retries (integer)")
@@ -46,6 +45,9 @@ def main(
     os.environ["DARKNESS_SERVICE_SLEEP_TIME"] = str(darkness_sleep_time)
     os.environ["DARKNESS_SERVICE_RETRY_COUNT"] = str(darkness_retries)
     os.environ["DARKNESS_SERVICE_TIMEOUT"] = str(darkness_timeout)
+
+    # this must import after the above environment variables have been declared.
+    from .routers import chrono
 
     logger.info("[Main] starting")
     app = FastAPI()

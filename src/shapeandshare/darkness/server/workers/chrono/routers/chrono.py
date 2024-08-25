@@ -36,11 +36,8 @@ async def world_chrono():
                 )
                 queue.task_done()
 
-        async def process():
-            queue = asyncio.Queue()
-            await asyncio.gather(producer_chunk(queue), consumer(queue))
-
-        await process()
+        queue = asyncio.Queue()
+        await asyncio.gather(producer_chunk(queue), consumer(queue))
 
     await step_one()
 
