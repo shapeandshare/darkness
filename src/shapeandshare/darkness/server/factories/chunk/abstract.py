@@ -59,10 +59,10 @@ class AbstractChunkFactory(BaseModel):
                 # update doc_patch
                 doc_patch["ids"] = []
 
-                # repopulate entities
-                await self.entity_factory.generate(address=address)
-
             await self.daoclient.patch(address=address, document=doc_patch)
+
+            # repopulate entities
+            await self.entity_factory.generate(address=address)
 
     async def adjecent_liquids(self, address: Address) -> list[TileType]:
         return await self.adjecent_to(address=address, types=[TileType.OCEAN, TileType.WATER])
@@ -97,7 +97,7 @@ class AbstractChunkFactory(BaseModel):
                 if TileType.FOREST in adjecent_flora:
                     await self.mutate_tile(address=address, mutate=1, tile_type=TileType.GRASS)
                 elif len(adjecent_flora) > 0:
-                    await self.mutate_tile(address=address, mutate=0.5, tile_type=TileType.GRASS)
+                    await self.mutate_tile(address=address, mutate=0.05, tile_type=TileType.GRASS)
 
     async def _grow_grass_tile(self, address: Address) -> None:
         neighbors: list[TileType] = await self.adjecent_to(
