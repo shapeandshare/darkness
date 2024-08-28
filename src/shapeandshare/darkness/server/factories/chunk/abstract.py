@@ -45,20 +45,24 @@ class AbstractChunkFactory(BaseModel):
             target_tile: Tile = await self.daoclient.get(address=address)
             await self.convert_tile(address=address, source=target_tile.tile_type, target=tile_type)
 
-    async def convert_tile(self, address: Address, source: TileType, target: TileType) -> None:
+    async def convert_tile(self, address: Address, source: TileType, target: TileType, clear_entities: bool = False) -> None:
         # get
         target_tile: Tile = await self.daoclient.get(address=address)
         # check
         if target_tile.tile_type == source:
-            for child_id in target_tile.ids:
-                await self.daoclient.delete(
-                    address=Address.model_validate({**address.model_dump(), "entity_id": child_id})
-                )
-            # update
-            await self.daoclient.patch(address=address, document={"tile_type": target, "ids": []})
+            doc_patch: dict = {"tile_type": target}
+            if clear_entities:
+                for child_id in target_tile.ids:
+                    await self.daoclient.delete(
+                        address=Address.model_validate({**address.model_dump(), "entity_id": child_id})
+                    )
+                # update doc_patch
+                doc_patch["ids"] = []
 
-            # repopulate entities
-            await self.entity_factory.generate(address=address)
+                # repopulate entities
+                await self.entity_factory.generate(address=address)
+
+            await self.daoclient.patch(address=address, document=doc_patch)
 
     async def adjecent_liquids(self, address: Address) -> list[TileType]:
         return await self.adjecent_to(address=address, types=[TileType.OCEAN, TileType.WATER])
@@ -81,37 +85,43 @@ class AbstractChunkFactory(BaseModel):
 
         return list(set(adjecent_targets))
 
+    async def _grow_dirt_tile(self, address: Address) -> None:
+        adjecent_liquids: list[TileType] = await self.adjecent_liquids(address=address)
+
+        # grass does not grow by the ocean
+        if TileType.OCEAN not in adjecent_liquids:
+            if TileType.WATER in adjecent_liquids:
+                await self.mutate_tile(address=address, mutate=1, tile_type=TileType.GRASS)
+            else:
+                adjecent_flora: list[TileType] = await self.adjecent_to(address=address, types=[TileType.FOREST, TileType.GRASS])
+                if TileType.FOREST in adjecent_flora:
+                    await self.mutate_tile(address=address, mutate=1, tile_type=TileType.GRASS)
+                elif len(adjecent_flora) > 0:
+                    await self.mutate_tile(address=address, mutate=0.5, tile_type=TileType.GRASS)
+
+    async def _grow_grass_tile(self, address: Address) -> None:
+        neighbors: list[TileType] = await self.adjecent_to(
+            address=address, types=[TileType.WATER, TileType.GRASS, TileType.FOREST, TileType.OCEAN]
+        )
+
+        # no forests grow by oceans
+        if TileType.OCEAN in neighbors:
+            return
+
+        if len(neighbors) > 1:
+            await self.mutate_tile(address=address, mutate=1, tile_type=TileType.FOREST)
+
     async def grow_tile(self, address: Address) -> None:
         # get
         target_tile: Tile = await self.daoclient.get(address=address)
+
         # dirt -> grass
         if target_tile.tile_type == TileType.DIRT:
-            # await self.adjecent_to(address=address, types=[TileType.GRASS, TileType.WATER])
-
-            adjecent_liquids: list[TileType] = await self.adjecent_liquids(address=address)
-            if TileType.OCEAN not in adjecent_liquids:
-                if TileType.WATER in adjecent_liquids:
-                    await self.convert_tile(address=address, source=target_tile.tile_type, target=TileType.GRASS)
-                else:
-                    adjecent_flora: list[TileType] = await self.adjecent_to(address=address, types=[TileType.FOREST])
-                    if len(adjecent_flora) > 0:
-                        await self.convert_tile(address=address, source=target_tile.tile_type, target=TileType.GRASS)
+            await self._grow_dirt_tile(address=address)
 
         # grass+water (no dirt/ocean) -> forest
         if target_tile.tile_type == TileType.GRASS:
-            neighbors: list[TileType] = await self.adjecent_to(
-                address=address,
-                types=[TileType.WATER, TileType.GRASS, TileType.OCEAN],
-            )
-
-            # no forests grow by oceans
-            if TileType.OCEAN in neighbors:
-                return
-
-            if len(neighbors) > 1:
-                await self.convert_tile(address=address, source=target_tile.tile_type, target=TileType.FOREST)
-
-        # TODO: grass+(dirt)
+            await self._grow_grass_tile(address=address)
 
     async def brackish_tile(self, address: Address) -> None:
         # Convert inner Ocean to Water Tiles
