@@ -41,7 +41,8 @@ class AbstractChunkFactory(BaseModel):
         """ """
 
     async def mutate_tile(self, address: Address, mutate: float, tile_type: TileType) -> None:
-        if secrets.randbelow(100) <= mutate:
+        # 64x64=4096
+        if secrets.randbelow(4000) <= mutate:
             target_tile: Tile = await self.daoclient.get(address=address)
             await self.convert_tile(address=address, source=target_tile.tile_type, target=tile_type)
 
@@ -91,13 +92,13 @@ class AbstractChunkFactory(BaseModel):
         # grass does not grow by the ocean
         if TileType.OCEAN not in adjecent_liquids:
             if TileType.WATER in adjecent_liquids:
-                await self.mutate_tile(address=address, mutate=1, tile_type=TileType.GRASS)
+                await self.mutate_tile(address=address, mutate=40, tile_type=TileType.GRASS)
             else:
                 adjecent_flora: list[TileType] = await self.adjecent_to(address=address, types=[TileType.FOREST, TileType.GRASS])
                 if TileType.FOREST in adjecent_flora:
-                    await self.mutate_tile(address=address, mutate=1, tile_type=TileType.GRASS)
+                    await self.mutate_tile(address=address, mutate=20, tile_type=TileType.GRASS)
                 elif len(adjecent_flora) > 0:
-                    await self.mutate_tile(address=address, mutate=0.05, tile_type=TileType.GRASS)
+                    await self.mutate_tile(address=address, mutate=5, tile_type=TileType.GRASS)
 
     async def _grow_grass_tile(self, address: Address) -> None:
         neighbors: list[TileType] = await self.adjecent_to(
@@ -109,9 +110,9 @@ class AbstractChunkFactory(BaseModel):
             return
 
         if len(neighbors) > 1:
-            await self.mutate_tile(address=address, mutate=1, tile_type=TileType.FOREST)
+            await self.mutate_tile(address=address, mutate=5, tile_type=TileType.FOREST)
 
-    async def grow_tile(self, address: Address) -> None:
+    async def tile_grow(self, address: Address) -> None:
         # get
         target_tile: Tile = await self.daoclient.get(address=address)
 
@@ -122,6 +123,18 @@ class AbstractChunkFactory(BaseModel):
         # grass+water (no dirt/ocean) -> forest
         if target_tile.tile_type == TileType.GRASS:
             await self._grow_grass_tile(address=address)
+
+    async def tile_senescence(self, address: Address) -> None:
+        # get
+        target_tile: Tile = await self.daoclient.get(address=address)
+
+        ##
+        if len(target_tile.ids)<1:
+            # then we don't have any entities, downgrade as appropriate
+            if target_tile.tile_type == TileType.GRASS:
+                await self.mutate_tile(address=address, mutate=4000, tile_type=TileType.DIRT)
+            elif target_tile.tile_type == TileType.FOREST:
+                await self.mutate_tile(address=address, mutate=4000, tile_type=TileType.GRASS)
 
     async def brackish_tile(self, address: Address) -> None:
         # Convert inner Ocean to Water Tiles
