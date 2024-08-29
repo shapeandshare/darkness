@@ -46,7 +46,9 @@ class AbstractChunkFactory(BaseModel):
             target_tile: Tile = await self.daoclient.get(address=address)
             await self.convert_tile(address=address, source=target_tile.tile_type, target=tile_type)
 
-    async def convert_tile(self, address: Address, source: TileType, target: TileType, clear_entities: bool = False) -> None:
+    async def convert_tile(
+        self, address: Address, source: TileType, target: TileType, clear_entities: bool = False
+    ) -> None:
         # get
         target_tile: Tile = await self.daoclient.get(address=address)
         # check
@@ -94,7 +96,9 @@ class AbstractChunkFactory(BaseModel):
             if TileType.WATER in adjecent_liquids:
                 await self.mutate_tile(address=address, mutate=40, tile_type=TileType.GRASS)
             else:
-                adjecent_flora: list[TileType] = await self.adjecent_to(address=address, types=[TileType.FOREST, TileType.GRASS])
+                adjecent_flora: list[TileType] = await self.adjecent_to(
+                    address=address, types=[TileType.FOREST, TileType.GRASS]
+                )
                 if TileType.FOREST in adjecent_flora:
                     await self.mutate_tile(address=address, mutate=20, tile_type=TileType.GRASS)
                 elif len(adjecent_flora) > 0:
@@ -129,7 +133,7 @@ class AbstractChunkFactory(BaseModel):
         target_tile: Tile = await self.daoclient.get(address=address)
 
         ##
-        if len(target_tile.ids)<1:
+        if len(target_tile.ids) < 1:
             # then we don't have any entities, downgrade as appropriate
             if target_tile.tile_type == TileType.GRASS:
                 await self.mutate_tile(address=address, mutate=4000, tile_type=TileType.DIRT)

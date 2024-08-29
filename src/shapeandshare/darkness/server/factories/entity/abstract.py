@@ -30,10 +30,9 @@ class AbstractEntityFactory(BaseModel):
         # get entities ids for the tile
         local_tile: Tile = await self.daoclient.get(address=address)
 
-        if len(local_tile.ids) > 0:
-            msg: str = f"entity generation can not occur on a tile with pre-existing entities, {address}"
-            logger.warning(msg)
-            return
+        # if len(local_tile.ids) > 0:
+        #     msg: str = f"entity generation can occurring on a tile with pre-existing entities, {address}"
+        #     logger.warning(msg)
 
         # Review types now
         if local_tile.tile_type == TileType.GRASS:
