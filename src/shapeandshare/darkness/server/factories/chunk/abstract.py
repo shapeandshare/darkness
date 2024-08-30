@@ -9,6 +9,7 @@ from asyncio import Queue
 
 from pydantic import BaseModel
 
+from ....sdk.common.utils import generate_random_float
 from ....sdk.contracts.dtos.entities.entity import Entity
 from ....sdk.contracts.dtos.tiles.address import Address
 from ....sdk.contracts.dtos.tiles.chunk import Chunk
@@ -42,7 +43,8 @@ class AbstractChunkFactory(BaseModel):
 
     async def mutate_tile(self, address: Address, mutate: float, tile_type: TileType) -> None:
         # 64x64=4096
-        if secrets.randbelow(4000) <= mutate:
+        if generate_random_float() <= mutate:
+        # if secrets.randbelow(4000) <= mutate:
             target_tile: Tile = await self.daoclient.get(address=address)
             await self.convert_tile(address=address, source=target_tile.tile_type, target=tile_type)
 
@@ -70,6 +72,19 @@ class AbstractChunkFactory(BaseModel):
     async def adjecent_liquids(self, address: Address) -> list[TileType]:
         return await self.adjecent_to(address=address, types=[TileType.OCEAN, TileType.WATER])
 
+    async def adjacents(self, address: Address, depth: int) -> set[Tile]:
+        adjacent_targets: set[Tile] = set()
+        target_tile: Tile = await self.daoclient.get(address=address)
+        if depth <= 0:
+            return set[Tile](target_tile)
+
+        # TODO: use get_multi
+        for adjacent_id in target_tile.ids:
+            new_address: Address = Address.model_validate({**address.model_dump(), "tile_id": adjacent_id})
+            child_adjs: set[Tile] = await self.adjacents(address=new_address, depth=depth - 1)
+            adjacent_targets = adjacent_targets.union(child_adjs)
+        return adjacent_targets
+
     async def adjecent_to(self, address: Address, types: list[TileType] | None) -> list[TileType]:
         adjecent_targets: list[TileType] = []
 
@@ -94,15 +109,21 @@ class AbstractChunkFactory(BaseModel):
         # grass does not grow by the ocean
         if TileType.OCEAN not in adjecent_liquids:
             if TileType.WATER in adjecent_liquids:
-                await self.mutate_tile(address=address, mutate=40, tile_type=TileType.GRASS)
+                await self.mutate_tile(address=address, mutate=0.01, tile_type=TileType.GRASS)
             else:
+                # # grass can not grow 2 tiles beyond a WATER source (0 based indexing)
+                # for adjacent in (await self.adjecents(address=address, depth=1)):
+                #     [for x in adjacent.t]
+                #     raise NotImplementedError("Add this Josh")
+
                 adjecent_flora: list[TileType] = await self.adjecent_to(
                     address=address, types=[TileType.FOREST, TileType.GRASS]
                 )
                 if TileType.FOREST in adjecent_flora:
-                    await self.mutate_tile(address=address, mutate=20, tile_type=TileType.GRASS)
-                elif len(adjecent_flora) > 0:
-                    await self.mutate_tile(address=address, mutate=5, tile_type=TileType.GRASS)
+                    await self.mutate_tile(address=address, mutate=0.005, tile_type=TileType.GRASS)
+
+                # elif len(adjecent_flora) > 0:
+                #     await self.mutate_tile(address=address, mutate=0.00125, tile_type=TileType.GRASS)
 
     async def _grow_grass_tile(self, address: Address) -> None:
         neighbors: list[TileType] = await self.adjecent_to(
@@ -114,7 +135,7 @@ class AbstractChunkFactory(BaseModel):
             return
 
         if len(neighbors) > 1:
-            await self.mutate_tile(address=address, mutate=5, tile_type=TileType.FOREST)
+            await self.mutate_tile(address=address, mutate=0.00125, tile_type=TileType.FOREST)
 
     async def tile_grow(self, address: Address) -> None:
         # get
@@ -136,9 +157,9 @@ class AbstractChunkFactory(BaseModel):
         if len(target_tile.ids) < 1:
             # then we don't have any entities, downgrade as appropriate
             if target_tile.tile_type == TileType.GRASS:
-                await self.mutate_tile(address=address, mutate=4000, tile_type=TileType.DIRT)
+                await self.mutate_tile(address=address, mutate=1, tile_type=TileType.DIRT)
             elif target_tile.tile_type == TileType.FOREST:
-                await self.mutate_tile(address=address, mutate=4000, tile_type=TileType.GRASS)
+                await self.mutate_tile(address=address, mutate=1, tile_type=TileType.GRASS)
 
     async def brackish_tile(self, address: Address) -> None:
         # Convert inner Ocean to Water Tiles

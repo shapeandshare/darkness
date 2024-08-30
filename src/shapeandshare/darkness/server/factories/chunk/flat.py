@@ -25,7 +25,7 @@ class FlatChunkFactory(AbstractChunkFactory):
                     # Mutate tiles to biome default (or dirt)
                     await self.mutate_tile(
                         address=address_tile,
-                        mutate=3750,  # percentage of 100%
+                        mutate=0.9375,  # percentage of 100%
                         tile_type=(chunk.biome if chunk.biome else TileType.DIRT),
                     )
                     queue.task_done()
@@ -43,7 +43,7 @@ class FlatChunkFactory(AbstractChunkFactory):
                     address_tile: Address = Address.model_validate({**address.model_dump(), "tile_id": local_tile_id})
                     await self.mutate_tile(
                         address=address_tile,
-                        mutate=10,  # 0.5% change (very low)
+                        mutate=0.0025,  # 0.5% change (very low)
                         tile_type=TileType.ROCK,
                     )
                     queue.task_done()
