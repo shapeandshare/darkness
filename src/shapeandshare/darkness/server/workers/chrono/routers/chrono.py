@@ -6,11 +6,11 @@ from asyncio import Queue
 from fastapi import APIRouter, HTTPException
 from fastapi_utils.tasks import repeat_every
 
-from ..... import ChunkQuantumType
 from .....sdk.contracts.dtos.tiles.world import World
 from .....sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from .....sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from .....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
+from .....sdk.contracts.types.chunk_quantum import ChunkQuantumType
 from ..context import ContextManager
 
 logger = logging.getLogger()

@@ -42,9 +42,7 @@ class AbstractChunkFactory(BaseModel):
         """ """
 
     async def mutate_tile(self, address: Address, mutate: float, tile_type: TileType) -> None:
-        # 64x64=4096
         if generate_random_float() <= mutate:
-        # if secrets.randbelow(4000) <= mutate:
             target_tile: Tile = await self.daoclient.get(address=address)
             await self.convert_tile(address=address, source=target_tile.tile_type, target=tile_type)
 
@@ -72,17 +70,17 @@ class AbstractChunkFactory(BaseModel):
     async def adjecent_liquids(self, address: Address) -> list[TileType]:
         return await self.adjecent_to(address=address, types=[TileType.OCEAN, TileType.WATER])
 
-    async def adjacents(self, address: Address, depth: int) -> set[Tile]:
-        adjacent_targets: set[Tile] = set()
+    async def adjacents(self, address: Address, depth: int) -> list[Tile]:
+        adjacent_targets: list[Tile] = []
         target_tile: Tile = await self.daoclient.get(address=address)
         if depth <= 0:
-            return set[Tile](target_tile)
+            return [target_tile]
 
         # TODO: use get_multi
         for adjacent_id in target_tile.ids:
             new_address: Address = Address.model_validate({**address.model_dump(), "tile_id": adjacent_id})
-            child_adjs: set[Tile] = await self.adjacents(address=new_address, depth=depth - 1)
-            adjacent_targets = adjacent_targets.union(child_adjs)
+            child_adjs: list[Tile] = await self.adjacents(address=new_address, depth=depth - 1)
+            adjacent_targets = adjacent_targets + child_adjs
         return adjacent_targets
 
     async def adjecent_to(self, address: Address, types: list[TileType] | None) -> list[TileType]:

@@ -6,7 +6,7 @@ from pymongo.collection import Collection
 from pymongo.database import Database
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
 
-from ... import demand_env_var, demand_env_var_as_int
+from ...sdk.common.config.environment import demand_env_var, demand_env_var_as_int
 from ...sdk.common.utils import address_type, get_document_id_from_address
 from ...sdk.contracts.dtos.entities.entity import Entity
 from ...sdk.contracts.dtos.tiles.address import Address
