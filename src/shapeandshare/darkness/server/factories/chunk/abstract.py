@@ -67,27 +67,11 @@ class AbstractChunkFactory(BaseModel):
             # repopulate entities
             await self.entity_factory.generate(address=address)
 
-    async def adjecent_liquids(self, address: Address) -> list[TileType]:
-        return await self.adjecent_to(address=address, types=[TileType.OCEAN, TileType.WATER])
+    async def adjacent_liquids(self, address: Address, depth: int) -> list[TileType]:
+        return await self.adjecent_to(address=address, types=[TileType.OCEAN, TileType.WATER], depth=depth)
 
-    async def adjacents(self, address: Address, depth: int) -> list[Tile]:
-        adjacent_targets: list[Tile] = []
+    async def adjacents(self, address: Address) -> list[Tile]:
         target_tile: Tile = await self.daoclient.get(address=address)
-        if depth <= 0:
-            return [target_tile]
-
-        # TODO: use get_multi
-        for adjacent_id in target_tile.ids:
-            new_address: Address = Address.model_validate({**address.model_dump(), "tile_id": adjacent_id})
-            child_adjs: list[Tile] = await self.adjacents(address=new_address, depth=depth - 1)
-            adjacent_targets = adjacent_targets + child_adjs
-        return adjacent_targets
-
-    async def adjecent_to(self, address: Address, types: list[TileType] | None) -> list[TileType]:
-        adjecent_targets: list[TileType] = []
-
-        target_tile: Tile = await self.daoclient.get(address=address)
-
         adjecent_tile_addresses: list[Address] = []
         for _, adjecent_id in target_tile.next.items():
             adjecent_tile_addresses.append(Address.model_validate({**address.model_dump(), "tile_id": adjecent_id}))
@@ -95,14 +79,32 @@ class AbstractChunkFactory(BaseModel):
         adjecent_tiles: list[Tile] = await self.daoclient.get_multi(
             addresses=adjecent_tile_addresses, doc_type=DaoDocumentType.TILE
         )
+        return adjecent_tiles
+
+    async def adjacent_recursive(self, address: Address, depth: int) -> list[Tile]:
+        if depth <= 0:
+            return []
+        adjacent_tiles: list[Tile] = await self.adjacents(address=address)
+        child_tiles: list[Tile] = []
+        for adj_tile in adjacent_tiles:
+            for adj_tile_child in adj_tile.ids:
+                grand_child_tiles: list[Tile] = await self.adjacent_recursive(
+                    address=Address.model_validate({**address.model_dump(), "tile_id": adj_tile_child}), depth=depth - 1
+                )
+                child_tiles = child_tiles + grand_child_tiles
+        adjacent_tiles = adjacent_tiles + child_tiles
+        return adjacent_tiles
+
+    async def adjecent_to(self, address: Address, types: list[TileType] | None, depth: int) -> list[TileType]:
+        adjecent_targets: list[TileType] = []
+        adjecent_tiles: list[Tile] = await self.adjacent_recursive(address=address, depth=depth)
         for adjecent_tile in adjecent_tiles:
             if adjecent_tile.tile_type in types:
                 adjecent_targets.append(adjecent_tile.tile_type)
-
         return list(set(adjecent_targets))
 
     async def _grow_dirt_tile(self, address: Address) -> None:
-        adjecent_liquids: list[TileType] = await self.adjecent_liquids(address=address)
+        adjecent_liquids: list[TileType] = await self.adjacent_liquids(address=address, depth=1)
 
         # grass does not grow by the ocean
         if TileType.OCEAN not in adjecent_liquids:
@@ -115,7 +117,7 @@ class AbstractChunkFactory(BaseModel):
                 #     raise NotImplementedError("Add this Josh")
 
                 adjecent_flora: list[TileType] = await self.adjecent_to(
-                    address=address, types=[TileType.FOREST, TileType.GRASS]
+                    address=address, types=[TileType.FOREST, TileType.GRASS], depth=1
                 )
                 if TileType.FOREST in adjecent_flora:
                     await self.mutate_tile(address=address, mutate=0.005, tile_type=TileType.GRASS)
@@ -125,7 +127,7 @@ class AbstractChunkFactory(BaseModel):
 
     async def _grow_grass_tile(self, address: Address) -> None:
         neighbors: list[TileType] = await self.adjecent_to(
-            address=address, types=[TileType.WATER, TileType.GRASS, TileType.FOREST, TileType.OCEAN]
+            address=address, types=[TileType.WATER, TileType.GRASS, TileType.FOREST, TileType.OCEAN], depth=1
         )
 
         # no forests grow by oceans
@@ -163,7 +165,7 @@ class AbstractChunkFactory(BaseModel):
         # Convert inner Ocean to Water Tiles
 
         # See if we are next to another ocean tile
-        neighbors: list[TileType] = await self.adjecent_to(address=address, types=[TileType.OCEAN])
+        neighbors: list[TileType] = await self.adjecent_to(address=address, types=[TileType.OCEAN], depth=1)
         if len(neighbors) < 1:
             await self.convert_tile(address=address, source=TileType.OCEAN, target=TileType.WATER)
 
@@ -181,7 +183,7 @@ class AbstractChunkFactory(BaseModel):
 
         # shore erosion
         if target_tile.tile_type not in [TileType.UNKNOWN, TileType.OCEAN, TileType.WATER, TileType.SHORE]:
-            adjecent_liquids: list[TileType] = await self.adjecent_liquids(address=address)
+            adjecent_liquids: list[TileType] = await self.adjacent_liquids(address=address, depth=1)
             # Apply erosion - rocks and be left by oceans, everything else becomes shore
             if TileType.OCEAN in adjecent_liquids:
                 if target_tile.tile_type not in (TileType.ROCK, TileType.SHORE):
