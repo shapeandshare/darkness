@@ -6,9 +6,6 @@ class EntityType(str, Enum):
 
     GRASS = "grass"
     TREE = "tree"
-    FRUIT = "fruit"
 
     FISH = "fish"
-
-    MYCELIUM = "mycelium"
-    MUSHROOM = "mushroom"
+    FUNGI = "fungi"
