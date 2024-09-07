@@ -10,6 +10,7 @@ from .....sdk.contracts.dtos.tiles.world import World
 from .....sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from .....sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from .....sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
+from .....sdk.contracts.errors.server.dao.unknown import DaoUnknownError
 from .....sdk.contracts.types.chunk_quantum import ChunkQuantumType
 from ..context import ContextManager
 
@@ -53,12 +54,18 @@ async def world_chrono():
 async def chunk_quantum() -> None:
     try:
         await world_chrono()
+    except HTTPException as error:
+        logger.error(str(error))
+        raise error from error
     except DaoConflictError as error:
         logger.error(str(error))
         raise HTTPException(status_code=409, detail=str(error)) from error
     except DaoDoesNotExistError as error:
         logger.error(str(error))
         raise HTTPException(status_code=404, detail=str(error)) from error
+    except DaoUnknownError as error:
+        logger.error(str(error))
+        raise HTTPException(status_code=400, detail=str(error)) from error
     except DaoInconsistencyError as error:
         logger.error(str(error))
         raise HTTPException(status_code=500, detail=str(error)) from error
