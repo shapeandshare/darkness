@@ -13,6 +13,8 @@ from ...sdk.contracts.dtos.tiles.address import Address
 from ...sdk.contracts.dtos.tiles.chunk import Chunk
 from ...sdk.contracts.dtos.tiles.tile import Tile
 from ...sdk.contracts.dtos.tiles.world import World
+from ...sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
+from ...sdk.contracts.errors.server.dao.unknown import DaoUnknownError
 from ...sdk.contracts.types.dao_document import DaoDocumentType
 
 
@@ -53,17 +55,23 @@ class DaoClient(BaseModel):
         doc_type: DaoDocumentType = address_type(address=address)
         document_id: str = get_document_id_from_address(address=address, doc_type=doc_type)
         result: dict | None = self.collections[doc_type].find_one({"id": document_id})
+
         if result is None:
-            raise Exception("no document found")
+            raise DaoDoesNotExistError("no document found")
+
         if doc_type == DaoDocumentType.ENTITY:
             return Entity.model_validate(result)
-        elif doc_type == DaoDocumentType.TILE:
+
+        if doc_type == DaoDocumentType.TILE:
             return Tile.model_validate(result)
-        elif doc_type == DaoDocumentType.CHUNK:
+
+        if doc_type == DaoDocumentType.CHUNK:
             return Chunk.model_validate(result)
-        elif doc_type == DaoDocumentType.WORLD:
+
+        if doc_type == DaoDocumentType.WORLD:
             return World.model_validate(result)
-        raise Exception("invalid document type")
+
+        raise DaoUnknownError("invalid document type")
 
     async def get_all(self, doc_type: DaoDocumentType) -> list[World] | list[Chunk] | list[Tile] | list[Entity]:
         results = self.collections[doc_type].find()
@@ -78,7 +86,7 @@ class DaoClient(BaseModel):
             elif doc_type == DaoDocumentType.WORLD:
                 documents.append(World.model_validate(result))
             else:
-                raise Exception("invalid document type")
+                raise DaoUnknownError("invalid document type")
         return documents
 
     async def get_multi(
@@ -100,7 +108,7 @@ class DaoClient(BaseModel):
             elif doc_type == DaoDocumentType.WORLD:
                 documents.append(World.model_validate(result))
             else:
-                raise Exception("invalid document type")
+                raise DaoUnknownError("invalid document type")
         return documents
 
     async def post(self, address: Address, document: World | Chunk | Tile | Entity) -> InsertOneResult:

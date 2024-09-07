@@ -49,6 +49,7 @@ from .sdk.contracts.errors.sdk.unknown_verb import UnknownVerbError
 from .sdk.contracts.errors.server.dao.conflict import DaoConflictError
 from .sdk.contracts.errors.server.dao.doesnotexist import DaoDoesNotExistError
 from .sdk.contracts.errors.server.dao.inconsistency import DaoInconsistencyError
+from .sdk.contracts.errors.server.dao.unknown import DaoUnknownError
 from .sdk.contracts.errors.server.factory import FactoryError
 from .sdk.contracts.errors.server.service import ServiceError
 from .sdk.contracts.types.chunk_quantum import ChunkQuantumType
