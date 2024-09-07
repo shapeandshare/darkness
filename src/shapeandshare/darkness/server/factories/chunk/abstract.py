@@ -82,18 +82,28 @@ class AbstractChunkFactory(BaseModel):
         return adjecent_tiles
 
     async def adjacent_recursive(self, address: Address, depth: int) -> list[Tile]:
-        if depth <= 0:
+        if depth < 0:
             return []
-        adjacent_tiles: list[Tile] = await self.adjacents(address=address)
-        child_tiles: list[Tile] = []
-        for adj_tile in adjacent_tiles:
-            for adj_tile_child in adj_tile.ids:
-                grand_child_tiles: list[Tile] = await self.adjacent_recursive(
-                    address=Address.model_validate({**address.model_dump(), "tile_id": adj_tile_child}), depth=depth - 1
+
+        adjacent_tiles = await self.adjacents(address=address)
+
+        if depth > 1:
+            child_tiles: list[Tile] = []
+            for adj_tile in adjacent_tiles:
+                current_children: list[Tile] = await self.adjacent_recursive(
+                    address=Address.model_validate({**address.model_dump(), "tile_id": adj_tile.id}), depth=depth - 1
                 )
-                child_tiles = child_tiles + grand_child_tiles
-        adjacent_tiles = adjacent_tiles + child_tiles
-        return adjacent_tiles
+                child_tiles = child_tiles + current_children
+
+            adjacent_tiles = adjacent_tiles + child_tiles
+
+        tile_ids: set[str] = set()
+        deduped_tiles: list[Tile] = []
+        for tile in adjacent_tiles:
+            if tile.id not in tile_ids:
+                tile_ids.add(tile.id)
+                deduped_tiles.append(tile)
+        return deduped_tiles
 
     async def adjecent_to(self, address: Address, types: list[TileType] | None, depth: int) -> list[TileType]:
         adjecent_targets: list[TileType] = []
@@ -106,24 +116,24 @@ class AbstractChunkFactory(BaseModel):
     async def _grow_dirt_tile(self, address: Address) -> None:
         adjecent_liquids: list[TileType] = await self.adjacent_liquids(address=address, depth=1)
 
-        # grass does not grow by the ocean
+        # Grass does not grow directly next to the ocean
         if TileType.OCEAN not in adjecent_liquids:
             if TileType.WATER in adjecent_liquids:
                 await self.mutate_tile(address=address, mutate=0.01, tile_type=TileType.GRASS)
             else:
-                # # grass can not grow 2 tiles beyond a WATER source (0 based indexing)
-                # for adjacent in (await self.adjecents(address=address, depth=1)):
-                #     [for x in adjacent.t]
-                #     raise NotImplementedError("Add this Josh")
+                # Grass can not grow more than 2 tiles beyond a WATER source
+                liquid_tiles: list[TileType] = await self.adjecent_to(address=address, types=[TileType.WATER], depth=2)
+                if TileType.WATER in liquid_tiles:
 
-                adjecent_flora: list[TileType] = await self.adjecent_to(
-                    address=address, types=[TileType.FOREST, TileType.GRASS], depth=1
-                )
-                if TileType.FOREST in adjecent_flora:
-                    await self.mutate_tile(address=address, mutate=0.005, tile_type=TileType.GRASS)
+                    # Grass grows from other grass
+                    adjecent_flora: list[TileType] = await self.adjecent_to(
+                        address=address, types=[TileType.FOREST, TileType.GRASS], depth=1
+                    )
+                    if TileType.FOREST in adjecent_flora:
+                        await self.mutate_tile(address=address, mutate=0.005, tile_type=TileType.GRASS)
 
-                # elif len(adjecent_flora) > 0:
-                #     await self.mutate_tile(address=address, mutate=0.00125, tile_type=TileType.GRASS)
+                    # elif len(adjecent_flora) > 0:
+                    #     await self.mutate_tile(address=address, mutate=0.00125, tile_type=TileType.GRASS)
 
     async def _grow_grass_tile(self, address: Address) -> None:
         neighbors: list[TileType] = await self.adjecent_to(
