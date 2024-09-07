@@ -137,11 +137,13 @@ class AbstractChunkFactory(BaseModel):
 
     async def _grow_grass_tile(self, address: Address) -> None:
         neighbors: list[TileType] = await self.adjecent_to(
-            address=address, types=[TileType.WATER, TileType.GRASS, TileType.FOREST, TileType.OCEAN], depth=1
+            address=address,
+            types=[TileType.WATER, TileType.GRASS, TileType.FOREST, TileType.OCEAN, TileType.DIRT],
+            depth=1,
         )
 
-        # no forests grow by oceans
-        if TileType.OCEAN in neighbors:
+        # no forests grow by oceans or bare dirt
+        if TileType.OCEAN in neighbors or TileType.DIRT in neighbors:
             return
 
         if len(neighbors) > 1:
