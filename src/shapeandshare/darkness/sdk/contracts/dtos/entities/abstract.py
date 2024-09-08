@@ -9,6 +9,5 @@ class AbstractEntity(BaseModel):
     rbac: dict = {}
     entity_type: EntityType = EntityType.UNKNOWN
 
-    # future ..
     amount: float = 0
     state: int = 0

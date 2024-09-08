@@ -26,6 +26,7 @@ from .commands.world.get import WorldGetCommand
 from .commands.worlds.get import WorldsGetCommand
 
 
+# pylint: disable=too-many-instance-attributes
 class StateClient:
     # metrics/health
     health_get_command: HealthGetCommand

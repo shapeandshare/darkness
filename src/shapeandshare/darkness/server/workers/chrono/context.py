@@ -20,6 +20,7 @@ class ContextManager:
             logger.debug("[ContextManager] state client already assigned")
 
 
+# pylint: disable=duplicate-code
 try:
     ContextManager()
 except ServiceError as error:
