@@ -95,7 +95,7 @@ class AbstractEntityFactory(BaseModel):
                         grass: EntityGrass = EntityGrass.model_validate(entity.model_dump())
                         await grass.quantum()
                     elif entity.entity_type == EntityType.FISH:
-                        fish: EntityFish = EntityFish.model_validate(entity.model_dump())
+                        fish: EntityFish = EntityFish.model_validate({**entity.model_dump(), "address": address_entity, "daoclient": self.daoclient })
                         await fish.quantum()
                     elif entity.entity_type == EntityType.TREE:
                         tree: EntityTree = EntityTree.model_validate(entity.model_dump())
