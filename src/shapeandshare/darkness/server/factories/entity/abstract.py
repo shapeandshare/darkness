@@ -89,16 +89,24 @@ class AbstractEntityFactory(BaseModel):
                     # print(wrapped_entity.model_dump())
 
                     if entity.entity_type == EntityType.FUNGI:
-                        fungi: EntityFungi = EntityFungi.model_validate(entity.model_dump())
+                        fungi: EntityFungi = EntityFungi.model_validate(
+                            {**entity.model_dump(), "address": address_entity, "daoclient": self.daoclient}
+                        )
                         await fungi.quantum()
                     elif entity.entity_type == EntityType.GRASS:
-                        grass: EntityGrass = EntityGrass.model_validate(entity.model_dump())
+                        grass: EntityGrass = EntityGrass.model_validate(
+                            {**entity.model_dump(), "address": address_entity, "daoclient": self.daoclient}
+                        )
                         await grass.quantum()
                     elif entity.entity_type == EntityType.FISH:
-                        fish: EntityFish = EntityFish.model_validate({**entity.model_dump(), "address": address_entity, "daoclient": self.daoclient })
+                        fish: EntityFish = EntityFish.model_validate(
+                            {**entity.model_dump(), "address": address_entity, "daoclient": self.daoclient}
+                        )
                         await fish.quantum()
                     elif entity.entity_type == EntityType.TREE:
-                        tree: EntityTree = EntityTree.model_validate(entity.model_dump())
+                        tree: EntityTree = EntityTree.model_validate(
+                            {**entity.model_dump(), "address": address_entity, "daoclient": self.daoclient}
+                        )
                         await tree.quantum()
 
                     queue.task_done()

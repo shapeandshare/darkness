@@ -10,4 +10,4 @@ dist/
 venv/
 *.egg-info
 infra/local/assets
-infra/local/mongodb-macos-aarch64-7.0.12
+infra/local/mongodb-macos-aarch64-*/
