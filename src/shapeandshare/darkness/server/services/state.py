@@ -33,6 +33,7 @@ from ..factories.world.world import WorldFactory
 logger = logging.getLogger()
 
 
+# pylint: disable=too-many-public-methods
 class StateService(BaseModel):
     daoclient: DaoClient
 
