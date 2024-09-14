@@ -8,6 +8,7 @@ class TileConnectionType(str, Enum):
     UP = "up"
     DOWN = "down"
 
+    # pylint: disable=no-else-return
     @classmethod
     def opposite(cls, of: Self) -> Self:
         if of == TileConnectionType.LEFT:
