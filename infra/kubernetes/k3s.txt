@@ -1,0 +1,15 @@
+-----------------------------------------------
+k3s
+
+https://docs.k3s.io/quick-start
+
+curl -sfL https://get.k3s.io | sh -
+
+
+
+-----------------------------------------------
+k3d
+
+https://k3d.io/v5.7.4/#install-current-latest-release
+
+

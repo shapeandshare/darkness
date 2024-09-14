@@ -24,6 +24,7 @@ from ..entity.entity import EntityFactory
 logger = logging.getLogger()
 
 
+# pylint: disable=too-many-statements
 class AbstractChunkFactory(BaseModel):
     daoclient: DaoClient
     entity_factory: EntityFactory

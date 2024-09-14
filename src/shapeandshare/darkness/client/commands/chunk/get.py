@@ -1,3 +1,5 @@
+""" Chunk Get Command """
+
 import requests
 
 from ....sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest

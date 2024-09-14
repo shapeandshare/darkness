@@ -10,6 +10,8 @@ See: https://github.com/mongodb/mongodb-kubernetes-operator/blob/master/docs/ins
 4. Deploy a Replica Set
 See: https://github.com/mongodb/mongodb-kubernetes-operator/blob/master/docs/deploy-configure.md
 > kubectl apply -f config/samples/mongodb.com_v1_mongodbcommunity_cr.yaml --namespace <my-namespace>
+
+vs.
 > kubectl apply -f ./mongodb.yaml --namespace darkness
 
 5. Verify resources:
