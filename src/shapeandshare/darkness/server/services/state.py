@@ -3,7 +3,6 @@ import logging
 from pydantic import BaseModel
 from pymongo.results import DeleteResult, UpdateResult
 
-from ... import TileConnectionType
 from ...sdk.contracts.dtos.entities.entity import Entity
 from ...sdk.contracts.dtos.sdk.requests.chunk.chunk import ChunkRequest
 from ...sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
@@ -24,6 +23,7 @@ from ...sdk.contracts.dtos.tiles.address import Address
 from ...sdk.contracts.dtos.tiles.chunk import Chunk
 from ...sdk.contracts.dtos.tiles.tile import Tile
 from ...sdk.contracts.dtos.tiles.world import World
+from ...sdk.contracts.types.connection import TileConnectionType
 from ...sdk.contracts.types.dao_document import DaoDocumentType
 from ..clients.dao import DaoClient
 from ..factories.chunk.flat import FlatChunkFactory

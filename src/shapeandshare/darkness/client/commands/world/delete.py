@@ -1,7 +1,7 @@
 import requests
 
-from .... import Response
 from ....sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
+from ....sdk.contracts.dtos.sdk.responses.response import Response
 from ..abstract import AbstractCommand
 
 

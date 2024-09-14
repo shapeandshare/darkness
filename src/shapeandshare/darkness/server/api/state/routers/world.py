@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from ..... import Entity, Tile
+from .....sdk.contracts.dtos.entities.entity import Entity
 from .....sdk.contracts.dtos.sdk.requests.chunk.chunk import ChunkRequest
 from .....sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
 from .....sdk.contracts.dtos.sdk.requests.chunk.delete import ChunkDeleteRequest
@@ -25,6 +25,7 @@ from .....sdk.contracts.dtos.sdk.responses.tile.get import TileGetResponse
 from .....sdk.contracts.dtos.sdk.responses.world.create import WorldCreateResponse
 from .....sdk.contracts.dtos.sdk.responses.world.get import WorldGetResponse
 from .....sdk.contracts.dtos.tiles.chunk import Chunk
+from .....sdk.contracts.dtos.tiles.tile import Tile
 from .....sdk.contracts.dtos.tiles.world import World
 from .....sdk.contracts.types.chunk_quantum import ChunkQuantumType
 from ...common.middleware.error import error_handler
