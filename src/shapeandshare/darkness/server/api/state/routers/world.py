@@ -5,6 +5,7 @@ from .....sdk.contracts.dtos.sdk.requests.chunk.chunk import ChunkRequest
 from .....sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
 from .....sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
 from .....sdk.contracts.dtos.sdk.requests.chunk.quantum import ChunkQuantumRequest
+from .....sdk.contracts.dtos.sdk.requests.entity.delete import EntityDeleteRequest
 from .....sdk.contracts.dtos.sdk.requests.entity.entity import EntityRequest
 from .....sdk.contracts.dtos.sdk.requests.entity.patch import EntityPatchRequest
 from .....sdk.contracts.dtos.sdk.requests.tile.get import TileGetRequest
@@ -172,7 +173,7 @@ async def entity_patch(world_id: str, chunk_id: str, tile_id: str, entity_id: st
 @router.delete("/{world_id}/chunk/{chunk_id}/tile/{tile_id}/entity/{entity_id}")
 @error_handler
 async def entity_delete(world_id: str, chunk_id: str, tile_id: str, entity_id: str, partial: dict) -> None:
-    request: EntityRequest = EntityRequest(
+    request: EntityDeleteRequest = EntityDeleteRequest(
         world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, entity_id=entity_id, partial=partial
     )
     await ContextManager.state_service.entity_delete(request=request)
