@@ -75,17 +75,16 @@ class StateService(BaseModel):
 
     async def world_delete(self, request: WorldDeleteRequest) -> bool:
         logger.debug("[StateService] deleting world")
-        address_world: Address = Address.model_validate({"world_id": request.id})
 
         if request.cascade:
-            world: World = await self.world_get(request=WorldGetRequest(world_id=address_world))
+            world: World = await self.world_get(request=WorldGetRequest(id=request.id))
             for chunk_id in world.ids:
                 await self.chunk_delete(
-                    request=ChunkDeleteRequest(world_id=address_world, chunk_id=chunk_id, cascade=request.cascade)
+                    request=ChunkDeleteRequest(world_id=request.id, chunk_id=chunk_id, cascade=request.cascade)
                 )
 
         # lastly delete the world
-        result: DeleteResult = await self.daoclient.delete(address=address_world)
+        result: DeleteResult = await self.daoclient.delete(address=Address(world_id=request.id))
         if result.deleted_count == 1:
             return True
         return False
