@@ -1,3 +1,5 @@
+""" Chunk Delete Command """
+
 import requests
 
 from ....sdk.contracts.dtos.sdk.requests.chunk.chunk import ChunkRequest

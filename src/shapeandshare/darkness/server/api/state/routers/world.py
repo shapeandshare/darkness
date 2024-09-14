@@ -1,15 +1,22 @@
 from fastapi import APIRouter, HTTPException
 
+from ..... import Entity, Tile
 from .....sdk.contracts.dtos.sdk.requests.chunk.chunk import ChunkRequest
 from .....sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
 from .....sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
 from .....sdk.contracts.dtos.sdk.requests.chunk.quantum import ChunkQuantumRequest
+from .....sdk.contracts.dtos.sdk.requests.entity.entity import EntityRequest
+from .....sdk.contracts.dtos.sdk.requests.entity.patch import EntityPatchRequest
+from .....sdk.contracts.dtos.sdk.requests.tile.get import TileGetRequest
+from .....sdk.contracts.dtos.sdk.requests.tile.patch import TilePatchRequest
 from .....sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
 from .....sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
 from .....sdk.contracts.dtos.sdk.requests.world.world import WorldRequest
 from .....sdk.contracts.dtos.sdk.responses.chunk.create import ChunkCreateResponse
 from .....sdk.contracts.dtos.sdk.responses.chunk.get import ChunkGetResponse
+from .....sdk.contracts.dtos.sdk.responses.entity.get import EntityGetResponse
 from .....sdk.contracts.dtos.sdk.responses.response import Response
+from .....sdk.contracts.dtos.sdk.responses.tile.get import TileGetResponse
 from .....sdk.contracts.dtos.sdk.responses.world.create import WorldCreateResponse
 from .....sdk.contracts.dtos.sdk.responses.world.get import WorldGetResponse
 from .....sdk.contracts.dtos.tiles.chunk import Chunk
@@ -110,3 +117,66 @@ async def chunk_quantum(world_id: str, chunk_id: str, request: ChunkQuantumReque
     else:
         msg: str = f"unknown scope ({request.scope})"
         raise HTTPException(status_code=400, detail=msg)
+
+
+### /world/{world_id}/chunk/{chunk_id}/tile
+
+### /world/{world_id}/chunk/{chunk_id}/tile/{tile_id}
+
+
+## get
+@router.get("/{world_id}/chunk/{chunk_id}/tile/{tile_id}")
+@error_handler
+async def tile_get(world_id: str, chunk_id: str, tile_id: str, full: bool = True) -> Response[TileGetResponse]:
+    request: TileGetRequest = TileGetRequest(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id)
+
+    if full:
+        tile: Tile = await ContextManager.state_service.tile_get(request=request)
+        response = Response[TileGetResponse](data=TileGetResponse(tile=tile))
+    else:
+        tile: Tile = await ContextManager.state_service.tile_lite_get(request=request)
+        response = Response[TileGetResponse](data=TileGetResponse(tile=tile))
+
+    return response
+
+
+## patch
+@router.patch("/{world_id}/chunk/{chunk_id}/tile/{tile_id}")
+@error_handler
+async def tile_patch(world_id: str, chunk_id: str, tile_id: str, partial: dict) -> None:
+    request: TilePatchRequest = TilePatchRequest(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, partial=partial)
+    await ContextManager.state_service.tile_patch(request=request)
+
+
+## get
+@router.get("/{world_id}/chunk/{chunk_id}/tile/{tile_id}/entity/{entity_id}")
+@error_handler
+async def entity_get(world_id: str, chunk_id: str, tile_id: str, entity_id: str) -> Response[EntityGetResponse]:
+    request: EntityRequest = EntityRequest(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, entity_id=entity_id)
+    entity: Entity = await ContextManager.state_service.entity_get(request=request)
+    return Response[EntityGetResponse](data=EntityGetResponse(entity=entity))
+
+
+## patch
+@router.patch("/{world_id}/chunk/{chunk_id}/tile/{tile_id}/entity/{entity_id}")
+@error_handler
+async def entity_patch(world_id: str, chunk_id: str, tile_id: str, entity_id: str, partial: dict) -> None:
+    request: EntityPatchRequest = EntityPatchRequest(
+        world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, entity_id=entity_id, partial=partial
+    )
+    await ContextManager.state_service.entity_patch(request=request)
+
+
+### /world/{world_id}/chunk/{chunk_id}/tile/{tile_id}/entity/{entity_id}
+## delete
+@router.delete("/{world_id}/chunk/{chunk_id}/tile/{tile_id}/entity/{entity_id}")
+@error_handler
+async def entity_delete(world_id: str, chunk_id: str, tile_id: str, entity_id: str, partial: dict) -> None:
+    request: EntityRequest = EntityRequest(
+        world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, entity_id=entity_id, partial=partial
+    )
+    await ContextManager.state_service.entity_delete(request=request)
+
+
+### /world/{world_id}/chunk/{chunk_id}/tile/{tile_id}/entity
+## post (create)

@@ -1,12 +1,16 @@
 import logging
 
 from pydantic import BaseModel
-from pymongo.results import DeleteResult
+from pymongo.results import DeleteResult, UpdateResult
 
 from ...sdk.contracts.dtos.entities.entity import Entity
 from ...sdk.contracts.dtos.sdk.requests.chunk.chunk import ChunkRequest
 from ...sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
 from ...sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
+from ...sdk.contracts.dtos.sdk.requests.entity.entity import EntityRequest
+from ...sdk.contracts.dtos.sdk.requests.entity.patch import EntityPatchRequest
+from ...sdk.contracts.dtos.sdk.requests.tile.get import TileGetRequest
+from ...sdk.contracts.dtos.sdk.requests.tile.patch import TilePatchRequest
 from ...sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
 from ...sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
 from ...sdk.contracts.dtos.sdk.requests.world.world import WorldRequest
@@ -110,26 +114,9 @@ class StateService(BaseModel):
         # re-hydrate the tiles
         tile_ids: set[str] = chunk.ids
         for tile_id in tile_ids:
-            address_tile: Address = Address.model_validate(
-                {"world_id": request.world_id, "chunk_id": chunk.id, "tile_id": tile_id}
+            tile: Tile = await self.tile_get(
+                request=TileGetRequest(world_id=request.world_id, chunk_id=chunk.id, tile_id=tile_id)
             )
-            tile: Tile = await self.tile_get(address=address_tile)
-
-            # re-hydrate the entities
-            entity_ids: set[str] = tile.ids
-            for entity_id in entity_ids:
-                address_entity: Address = Address.model_validate(
-                    {
-                        "world_id": request.world_id,
-                        "chunk_id": chunk.id,
-                        "tile_id": tile_id,
-                        "entity_id": entity_id,
-                    }
-                )
-                entity: Entity = await self.entity_get(address=address_entity)
-
-                # add finalized entity to tile
-                tile.contents[entity_id] = entity
 
             # Add finalized tile to chunk
             chunk.contents[tile_id] = tile
@@ -151,10 +138,73 @@ class StateService(BaseModel):
 
     ### Tile ##################################
 
-    async def tile_get(self, address: Address) -> Tile:
-        return await self.daoclient.get(address=address)
+    async def tile_lite_get(self, request: TileGetRequest) -> Tile:
+        address_tile: Address = Address.model_validate(
+            {"world_id": request.world_id, "chunk_id": request.chunk_id, "tile_id": request.tile_id}
+        )
+        return await self.daoclient.get(address=address_tile)
+
+    async def tile_get(self, request: TileGetRequest) -> Tile:
+        tile: Tile = await self.tile_lite_get(request=request)
+
+        # re-hydrate the entities
+        entity_ids: set[str] = tile.ids
+        for entity_id in entity_ids:
+            entity_request: EntityRequest = EntityRequest.model_validate(
+                {
+                    "world_id": request.world_id,
+                    "chunk_id": request.chunk_id,
+                    "tile_id": request.tile_id,
+                    "entity_id": entity_id,
+                }
+            )
+
+            entity: Entity = await self.entity_get(request=entity_request)
+
+            # add finalized entity to tile
+            tile.contents[entity_id] = entity
+
+        return tile
+
+    async def tile_patch(self, request: TilePatchRequest) -> UpdateResult:
+        address_tile: Address = Address.model_validate(
+            {"world_id": request.world_id, "chunk_id": request.chunk_id, "tile_id": request.tile_id}
+        )
+        return await self.daoclient.patch(address=address_tile, document=request.partial)
 
     ### Entity ##################################
 
-    async def entity_get(self, address: Address) -> Entity:
-        return await self.daoclient.get(address=address)
+
+
+    async def entity_get(self, request: EntityRequest) -> Entity:
+        address_entity: Address = Address.model_validate(
+            {
+                "world_id": request.world_id,
+                "chunk_id": request.chunk_id,
+                "tile_id": request.tile_id,
+                "entity_id": request.entity_id,
+            }
+        )
+        return await self.daoclient.get(address=address_entity)
+
+    async def entity_patch(self, request: EntityPatchRequest) -> UpdateResult:
+        address_entity: Address = Address.model_validate(
+            {
+                "world_id": request.world_id,
+                "chunk_id": request.chunk_id,
+                "tile_id": request.tile_id,
+                "entity_id": request.entity_id,
+            }
+        )
+        return await self.daoclient.patch(address=address_entity, document=request.partial)
+
+    async def entity_delete(self, request: EntityRequest) -> DeleteResult:
+        address_entity: Address = Address.model_validate(
+            {
+                "world_id": request.world_id,
+                "chunk_id": request.chunk_id,
+                "tile_id": request.tile_id,
+                "entity_id": request.entity_id,
+            }
+        )
+        return await self.daoclient.delete(address=address_entity)
