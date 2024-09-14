@@ -3,16 +3,20 @@ from fastapi import APIRouter, HTTPException
 from ..... import Entity, Tile
 from .....sdk.contracts.dtos.sdk.requests.chunk.chunk import ChunkRequest
 from .....sdk.contracts.dtos.sdk.requests.chunk.create import ChunkCreateRequest
+from .....sdk.contracts.dtos.sdk.requests.chunk.delete import ChunkDeleteRequest
 from .....sdk.contracts.dtos.sdk.requests.chunk.get import ChunkGetRequest
+from .....sdk.contracts.dtos.sdk.requests.chunk.patch import ChunkPatchRequest
 from .....sdk.contracts.dtos.sdk.requests.chunk.quantum import ChunkQuantumRequest
 from .....sdk.contracts.dtos.sdk.requests.entity.delete import EntityDeleteRequest
 from .....sdk.contracts.dtos.sdk.requests.entity.entity import EntityRequest
 from .....sdk.contracts.dtos.sdk.requests.entity.patch import EntityPatchRequest
+from .....sdk.contracts.dtos.sdk.requests.tile.delete import TileDeleteRequest
 from .....sdk.contracts.dtos.sdk.requests.tile.get import TileGetRequest
 from .....sdk.contracts.dtos.sdk.requests.tile.patch import TilePatchRequest
 from .....sdk.contracts.dtos.sdk.requests.world.create import WorldCreateRequest
+from .....sdk.contracts.dtos.sdk.requests.world.delete import WorldDeleteRequest
 from .....sdk.contracts.dtos.sdk.requests.world.get import WorldGetRequest
-from .....sdk.contracts.dtos.sdk.requests.world.world import WorldRequest
+from .....sdk.contracts.dtos.sdk.requests.world.patch import WorldPatchRequest
 from .....sdk.contracts.dtos.sdk.responses.chunk.create import ChunkCreateResponse
 from .....sdk.contracts.dtos.sdk.responses.chunk.get import ChunkGetResponse
 from .....sdk.contracts.dtos.sdk.responses.entity.get import EntityGetResponse
@@ -55,9 +59,18 @@ async def world_get(world_id: str, full: bool = False) -> Response[WorldGetRespo
 
 @router.delete("/{world_id}")
 @error_handler
-async def world_delete(world_id: str) -> None:
-    request: WorldRequest = WorldRequest(id=world_id)
-    await ContextManager.state_service.world_delete(request=request)
+async def world_delete(world_id: str, cascade: bool) -> Response[bool]:
+    request: WorldDeleteRequest = WorldDeleteRequest(id=world_id, cascade=cascade)
+    success: bool = await ContextManager.state_service.world_delete(request=request)
+    return Response[bool](data=success)
+
+
+@router.patch("/{world_id}")
+@error_handler
+async def world_patch(world_id: str, partial: dict) -> Response[bool]:
+    request: WorldPatchRequest = WorldPatchRequest(id=world_id, partial=partial)
+    await ContextManager.state_service.world_patch(request=request)
+    return Response[bool](data=True)
 
 
 @router.post("")
@@ -83,6 +96,14 @@ async def chunk_create(world_id: str, request: ChunkCreateRequest) -> Response[C
     return Response[ChunkCreateResponse](data=ChunkCreateResponse(id=chunk_id))
 
 
+@router.patch("/{world_id}/chunk/{chunk_id}")
+@error_handler
+async def chunk_patch(world_id: str, chunk_id: str, partial: dict) -> Response[bool]:
+    request: ChunkPatchRequest = ChunkPatchRequest(id=world_id, chunk_id=chunk_id, partial=partial)
+    await ContextManager.state_service.chunk_patch(request=request)
+    return Response[bool](data=ChunkCreateResponse(id=True))
+
+
 @router.get("/{world_id}/chunk/{chunk_id}")
 @error_handler
 async def chunk_get(world_id: str, chunk_id: str, full: bool = True) -> Response[ChunkGetResponse]:
@@ -100,14 +121,17 @@ async def chunk_get(world_id: str, chunk_id: str, full: bool = True) -> Response
 
 @router.delete("/{world_id}/chunk/{chunk_id}")
 @error_handler
-async def chunk_delete(world_id: str, chunk_id: str) -> None:
-    request: ChunkRequest = ChunkRequest(world_id=world_id, chunk_id=chunk_id)
-    await ContextManager.state_service.chunk_delete(request=request)
+async def chunk_delete(world_id: str, chunk_id: str, parent: bool, cascade: bool) -> Response[bool]:
+    request: ChunkDeleteRequest = ChunkDeleteRequest(
+        world_id=world_id, chunk_id=chunk_id, parent=parent, cascade=cascade
+    )
+    success: bool = await ContextManager.state_service.chunk_delete(request=request)
+    return Response[bool](data=success)
 
 
 @router.post("/{world_id}/chunk/{chunk_id}")
 @error_handler
-async def chunk_quantum(world_id: str, chunk_id: str, request: ChunkQuantumRequest) -> None:
+async def chunk_quantum(world_id: str, chunk_id: str, request: ChunkQuantumRequest) -> Response[bool]:
     chunk_request: ChunkRequest = ChunkRequest(world_id=world_id, chunk_id=chunk_id)
     if request.scope == ChunkQuantumType.ALL:
         await ContextManager.state_service.chunk_quantum(request=chunk_request)
@@ -118,6 +142,7 @@ async def chunk_quantum(world_id: str, chunk_id: str, request: ChunkQuantumReque
     else:
         msg: str = f"unknown scope ({request.scope})"
         raise HTTPException(status_code=400, detail=msg)
+    return Response[bool](data=True)
 
 
 ### /world/{world_id}/chunk/{chunk_id}/tile
@@ -144,9 +169,20 @@ async def tile_get(world_id: str, chunk_id: str, tile_id: str, full: bool = True
 ## patch
 @router.patch("/{world_id}/chunk/{chunk_id}/tile/{tile_id}")
 @error_handler
-async def tile_patch(world_id: str, chunk_id: str, tile_id: str, partial: dict) -> None:
+async def tile_patch(world_id: str, chunk_id: str, tile_id: str, partial: dict) -> Response[bool]:
     request: TilePatchRequest = TilePatchRequest(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, partial=partial)
     await ContextManager.state_service.tile_patch(request=request)
+    return Response[bool](data=True)
+
+
+@router.delete("/{world_id}/chunk/{chunk_id}/tile/{tile_id}")
+@error_handler
+async def tile_delete(world_id: str, chunk_id: str, tile_id: str, parent: bool, cascade: bool) -> Response[bool]:
+    request: TileDeleteRequest = TileDeleteRequest(
+        world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, parent=parent, cascade=cascade
+    )
+    success: bool = await ContextManager.state_service.tile_delete(request=request)
+    return Response[bool](data=success)
 
 
 ## get
@@ -161,22 +197,24 @@ async def entity_get(world_id: str, chunk_id: str, tile_id: str, entity_id: str)
 ## patch
 @router.patch("/{world_id}/chunk/{chunk_id}/tile/{tile_id}/entity/{entity_id}")
 @error_handler
-async def entity_patch(world_id: str, chunk_id: str, tile_id: str, entity_id: str, partial: dict) -> None:
+async def entity_patch(world_id: str, chunk_id: str, tile_id: str, entity_id: str, partial: dict) -> Response[bool]:
     request: EntityPatchRequest = EntityPatchRequest(
         world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, entity_id=entity_id, partial=partial
     )
     await ContextManager.state_service.entity_patch(request=request)
+    return Response[bool](data=True)
 
 
 ### /world/{world_id}/chunk/{chunk_id}/tile/{tile_id}/entity/{entity_id}
 ## delete
 @router.delete("/{world_id}/chunk/{chunk_id}/tile/{tile_id}/entity/{entity_id}")
 @error_handler
-async def entity_delete(world_id: str, chunk_id: str, tile_id: str, entity_id: str, partial: dict) -> None:
+async def entity_delete(world_id: str, chunk_id: str, tile_id: str, entity_id: str, parent: bool) -> Response[bool]:
     request: EntityDeleteRequest = EntityDeleteRequest(
-        world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, entity_id=entity_id, partial=partial
+        world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, entity_id=entity_id, parent=parent
     )
-    await ContextManager.state_service.entity_delete(request=request)
+    success: bool = await ContextManager.state_service.entity_delete(request=request)
+    return Response[bool](data=success)
 
 
 ### /world/{world_id}/chunk/{chunk_id}/tile/{tile_id}/entity
