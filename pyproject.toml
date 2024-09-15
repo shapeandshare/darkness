@@ -22,7 +22,7 @@ where = ["src"]  # list of folders that contain the packages (["."] by default)
 
 [project]
 name = "shapeandshare.darkness"
-version = "0.4.15"
+version = "0.4.16"
 authors = [
   { name="Joshua C. Burt", email="joshburt@shapeandshare.com" },
 ]
