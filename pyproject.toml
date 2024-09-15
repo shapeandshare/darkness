@@ -22,7 +22,7 @@ where = ["src"]  # list of folders that contain the packages (["."] by default)
 
 [project]
 name = "shapeandshare.darkness"
-version = "0.4.12"
+version = "0.4.13"
 authors = [
   { name="Joshua C. Burt", email="joshburt@shapeandshare.com" },
 ]
@@ -40,7 +40,7 @@ dependencies = ["fastapi", "fastapi-utils[all]", "typing_inspect", "pydantic", "
 
 [project.scripts]
 darkness-state = "shapeandshare.darkness.server.api.state.main:main"
-darknesss-chrono = "shapeandshare.darkness.server.workers.chrono.main:main"
+darkness-chrono = "shapeandshare.darkness.server.workers.chrono.main:main"
 
 [project.urls]
 Homepage = "https://github.com/shapeandshare/darkness"
