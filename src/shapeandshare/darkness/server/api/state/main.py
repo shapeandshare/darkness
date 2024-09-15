@@ -45,7 +45,7 @@ def main(
 
     logger.info("[Main] online")
 
-    uvicorn.run(app, host=hostname, port=port, log_level=logging.getLevelName(log_level))
+    uvicorn.run(app=app, host=hostname, port=port, log_level=logging.getLevelName(log_level))
 
 
 if __name__ == "__main__":

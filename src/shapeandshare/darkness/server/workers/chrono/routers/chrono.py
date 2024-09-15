@@ -5,6 +5,7 @@ from asyncio import Queue
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
 
+from ..... import demand_env_var_as_int, get_env_var
 from .....sdk.contracts.dtos.tiles.world import World
 from .....sdk.contracts.types.chunk_quantum import ChunkQuantumType
 from ....api.common.middleware.error import error_handler
@@ -18,7 +19,13 @@ router: APIRouter = APIRouter(
 )
 
 
-@repeat_every(seconds=2)
+@repeat_every(
+    seconds=(
+        demand_env_var_as_int(name="DARKNESS_WORKER_CHRONO_SLEEP_TIME")
+        if get_env_var(name="DARKNESS_WORKER_CHRONO_SLEEP_TIME")
+        else 10
+    )
+)
 async def world_chrono():
     logger.debug("world chrono process executing")
     if ContextManager.client is None:
