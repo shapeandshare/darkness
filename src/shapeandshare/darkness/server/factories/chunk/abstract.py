@@ -121,8 +121,8 @@ class AbstractChunkFactory(BaseModel):
             if TileType.WATER in adjecent_liquids:
                 await self.mutate_tile(address=address, mutate=0.01, tile_type=TileType.GRASS)
             else:
-                # Grass can not grow more than 2 tiles beyond a WATER source
-                liquid_tiles: list[TileType] = await self.adjecent_to(address=address, types=[TileType.WATER], depth=2)
+                # Grass can not grow more than 3 tiles beyond a WATER source
+                liquid_tiles: list[TileType] = await self.adjecent_to(address=address, types=[TileType.WATER], depth=3)
                 if TileType.WATER in liquid_tiles:
 
                     # Grass grows from other grass
