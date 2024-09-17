@@ -13,3 +13,13 @@ k3d
 https://k3d.io/v5.7.4/#install-current-latest-release
 
 
+--port 443:443@loadbalancer
+--port 80:80@loadbalancer
+
+
+k3d cluster create \
+    --volume /Users/joshburt/Workbench/Repositories/darkness/infra/kubernetes/k3d/data/:/opt/darkness/@all \
+    --port 8000:8000@loadbalancer \
+    --port 8001:8001@loadbalancer \
+    --port 27017:27017@loadbalancer
+
