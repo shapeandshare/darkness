@@ -36,3 +36,5 @@ containers:
 
 
 kubectl expose service darkness-mongodb-svc --type=NodePort --port=27017 --namespace darkness
+
+kubectl port-forward darkness-mongodb-0 27017:27017

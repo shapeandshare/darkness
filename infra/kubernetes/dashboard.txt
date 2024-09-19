@@ -1,0 +1,21 @@
+https://github.com/kubernetes/dashboard
+
+# Add kubernetes-dashboard repository
+    > helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
+
+# Deploy a Helm Release named "kubernetes-dashboard" using the kubernetes-dashboard chart
+    > helm upgrade --install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard --create-namespace --namespace kubernetes-dashboard
+
+To access Dashboard run:
+  kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard-kong-proxy 8443:443
+
+NOTE: In case port-forward command does not work, make sure that kong service name is correct.
+      Check the services in Kubernetes Dashboard namespace using:
+        kubectl -n kubernetes-dashboard get svc
+
+Dashboard will be available at:
+  https://localhost:8443
+
+
+> kubectl -n darkness create token default
+
