@@ -162,7 +162,7 @@ class StateClient:
     async def tile_get(self, world_id: str, chunk_id: str, tile_id: str, full: bool) -> Tile:
         request: TileGetRequest = TileGetRequest(world_id=world_id, chunk_id=chunk_id, tile_id=tile_id, full=full)
         response: TileGetResponse = await self.tile_get_command.execute(request=request)
-        return response.data
+        return response.tile
 
     async def tile_patch(self, world_id: str, chunk_id: str, tile_id: str, partial: dict) -> bool:
         request: TilePatchRequest = TilePatchRequest(
